@@ -6,6 +6,10 @@ import { SYSTEM_INSTRUCTION_BASE, AGENT_PERSONAS } from "../constants";
 const getProvider = () => (process.env.MODEL_PROVIDER || "google").toLowerCase();
 const getApiKey = () => process.env.GEMINI_API_KEY || process.env.API_KEY || "";
 const isGoogleProvider = () => getProvider() === "google" && getApiKey().length > 0;
+const getOllamaConfig = () => ({
+  baseUrl: (process.env.OLLAMA_BASE_URL || "http://localhost:11434").replace(/\/$/, ""),
+  model: process.env.OLLAMA_MODEL || "llama3.1",
+});
 
 let cachedClient: GoogleGenAI | null = null;
 let cachedApiKey = "";
@@ -435,7 +439,11 @@ export const gradeOpenEndedAnswer = async (
 // --- LOCAL / OLLAMA FALLBACK HELPERS ---
 
 const streamWithOllama = async ({
+  history,
+  newMessage,
+  systemPrompt,
   onChunk,
+  signal,
 }: {
   history: Message[];
   newMessage: string;
@@ -443,7 +451,82 @@ const streamWithOllama = async ({
   onChunk: (text: string, groundingMetadata?: any) => void;
   signal?: AbortSignal;
 }) => {
-  onChunk("\n[System Error: Ollama streaming is not configured]");
+  const { baseUrl, model } = getOllamaConfig();
+
+  const messages = [
+    { role: 'system', content: systemPrompt.trim() },
+    ...history.map(m => ({
+      role: m.role === 'model' ? 'assistant' : 'user',
+      content: m.text
+    })),
+    { role: 'user', content: newMessage }
+  ];
+
+  try {
+    const response = await fetch(`${baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        messages,
+        stream: true
+      }),
+      signal
+    });
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => "Unknown error");
+      onChunk(`\n[System Error: Ollama ${response.status} ${response.statusText} - ${errText}]`);
+      return;
+    }
+
+    if (!response.body) {
+      onChunk("\n[System Error: Ollama response missing body]");
+      return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      let newlineIndex: number;
+
+      while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
+        const line = buffer.slice(0, newlineIndex).trim();
+        buffer = buffer.slice(newlineIndex + 1);
+        if (!line) continue;
+
+        try {
+          const json = JSON.parse(line);
+          if (json.message?.content) {
+            onChunk(json.message.content);
+          }
+          if (json.done) {
+            return;
+          }
+        } catch (e) {
+          // Ignore parse errors on partial lines
+        }
+      }
+
+      if (signal?.aborted) {
+        reader.cancel().catch(() => {});
+        onChunk("\n\n[Generation stopped by user]");
+        return;
+      }
+    }
+  } catch (error: any) {
+    if (signal?.aborted) {
+      onChunk("\n\n[Generation stopped by user]");
+      return;
+    }
+    onChunk(`\n[System Error: ${error?.message || "Failed to reach Ollama"}]`);
+  }
 };
 
 const buildLocalKnowledgeGraph = (files: FileDocument[]): KnowledgeNode[] => {
