@@ -1,0 +1,7 @@
+{
+  "name": "Study OS",
+  "description": "The greatest all-in-one AI study system. Hallucination-proof, exam-intelligent, and multimodal.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
