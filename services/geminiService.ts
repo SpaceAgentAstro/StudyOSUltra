@@ -3,7 +3,21 @@ import { GoogleGenAI } from "@google/genai";
 import { FileDocument, Message, Question, GameMode, AgentRole, DigitalTwin, KnowledgeNode, MetaInsight, CognitiveExercise } from "../types";
 import { SYSTEM_INSTRUCTION_BASE, AGENT_PERSONAS } from "../constants";
 
-const aiClient = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const getProvider = () => (process.env.MODEL_PROVIDER || "google").toLowerCase();
+const getApiKey = () => process.env.GEMINI_API_KEY || process.env.API_KEY || "";
+const isGoogleProvider = () => getProvider() === "google" && getApiKey().length > 0;
+
+let cachedClient: GoogleGenAI | null = null;
+let cachedApiKey = "";
+const getGoogleClient = () => {
+  if (!isGoogleProvider()) return null;
+  const apiKey = getApiKey();
+  if (!cachedClient || cachedApiKey !== apiKey) {
+    cachedClient = new GoogleGenAI({ apiKey });
+    cachedApiKey = apiKey;
+  }
+  return cachedClient;
+};
 
 interface SendMessageParams {
   history: Message[];
@@ -33,8 +47,6 @@ export const streamChatResponse = async ({
   onChunk,
   signal
 }: SendMessageParams) => {
-  if (!aiClient) throw new Error("AI Client not initialized");
-
   // 1. Context Construction
   const contextString = files
     .filter(f => f.status === 'ready')
@@ -76,6 +88,22 @@ export const streamChatResponse = async ({
     AVAILABLE SOURCE MATERIALS:
     ${contextString.length > 0 ? contextString : "No files uploaded yet. Rely on general knowledge (or Google Search if enabled)."}
   `;
+
+  if (getProvider() === 'ollama') {
+    return streamWithOllama({
+      history,
+      newMessage,
+      systemPrompt,
+      onChunk,
+      signal
+    });
+  }
+
+  const aiClient = getGoogleClient();
+  if (!aiClient) {
+    onChunk("\n[System Error: AI provider not configured]");
+    return;
+  }
 
   // 5. Prompt Construction
   const contents = history.map(msg => ({
@@ -140,7 +168,14 @@ export const streamChatResponse = async ({
 // --- PHASE 8 SERVICES ---
 
 export const generateKnowledgeGraph = async (files: FileDocument[]): Promise<KnowledgeNode[]> => {
-  if (!aiClient) throw new Error("AI Client not initialized");
+  if (!isGoogleProvider()) {
+    return buildLocalKnowledgeGraph(files);
+  }
+
+  const aiClient = getGoogleClient();
+  if (!aiClient) {
+    return buildLocalKnowledgeGraph(files);
+  }
   if (files.length === 0) return [];
 
   const contextString = files
@@ -188,6 +223,11 @@ export const generateKnowledgeGraph = async (files: FileDocument[]): Promise<Kno
 };
 
 export const generateMetaAnalysis = async (history: Message[]): Promise<MetaInsight[]> => {
+  if (!isGoogleProvider()) {
+    return buildLocalMetaInsights(history);
+  }
+
+  const aiClient = getGoogleClient();
   if (!aiClient) return [];
   
   const userMessages = history.filter(m => m.role === 'user').map(m => m.text).join("\n");
@@ -229,6 +269,8 @@ export const generateMetaAnalysis = async (history: Message[]): Promise<MetaInsi
 };
 
 export const generateCognitiveExercises = async (): Promise<CognitiveExercise[]> => {
+    if (!isGoogleProvider()) return buildLocalCognitiveExercises();
+    const aiClient = getGoogleClient();
     if (!aiClient) return [];
     
     const prompt = `
@@ -271,6 +313,11 @@ export const generateExamPaper = async (
   topic: string,
   files: FileDocument[]
 ): Promise<Question[]> => {
+  if (!isGoogleProvider()) {
+    return buildLocalExamPaper(topic, files);
+  }
+
+  const aiClient = getGoogleClient();
   if (!aiClient) throw new Error("AI Client not initialized");
 
   // Re-use game engine logic but ask for a "Paper" structure
@@ -344,6 +391,11 @@ export const gradeOpenEndedAnswer = async (
   markScheme: string[],
   files: FileDocument[]
 ): Promise<{ score: number; maxScore: number; feedback: string }> => {
+  if (!isGoogleProvider()) {
+    return gradeOpenEndedAnswerLocally(question, userAnswer, markScheme);
+  }
+
+  const aiClient = getGoogleClient();
   if (!aiClient) throw new Error("AI Client not initialized");
 
   const prompt = `
@@ -378,4 +430,145 @@ export const gradeOpenEndedAnswer = async (
   const jsonText = response.text;
   if (!jsonText) return { score: 0, maxScore: 5, feedback: "Error grading" };
   return JSON.parse(jsonText);
+};
+
+// --- LOCAL / OLLAMA FALLBACK HELPERS ---
+
+const streamWithOllama = async ({
+  onChunk,
+}: {
+  history: Message[];
+  newMessage: string;
+  systemPrompt: string;
+  onChunk: (text: string, groundingMetadata?: any) => void;
+  signal?: AbortSignal;
+}) => {
+  onChunk("\n[System Error: Ollama streaming is not configured]");
+};
+
+const buildLocalKnowledgeGraph = (files: FileDocument[]): KnowledgeNode[] => {
+  const titles = files.length > 0
+    ? files.map(f => f.name.replace(/\.[^/.]+$/, ''))
+    : ["Focus Habits", "Memory Cues", "Exam Strategy", "Active Recall"];
+
+  return titles.slice(0, 8).map((title, idx) => ({
+    id: (idx + 1).toString(),
+    label: title || `Concept ${idx + 1}`,
+    category: files[idx]?.type?.toUpperCase() || "GENERAL",
+    mastery: 45 + ((idx * 7) % 35),
+    connections: idx === 0 ? [] : [(idx).toString()]
+  }));
+};
+
+const buildLocalMetaInsights = (history: Message[]): MetaInsight[] => {
+  const userMessages = history.filter(m => m.role === 'user').map(m => m.text);
+  if (userMessages.length === 0) return [];
+
+  const now = Date.now();
+  return [
+    {
+      type: 'STRENGTH',
+      title: 'Curiosity Detected',
+      description: 'Your questions show steady curiosity. Keep iterating with follow-ups.',
+      timestamp: now
+    },
+    {
+      type: 'BIAS_DETECTED',
+      title: 'Watch Confirmation Bias',
+      description: 'Try to ask for counter-examples to your assumptions to avoid narrow framing.',
+      timestamp: now
+    },
+    {
+      type: 'STRATEGY_SUGGESTION',
+      title: 'Add Spaced Retrieval',
+      description: 'Summarize answers in your own words, then quiz yourself in 24 hours.',
+      timestamp: now
+    }
+  ];
+};
+
+const buildLocalCognitiveExercises = (): CognitiveExercise[] => ([
+  {
+    id: 'local-logic',
+    title: 'Fallacy Hunt',
+    skill: 'LOGIC',
+    description: 'Spot the hidden assumption in a short argument you read today.',
+    difficulty: 'Novice'
+  },
+  {
+    id: 'local-first-principles',
+    title: 'Unbundle a Concept',
+    skill: 'FIRST_PRINCIPLES',
+    description: 'Break a topic into 5 atomic facts and rebuild the explanation from them.',
+    difficulty: 'Adept'
+  },
+  {
+    id: 'local-analogy',
+    title: 'Analogy Sprint',
+    skill: 'LATERAL_THINKING',
+    description: 'Create two analogies between your current topic and everyday objects.',
+    difficulty: 'Master'
+  }
+]);
+
+const buildLocalExamPaper = (topic: string, files: FileDocument[]): Question[] => {
+  const sourceLabel = files[0]?.name ? `Source: ${files[0].name}` : "General knowledge";
+  const mcq = (id: number, text: string, options: string[], correct: number): Question => ({
+    id: `q${id}`,
+    type: 'MCQ',
+    text,
+    options,
+    correctOptionIndex: correct,
+    explanation: 'Self-check: ensure you can justify why the correct option wins.',
+    sourceCitation: sourceLabel,
+    difficulty: 'easy',
+    marks: 1,
+  });
+
+  const open = (id: number, text: string): Question => ({
+    id: `q${id}`,
+    type: 'OPEN',
+    text,
+    explanation: 'Aim for 3-4 bullet points; define any key terms.',
+    sourceCitation: sourceLabel,
+    difficulty: 'medium',
+    marks: 4,
+  });
+
+  return [
+    mcq(1, `Which statement best describes ${topic}?`, [
+      `${topic} focuses on processes.`,
+      `${topic} is purely descriptive.`,
+      `${topic} is only a lab technique.`,
+      `${topic} is unrelated to systems.`,
+    ], 0),
+    mcq(2, `What is a common misconception about ${topic}?`, [
+      'It has no exceptions.',
+      'It scales linearly.',
+      'It always increases efficiency.',
+      'It cannot be measured.',
+    ], 0),
+    open(3, `Outline two core principles of ${topic}.`),
+    open(4, `Give one real-world application of ${topic} and its limitation.`),
+    open(5, `Compare ${topic} to a related idea and highlight a key difference.`),
+  ];
+};
+
+const gradeOpenEndedAnswerLocally = (
+  question: string,
+  userAnswer: string,
+  markScheme: string[]
+): { score: number; maxScore: number; feedback: string } => {
+  const scheme = markScheme || [];
+  const maxScore = Math.max(scheme.length, 5);
+  const normalizedAnswer = userAnswer.toLowerCase();
+  const hits = scheme.reduce((acc, point) => acc + (normalizedAnswer.includes(point.toLowerCase()) ? 1 : 0), 0);
+  const score = Math.min(hits, maxScore);
+
+  const missing = scheme.filter(point => !normalizedAnswer.includes(point.toLowerCase()));
+  const feedback = missing.length === 0
+    ? "Strong answer — you covered the key points."
+    : `You could add: ${missing.slice(0, 3).join("; ")}.`;
+
+  return { score, maxScore, feedback };
 };
