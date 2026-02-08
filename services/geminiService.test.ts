@@ -17,12 +17,54 @@ vi.mock('@google/genai', () => ({
   GoogleGenAI: mockGoogleGenAI
 }));
 
-import { streamChatResponse, generateExamPaper } from './geminiService';
+import { streamChatResponse, generateExamPaper, gradeOpenEndedAnswer } from './geminiService';
 
 describe('geminiService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.API_KEY = 'test-key';
+  });
+
+  describe('gradeOpenEndedAnswer', () => {
+    it('returns graded response on success', async () => {
+      const mockGrade = {
+        score: 4,
+        maxScore: 5,
+        feedback: 'Good job'
+      };
+
+      mockGenerateContent.mockResolvedValueOnce({
+        text: JSON.stringify(mockGrade)
+      });
+
+      const result = await gradeOpenEndedAnswer('What is DNA?', 'Deoxyribonucleic acid', ['DNA'], []);
+      expect(result).toEqual(mockGrade);
+      expect(mockGenerateContent).toHaveBeenCalled();
+    });
+
+    it('returns error object on API failure', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockGenerateContent.mockRejectedValueOnce(new Error('API Error'));
+
+      const result = await gradeOpenEndedAnswer('Q', 'A', [], []);
+      expect(result).toEqual({ score: 0, maxScore: 5, feedback: "Error grading" });
+      expect(consoleErrorSpy).toHaveBeenCalled();
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('returns error object on invalid JSON', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockGenerateContent.mockResolvedValueOnce({
+        text: 'Invalid JSON'
+      });
+
+      const result = await gradeOpenEndedAnswer('Q', 'A', [], []);
+      expect(result).toEqual({ score: 0, maxScore: 5, feedback: "Error grading" });
+      expect(consoleErrorSpy).toHaveBeenCalled();
+
+      consoleErrorSpy.mockRestore();
+    });
   });
 
   describe('generateExamPaper', () => {
