@@ -17,7 +17,7 @@ vi.mock('@google/genai', () => ({
   GoogleGenAI: mockGoogleGenAI
 }));
 
-import { streamChatResponse, generateExamPaper } from './geminiService';
+import { streamChatResponse, generateExamPaper, generateGameQuestions } from './geminiService';
 
 describe('geminiService', () => {
   beforeEach(() => {
@@ -44,6 +44,53 @@ describe('geminiService', () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockGenerateContent.mockRejectedValueOnce(new Error('API Error'));
       const result = await generateExamPaper('Biology', []);
+      expect(result).toEqual([]);
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      consoleErrorSpy.mockRestore();
+    });
+  });
+
+  describe('generateGameQuestions', () => {
+    it('delegates to generateExamPaper with correct parameters', async () => {
+      const mockQuestions = [
+        { id: '1', text: 'Game Q', type: 'MCQ', marks: 1, explanation: '', sourceCitation: '', difficulty: 'easy' }
+      ];
+
+      mockGenerateContent.mockResolvedValueOnce({
+        text: JSON.stringify(mockQuestions)
+      });
+
+      const files = [{
+        id: 'f1', name: 'Notes.txt', type: 'txt', content: 'Cell biology notes', uploadDate: 0, status: 'ready'
+      } as any];
+
+      // topic='Biology', mode='MCQ_ARENA' (ignored), files=files, count=3 (ignored)
+      const result = await generateGameQuestions('Biology', 'MCQ_ARENA', files, 3);
+
+      expect(result).toEqual(mockQuestions);
+      expect(mockGenerateContent).toHaveBeenCalled();
+
+      // Verify the arguments passed to generateContent contain the topic and file content
+      // The implementation of generateExamPaper constructs the prompt with these values
+      const callArgs = mockGenerateContent.mock.calls[0][0];
+      // generateExamPaper sends:
+      // contents: [
+      //   { role: 'user', parts: [{ text: `CONTEXT:\n${contextString}` }] },
+      //   { role: 'user', parts: [{ text: prompt }] }
+      // ]
+      const contextPart = callArgs.contents[0].parts[0].text;
+      const promptPart = callArgs.contents[1].parts[0].text;
+
+      expect(contextPart).toContain('Cell biology notes');
+      expect(promptPart).toContain('Biology');
+    });
+
+    it('returns empty array on error', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockGenerateContent.mockRejectedValueOnce(new Error('API Error'));
+
+      const result = await generateGameQuestions('Math', 'MCQ_ARENA', [], 3);
+
       expect(result).toEqual([]);
       expect(consoleErrorSpy).toHaveBeenCalled();
       consoleErrorSpy.mockRestore();
