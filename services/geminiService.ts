@@ -1,9 +1,19 @@
 
-import { GoogleGenAI } from "@google/genai";
 import { FileDocument, Message, Question, GameMode, AgentRole, DigitalTwin, KnowledgeNode, MetaInsight, CognitiveExercise } from "../types";
 import { SYSTEM_INSTRUCTION_BASE, AGENT_PERSONAS } from "../constants";
 
-const aiClient = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Helper for API calls
+const callApi = async (endpoint: string, body: any) => {
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.statusText}`);
+  }
+  return response.json();
+};
 
 interface SendMessageParams {
   history: Message[];
@@ -33,7 +43,6 @@ export const streamChatResponse = async ({
   onChunk,
   signal
 }: SendMessageParams) => {
-  if (!aiClient) throw new Error("AI Client not initialized");
 
   // 1. Context Construction
   const contextString = files
@@ -113,19 +122,44 @@ export const streamChatResponse = async ({
   }
 
   try {
-    const responseStream = await aiClient.models.generateContentStream({
-      model: modelName,
-      contents: fullPromptParts,
-      config: config
+    const response = await fetch('/api/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            model: modelName,
+            contents: fullPromptParts,
+            config: config
+        }),
+        signal
     });
 
-    for await (const chunk of responseStream) {
-      if (signal?.aborted) {
-        break;
-      }
-      const text = chunk.text;
-      const groundingChunks = chunk.candidates?.[0]?.groundingMetadata?.groundingChunks;
-      if (text) onChunk(text, groundingChunks);
+    if (!response.body) throw new Error("No response body");
+    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    let buffer = "";
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        buffer += chunk;
+        const lines = buffer.split("\n");
+        // Process all complete lines
+        buffer = lines.pop() || ""; // Keep the last incomplete line
+
+        for (const line of lines) {
+            if (!line.trim()) continue;
+            try {
+                const data = JSON.parse(line);
+                const text = data.text;
+                const groundingChunks = data.candidates?.[0]?.groundingMetadata?.groundingChunks;
+                if (text) onChunk(text, groundingChunks);
+            } catch (e) {
+                console.error("Error parsing chunk", e);
+            }
+        }
     }
   } catch (error: any) {
     if (signal?.aborted) {
@@ -140,7 +174,6 @@ export const streamChatResponse = async ({
 // --- PHASE 8 SERVICES ---
 
 export const generateKnowledgeGraph = async (files: FileDocument[]): Promise<KnowledgeNode[]> => {
-  if (!aiClient) throw new Error("AI Client not initialized");
   if (files.length === 0) return [];
 
   const contextString = files
@@ -156,7 +189,7 @@ export const generateKnowledgeGraph = async (files: FileDocument[]): Promise<Kno
   `;
 
   try {
-    const response = await aiClient.models.generateContent({
+    const response = await callApi('/api/generate', {
       model: 'gemini-3-flash-preview',
       contents: [
         { role: 'user', parts: [{ text: contextString }] },
@@ -188,7 +221,6 @@ export const generateKnowledgeGraph = async (files: FileDocument[]): Promise<Kno
 };
 
 export const generateMetaAnalysis = async (history: Message[]): Promise<MetaInsight[]> => {
-  if (!aiClient) return [];
   
   const userMessages = history.filter(m => m.role === 'user').map(m => m.text).join("\n");
   if (!userMessages) return [];
@@ -203,7 +235,7 @@ export const generateMetaAnalysis = async (history: Message[]): Promise<MetaInsi
   `;
 
   try {
-    const response = await aiClient.models.generateContent({
+    const response = await callApi('/api/generate', {
       model: 'gemini-3-flash-preview',
       contents: [{ role: 'user', parts: [{ text: userMessages + "\n" + prompt }] }],
       config: {
@@ -229,7 +261,6 @@ export const generateMetaAnalysis = async (history: Message[]): Promise<MetaInsi
 };
 
 export const generateCognitiveExercises = async (): Promise<CognitiveExercise[]> => {
-    if (!aiClient) return [];
     
     const prompt = `
         Generate 3 abstract cognitive exercises to train reasoning skills (not subject specific).
@@ -238,7 +269,7 @@ export const generateCognitiveExercises = async (): Promise<CognitiveExercise[]>
     `;
 
     try {
-        const response = await aiClient.models.generateContent({
+        const response = await callApi('/api/generate', {
             model: 'gemini-3-flash-preview',
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
             config: {
@@ -271,7 +302,6 @@ export const generateExamPaper = async (
   topic: string,
   files: FileDocument[]
 ): Promise<Question[]> => {
-  if (!aiClient) throw new Error("AI Client not initialized");
 
   // Re-use game engine logic but ask for a "Paper" structure
   const contextString = files
@@ -287,7 +317,7 @@ export const generateExamPaper = async (
   `;
 
   try {
-    const response = await aiClient.models.generateContent({
+    const response = await callApi('/api/generate', {
       model: 'gemini-3-flash-preview',
       contents: [
         { role: 'user', parts: [{ text: `CONTEXT:\n${contextString}` }] },
@@ -344,7 +374,6 @@ export const gradeOpenEndedAnswer = async (
   markScheme: string[],
   files: FileDocument[]
 ): Promise<{ score: number; maxScore: number; feedback: string }> => {
-  if (!aiClient) throw new Error("AI Client not initialized");
 
   const prompt = `
     You are a strict Examiner. Grade this student response.
@@ -359,7 +388,7 @@ export const gradeOpenEndedAnswer = async (
     3. Be encouraging but strict on terminology.
   `;
 
-  const response = await aiClient.models.generateContent({
+  const response = await callApi('/api/generate', {
     model: 'gemini-3-flash-preview',
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     config: {
