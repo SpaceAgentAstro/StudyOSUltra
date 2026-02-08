@@ -29,3 +29,27 @@ export const calculateAccuracy = (score: number, total: number): number => {
 export const generateId = (): string => {
   return Math.random().toString(36).substring(2, 11);
 };
+
+/**
+ * Validates a file for upload.
+ * Checks for file size (max 5MB) and allowed extensions.
+ * @param file File object with name and size
+ * @returns Error message string or null if valid
+ */
+export const validateFile = (file: { name: string; size: number }): string | null => {
+  const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_EXTENSIONS = ['.txt', '.md', '.csv', '.json', '.pdf', '.docx'];
+
+  if (file.size > MAX_SIZE) {
+    return 'File size exceeds 5MB limit';
+  }
+
+  const lowerName = file.name.toLowerCase();
+  const hasValidExtension = ALLOWED_EXTENSIONS.some(ext => lowerName.endsWith(ext));
+
+  if (!hasValidExtension) {
+    return `File type not supported. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`;
+  }
+
+  return null;
+};
