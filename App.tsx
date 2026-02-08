@@ -154,11 +154,7 @@ const App: React.FC = () => {
         )
       case AppView.CHAT:
       default:
-        return (
-          <div className="h-screen p-4 md:p-6 bg-slate-100/50">
-             <ChatInterface files={files} />
-          </div>
-        );
+        return null;
     }
   };
 
@@ -167,6 +163,11 @@ const App: React.FC = () => {
       {!userProfile && <Onboarding onComplete={handleOnboardingComplete} />}
       <Sidebar currentView={currentView} setView={setCurrentView} />
       <main className="flex-1 h-full overflow-hidden relative">
+        <div style={{ display: currentView === AppView.CHAT ? 'block' : 'none' }} className="h-full">
+            <div className="h-screen p-4 md:p-6 bg-slate-100/50">
+                <ChatInterface files={files} />
+            </div>
+        </div>
         <Suspense
           fallback={
             <div className="h-full w-full flex items-center justify-center text-slate-500">
