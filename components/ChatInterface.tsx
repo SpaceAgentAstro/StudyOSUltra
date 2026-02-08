@@ -206,6 +206,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files }) => {
                     onClick={() => { setUseThinking(!useThinking); if(!useThinking) setUseFlashLite(false); }}
                     className={`p-1.5 rounded-lg border transition-colors ${useThinking ? 'bg-purple-100 border-purple-300 text-purple-700' : 'border-slate-200 text-slate-400'}`}
                     title="Thinking Mode"
+                    aria-label="Toggle Thinking Mode"
                 >
                     <Brain className="w-4 h-4" />
                 </button>
@@ -213,6 +214,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files }) => {
                     onClick={() => { setUseSearch(!useSearch); }}
                     className={`p-1.5 rounded-lg border transition-colors ${useSearch ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-slate-200 text-slate-400'}`}
                     title="Google Search"
+                    aria-label="Toggle Google Search"
                 >
                     <Globe className="w-4 h-4" />
                 </button>
@@ -220,6 +222,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files }) => {
                     onClick={() => { setUseFlashLite(!useFlashLite); if(!useFlashLite) setUseThinking(false); }}
                     className={`p-1.5 rounded-lg border transition-colors ${useFlashLite ? 'bg-amber-100 border-amber-300 text-amber-700' : 'border-slate-200 text-slate-400'}`}
                     title="Flash Lite (Fast)"
+                    aria-label="Toggle Flash Lite (Fast Mode)"
                 >
                     <Zap className="w-4 h-4" />
                 </button>
@@ -355,7 +358,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files }) => {
                  <span className="text-xs font-bold text-slate-700">Image Attached</span>
                  <span className="text-[10px] text-slate-400">Ready to analyze</span>
              </div>
-             <button onClick={() => setImageAttachment(null)} className="ml-2 p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
+             <button
+               onClick={() => setImageAttachment(null)}
+               className="ml-2 p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+               aria-label="Remove attached image"
+             >
                <div className="w-4 h-4 font-bold flex items-center justify-center">×</div>
              </button>
            </div>
@@ -386,6 +393,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files }) => {
               placeholder={`Ask ${AGENTS.find(a => a.role === selectedAgent)?.label}...`}
               disabled={isLoading || isUploading}
               className="w-full pl-4 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+              aria-label="Message input"
             />
             <div className="absolute right-2 top-2 flex items-center gap-1">
                <button 
@@ -393,6 +401,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files }) => {
                 disabled={isUploading || isLoading}
                 className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors disabled:opacity-50"
                 title="Attach Image"
+                aria-label="Attach image"
                >
                  <ImageIcon className="w-4 h-4" />
                </button>
@@ -411,6 +420,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files }) => {
                 onClick={handleStop}
                 className="px-4 py-3 bg-white border-2 border-red-100 text-red-600 rounded-xl hover:bg-red-50 hover:border-red-200 transition-all active:scale-95 flex items-center gap-2 font-bold text-sm shadow-sm"
                 title="Stop Generating"
+                aria-label="Stop generating response"
              >
                 <StopCircle className="w-4 h-4 animate-pulse" />
                 <span className="hidden sm:inline">Stop</span>
@@ -420,6 +430,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files }) => {
                 onClick={() => handleSend()}
                 disabled={(!input.trim() && !imageAttachment) || isUploading}
                 className="px-4 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-500/30 transition-all active:scale-95"
+                aria-label="Send message"
              >
                 <Send className="w-5 h-5" />
              </button>
