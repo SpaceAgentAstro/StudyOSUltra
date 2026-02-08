@@ -1,6 +1,6 @@
 
 import { describe, it, expect } from 'vitest';
-import { formatTime, calculateAccuracy, generateId } from './index';
+import { formatTime, calculateAccuracy, generateId, validateFile } from './index';
 
 describe('Utility Functions', () => {
   
@@ -48,6 +48,39 @@ describe('Utility Functions', () => {
       const id1 = generateId();
       const id2 = generateId();
       expect(id1).not.toBe(id2);
+    });
+  });
+
+  describe('validateFile', () => {
+    it('returns valid for allowed file type and size', () => {
+      const file = { name: 'test.txt', size: 1024 } as File;
+      expect(validateFile(file)).toEqual({ isValid: true });
+    });
+
+    it('returns error for invalid file extension', () => {
+      const file = { name: 'test.exe', size: 1024 } as File;
+      const result = validateFile(file);
+      expect(result.isValid).toBe(false);
+      expect(result.error).toContain('Invalid file type: .exe');
+    });
+
+    it('returns error for file without extension', () => {
+      const file = { name: 'testfile', size: 1024 } as File;
+      const result = validateFile(file);
+      expect(result.isValid).toBe(false);
+      expect(result.error).toContain('no extension');
+    });
+
+    it('returns error for file exceeding size limit', () => {
+      const file = { name: 'large.pdf', size: 6 * 1024 * 1024 } as File;
+      const result = validateFile(file);
+      expect(result.isValid).toBe(false);
+      expect(result.error).toContain('exceeds the 5MB size limit');
+    });
+
+    it('is case-insensitive for extensions', () => {
+      const file = { name: 'TEST.PDF', size: 1024 } as File;
+      expect(validateFile(file)).toEqual({ isValid: true });
     });
   });
 
