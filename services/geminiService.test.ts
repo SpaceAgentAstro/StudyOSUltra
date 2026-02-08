@@ -17,7 +17,8 @@ vi.mock('@google/genai', () => ({
   GoogleGenAI: mockGoogleGenAI
 }));
 
-import { streamChatResponse, generateExamPaper } from './geminiService';
+import { streamChatResponse, generateExamPaper, generateKnowledgeGraph } from './geminiService';
+import { FileDocument } from '../types';
 
 describe('geminiService', () => {
   beforeEach(() => {
@@ -47,6 +48,50 @@ describe('geminiService', () => {
       expect(result).toEqual([]);
       expect(consoleErrorSpy).toHaveBeenCalled();
       consoleErrorSpy.mockRestore();
+    });
+
+    it('returns empty array on invalid schema', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const invalidResponse = [{ id: '1', type: 'WRONG_TYPE' }]; // Invalid enum
+      mockGenerateContent.mockResolvedValueOnce({
+        text: JSON.stringify(invalidResponse)
+      });
+
+      const result = await generateExamPaper('Biology', []);
+      expect(result).toEqual([]);
+      expect(consoleErrorSpy).toHaveBeenCalledWith("Exam Paper Validation Failed:", expect.any(Object));
+      consoleErrorSpy.mockRestore();
+    });
+  });
+
+  describe('generateKnowledgeGraph', () => {
+    it('returns nodes on success', async () => {
+      const mockNodes = [
+        { id: '1', label: 'Node 1', category: 'Test', connections: [], mastery: 50 }
+      ];
+      mockGenerateContent.mockResolvedValueOnce({
+        text: JSON.stringify(mockNodes)
+      });
+      const files: FileDocument[] = [{ id: '1', name: 'test.txt', type: 'txt', content: 'content', uploadDate: 0, status: 'ready' }];
+      const result = await generateKnowledgeGraph(files);
+      expect(result).toEqual(mockNodes);
+    });
+
+    it('handles invalid schema gracefully', async () => {
+       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+       // The LLM returns an object instead of an array
+       const invalidResponse = { nodes: [] };
+       mockGenerateContent.mockResolvedValueOnce({
+         text: JSON.stringify(invalidResponse)
+       });
+
+       const files: FileDocument[] = [{ id: '1', name: 'test.txt', type: 'txt', content: 'content', uploadDate: 0, status: 'ready' }];
+       const result = await generateKnowledgeGraph(files);
+
+       // Now it should return empty array because validation failed
+       expect(result).toEqual([]);
+       expect(consoleErrorSpy).toHaveBeenCalledWith("Knowledge Graph Validation Failed:", expect.any(Object));
+       consoleErrorSpy.mockRestore();
     });
   });
 
@@ -101,10 +146,6 @@ describe('geminiService', () => {
       // Abort immediately
       controller.abort();
       await promise;
-
-      // Should break loop or handle error. Implementation breaks on signal.aborted check inside loop.
-      // Depending on timing, might get 0 or 1 chunk.
-      // Ideally we ensure it stops.
     });
   });
 });
