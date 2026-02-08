@@ -106,5 +106,26 @@ describe('geminiService', () => {
       // Depending on timing, might get 0 or 1 chunk.
       // Ideally we ensure it stops.
     });
+
+    it('handles API errors gracefully', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const onChunk = vi.fn();
+      const errorMsg = 'API Quota Exceeded';
+
+      mockGenerateContentStream.mockRejectedValueOnce(new Error(errorMsg));
+
+      await streamChatResponse({
+        history: [],
+        newMessage: 'Hi',
+        files: [],
+        mode: 'tutor',
+        onChunk
+      });
+
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      expect(onChunk).toHaveBeenCalledWith(`\n[System Error: ${errorMsg}]`);
+
+      consoleErrorSpy.mockRestore();
+    });
   });
 });
