@@ -333,9 +333,73 @@ export const generateGameQuestions = async (
   files: FileDocument[],
   count: number = 3
 ): Promise<Question[]> => {
-    // Simply call the same logic as exam generation but simpler prompt for games
-    // Ideally refactor to share logic, keeping it separate for safety in this change
-    return generateExamPaper(topic, files); 
+  if (!aiClient) throw new Error("AI Client not initialized");
+
+  const contextString = files
+    .filter(f => f.status === 'ready')
+    .map(f => `--- FILE START: ${f.name} ---\n${f.content}\n--- FILE END ---`)
+    .join("\n\n");
+
+  let instruction = "";
+  switch (mode) {
+    case 'MCQ_ARENA':
+      instruction = `Generate ${count} Multiple Choice Questions (MCQ) on "${topic}". Ensure they are challenging but fair.`;
+      break;
+    case 'EXPLAIN_TO_WIN':
+      instruction = `Generate ${count} Open Ended questions on "${topic}". The questions should ask the user to explain a concept in detail.`;
+      break;
+    case 'BOSS_BATTLE':
+      instruction = `Generate ${count} very difficult questions on "${topic}". Mix of MCQ and Open Ended. These should test deep understanding.`;
+      break;
+    default:
+      instruction = `Generate ${count} questions on "${topic}".`;
+  }
+
+  const prompt = `
+    ${instruction}
+    Based on the provided sources.
+    Assign marks (e.g., [1 mark], [4 marks]).
+    Return JSON.
+  `;
+
+  try {
+    const response = await aiClient.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: [
+        { role: 'user', parts: [{ text: `CONTEXT:\n${contextString}` }] },
+        { role: 'user', parts: [{ text: prompt }] }
+      ],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "ARRAY",
+          items: {
+            type: "OBJECT",
+            properties: {
+              id: { type: "STRING" },
+              type: { type: "STRING", enum: ["MCQ", "OPEN"] },
+              text: { type: "STRING" },
+              options: { type: "ARRAY", items: { type: "STRING" } },
+              correctOptionIndex: { type: "INTEGER" },
+              markScheme: { type: "ARRAY", items: { type: "STRING" } },
+              explanation: { type: "STRING" },
+              sourceCitation: { type: "STRING" },
+              difficulty: { type: "STRING", enum: ["easy", "medium", "hard"] },
+              marks: { type: "INTEGER" }
+            },
+            required: ["id", "type", "text", "explanation", "sourceCitation", "difficulty", "marks"]
+          }
+        }
+      }
+    });
+
+    const jsonText = response.text;
+    if (!jsonText) return [];
+    return JSON.parse(jsonText) as Question[];
+  } catch (e) {
+    console.error("Game Gen Error", e);
+    return [];
+  }
 };
 
 export const gradeOpenEndedAnswer = async (
