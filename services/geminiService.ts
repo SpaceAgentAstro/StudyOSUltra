@@ -1,9 +1,56 @@
 
 import { GoogleGenAI } from "@google/genai";
+import { z } from "zod";
 import { FileDocument, Message, Question, GameMode, AgentRole, DigitalTwin, KnowledgeNode, MetaInsight, CognitiveExercise } from "../types";
 import { SYSTEM_INSTRUCTION_BASE, AGENT_PERSONAS } from "../constants";
 
 const aiClient = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+// --- Zod Schemas for Validation ---
+
+const KnowledgeNodeSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  category: z.string(),
+  mastery: z.number(),
+  connections: z.array(z.string()),
+  x: z.number().optional(),
+  y: z.number().optional(),
+});
+
+const MetaInsightSchema = z.object({
+  type: z.enum(["BIAS_DETECTED", "STRATEGY_SUGGESTION", "STRENGTH"]),
+  title: z.string(),
+  description: z.string(),
+  timestamp: z.number(),
+});
+
+const CognitiveExerciseSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  skill: z.enum(["LOGIC", "FIRST_PRINCIPLES", "ARGUMENTATION", "LATERAL_THINKING"]),
+  description: z.string(),
+  difficulty: z.enum(["Novice", "Adept", "Master"]),
+});
+
+const QuestionSchema = z.object({
+  id: z.string(),
+  type: z.enum(["MCQ", "OPEN"]),
+  text: z.string(),
+  options: z.array(z.string()).optional(),
+  correctOptionIndex: z.number().optional(),
+  markScheme: z.array(z.string()).optional(),
+  explanation: z.string(),
+  sourceCitation: z.string(),
+  difficulty: z.enum(["easy", "medium", "hard"]),
+  marks: z.number().optional(),
+});
+
+const GradeResponseSchema = z.object({
+  score: z.number(),
+  maxScore: z.number(),
+  feedback: z.string(),
+});
 
 interface SendMessageParams {
   history: Message[];
@@ -180,7 +227,15 @@ export const generateKnowledgeGraph = async (files: FileDocument[]): Promise<Kno
       }
     });
     
-    return JSON.parse(response.text || "[]");
+    const rawData = JSON.parse(response.text || "[]");
+    const parseResult = z.array(KnowledgeNodeSchema).safeParse(rawData);
+
+    if (!parseResult.success) {
+      console.error("Knowledge Graph Validation Failed:", parseResult.error);
+      return [];
+    }
+
+    return parseResult.data;
   } catch (e) {
     console.error("Graph Gen Error", e);
     return [];
@@ -222,7 +277,16 @@ export const generateMetaAnalysis = async (history: Message[]): Promise<MetaInsi
         }
       }
     });
-    return JSON.parse(response.text || "[]");
+
+    const rawData = JSON.parse(response.text || "[]");
+    const parseResult = z.array(MetaInsightSchema).safeParse(rawData);
+
+    if (!parseResult.success) {
+      console.error("Meta Analysis Validation Failed:", parseResult.error);
+      return [];
+    }
+
+    return parseResult.data;
   } catch (e) {
     return [];
   }
@@ -258,7 +322,16 @@ export const generateCognitiveExercises = async (): Promise<CognitiveExercise[]>
                 }
             }
         });
-        return JSON.parse(response.text || "[]");
+
+        const rawData = JSON.parse(response.text || "[]");
+        const parseResult = z.array(CognitiveExerciseSchema).safeParse(rawData);
+
+        if (!parseResult.success) {
+            console.error("Cognitive Exercises Validation Failed:", parseResult.error);
+            return [];
+        }
+
+        return parseResult.data;
     } catch (e) {
         return [];
     }
@@ -319,7 +392,16 @@ export const generateExamPaper = async (
 
     const jsonText = response.text;
     if (!jsonText) return [];
-    return JSON.parse(jsonText) as Question[];
+
+    const rawData = JSON.parse(jsonText);
+    const parseResult = z.array(QuestionSchema).safeParse(rawData);
+
+    if (!parseResult.success) {
+      console.error("Exam Paper Validation Failed:", parseResult.error);
+      return [];
+    }
+
+    return parseResult.data;
   } catch (e) {
     console.error("Exam Gen Error", e);
     return [];
@@ -359,23 +441,37 @@ export const gradeOpenEndedAnswer = async (
     3. Be encouraging but strict on terminology.
   `;
 
-  const response = await aiClient.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: "OBJECT",
-        properties: {
-          score: { type: "INTEGER" },
-          maxScore: { type: "INTEGER" },
-          feedback: { type: "STRING" }
+  try {
+    const response = await aiClient.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            score: { type: "INTEGER" },
+            maxScore: { type: "INTEGER" },
+            feedback: { type: "STRING" }
+          }
         }
       }
-    }
-  });
+    });
 
-  const jsonText = response.text;
-  if (!jsonText) return { score: 0, maxScore: 5, feedback: "Error grading" };
-  return JSON.parse(jsonText);
+    const jsonText = response.text;
+    if (!jsonText) return { score: 0, maxScore: 5, feedback: "Error grading" };
+
+    const rawData = JSON.parse(jsonText);
+    const parseResult = GradeResponseSchema.safeParse(rawData);
+
+    if (!parseResult.success) {
+      console.error("Grading Validation Failed:", parseResult.error);
+      return { score: 0, maxScore: 5, feedback: "Error grading - invalid format" };
+    }
+
+    return parseResult.data;
+  } catch (e) {
+    console.error("Grading Error", e);
+    return { score: 0, maxScore: 5, feedback: "Error grading" };
+  }
 };
