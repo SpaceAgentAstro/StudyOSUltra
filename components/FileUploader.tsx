@@ -1,8 +1,8 @@
 
 import React, { useRef, useState } from 'react';
 import { FileDocument } from '../types';
-import { UploadCloud, FileText, Trash2, CheckCircle, Search } from './Icons';
-import { generateId } from '../utils';
+import { UploadCloud, FileText, Trash2, CheckCircle, Search, AlertTriangle } from './Icons';
+import { generateId, validateFile } from '../utils';
 
 interface FileUploaderProps {
   files: FileDocument[];
@@ -21,6 +21,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
 
     Array.from(uploadedFiles).forEach((file: File) => {
       const id = generateId();
+      const validationError = validateFile(file);
       
       const newFile: FileDocument = {
         id: id,
@@ -28,12 +29,16 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
         type: file.name.endsWith('.pdf') ? 'pdf' : 'txt',
         content: '', 
         uploadDate: Date.now(),
-        status: 'processing',
-        progress: 0
+        status: validationError ? 'error' : 'processing',
+        progress: validationError ? 0 : 0,
+        errorMessage: validationError || undefined
       };
 
       setFiles(prev => [...prev, newFile]);
-      simulateIngestionPipeline(id, file);
+
+      if (!validationError) {
+        simulateIngestionPipeline(id, file);
+      }
     });
   };
 
@@ -131,9 +136,11 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
         {filteredFiles.map(file => (
           <div key={file.id} className="flex items-center justify-between p-4 bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center gap-4 overflow-hidden">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors shrink-0 ${file.status === 'ready' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors shrink-0 ${file.status === 'ready' ? 'bg-indigo-50 text-indigo-600' : file.status === 'error' ? 'bg-red-50 text-red-500' : 'bg-slate-100 text-slate-400'}`}>
                  {file.status === 'processing' ? (
                      <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                 ) : file.status === 'error' ? (
+                    <AlertTriangle className="w-5 h-5" />
                  ) : (
                     <FileText className="w-5 h-5" />
                  )}
@@ -142,6 +149,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
                 <p className="font-medium text-slate-900 truncate">{file.name}</p>
                 {file.status === 'processing' ? (
                      <p className="text-xs text-indigo-600 font-medium animate-pulse">{pipelineStep || 'Processing...'}</p>
+                ) : file.status === 'error' ? (
+                     <p className="text-xs text-red-500 font-medium">{file.errorMessage || 'Upload failed'}</p>
                 ) : (
                     <p className="text-xs text-slate-500 truncate">
                     {new Date(file.uploadDate).toLocaleDateString()} • {file.content.length} chars • Ready for RAG

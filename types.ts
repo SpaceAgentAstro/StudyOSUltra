@@ -7,6 +7,7 @@ export interface FileDocument {
   uploadDate: number;
   status: 'processing' | 'ready' | 'error';
   progress?: number;
+  errorMessage?: string;
 }
 
 export interface Message {
