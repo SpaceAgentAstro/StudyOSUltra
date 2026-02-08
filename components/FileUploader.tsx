@@ -11,8 +11,7 @@ interface FileUploaderProps {
 
 const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [processingId, setProcessingId] = useState<string | null>(null);
-  const [pipelineStep, setPipelineStep] = useState<string>('');
+  const [fileProgressMessages, setFileProgressMessages] = useState<Record<string, string>>({});
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,13 +37,16 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
   };
 
   const simulateIngestionPipeline = (id: string, file: File) => {
-    setProcessingId(id);
-    
+    const updateMessage = (msg: string) => {
+      setFileProgressMessages(prev => ({ ...prev, [id]: msg }));
+    };
+
     // Step 1: Uploading
-    setPipelineStep('Uploading...');
+    updateMessage('Uploading...');
+
     setTimeout(() => {
         // Step 2: OCR / Text Extraction
-        setPipelineStep(file.name.endsWith('.pdf') ? 'Running OCR & Text Extraction...' : 'Reading Content...');
+        updateMessage(file.name.endsWith('.pdf') ? 'Running OCR & Text Extraction...' : 'Reading Content...');
         
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -52,16 +54,20 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
             
             setTimeout(() => {
                 // Step 3: Chunking
-                setPipelineStep('Page-aware Chunking & Metadata Extraction...');
+                updateMessage('Page-aware Chunking & Metadata Extraction...');
                 
                 setTimeout(() => {
                     // Step 4: Vector Embeddings
-                    setPipelineStep('Generating Vector Embeddings...');
+                    updateMessage('Generating Vector Embeddings...');
                     
                     setTimeout(() => {
                         setFiles(prev => prev.map(f => f.id === id ? { ...f, content: text, status: 'ready', progress: 100 } : f));
-                        setProcessingId(null);
-                        setPipelineStep('');
+                        // Clean up status message
+                        setFileProgressMessages(prev => {
+                          const next = { ...prev };
+                          delete next[id];
+                          return next;
+                        });
                     }, 800);
                 }, 800);
             }, 800);
@@ -73,6 +79,11 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
 
   const removeFile = (id: string) => {
     setFiles(files.filter(f => f.id !== id));
+    setFileProgressMessages(prev => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
   };
 
   const filteredFiles = files.filter(file => 
@@ -141,7 +152,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
               <div className="min-w-0">
                 <p className="font-medium text-slate-900 truncate">{file.name}</p>
                 {file.status === 'processing' ? (
-                     <p className="text-xs text-indigo-600 font-medium animate-pulse">{pipelineStep || 'Processing...'}</p>
+                     <p className="text-xs text-indigo-600 font-medium animate-pulse">{fileProgressMessages[file.id] || 'Processing...'}</p>
                 ) : (
                     <p className="text-xs text-slate-500 truncate">
                     {new Date(file.uploadDate).toLocaleDateString()} • {file.content.length} chars • Ready for RAG
