@@ -7,6 +7,8 @@ let geminiServicePromise: Promise<typeof import('../services/geminiService')> | 
 
 interface ChatInterfaceProps {
   files: FileDocument[];
+  messages: Message[];
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
 }
 
 const AGENTS: {role: AgentRole, label: string, color: string}[] = [
@@ -17,16 +19,7 @@ const AGENTS: {role: AgentRole, label: string, color: string}[] = [
   { role: 'ANALYST', label: 'Analyst', color: 'bg-blue-600' },
 ];
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ files }) => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'welcome',
-      role: 'model',
-      agent: 'COUNCIL',
-      text: "Welcome to your Study Universe. I am The Council. I will route your queries to the best agent. Try asking for a strict mark scheme check (Examiner) or a simple analogy (Teacher).",
-      timestamp: Date.now()
-    }
-  ]);
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, messages, setMessages }) => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
