@@ -17,7 +17,7 @@ vi.mock('@google/genai', () => ({
   GoogleGenAI: mockGoogleGenAI
 }));
 
-import { streamChatResponse, generateExamPaper } from './geminiService';
+import { streamChatResponse, generateExamPaper, gradeOpenEndedAnswer } from './geminiService';
 
 describe('geminiService', () => {
   beforeEach(() => {
@@ -105,6 +105,50 @@ describe('geminiService', () => {
       // Should break loop or handle error. Implementation breaks on signal.aborted check inside loop.
       // Depending on timing, might get 0 or 1 chunk.
       // Ideally we ensure it stops.
+    });
+  });
+
+  describe('gradeOpenEndedAnswer', () => {
+    it('should return safe default when API returns malformed JSON', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockGenerateContent.mockResolvedValueOnce({
+        text: "This is not JSON"
+      });
+
+      const result = await gradeOpenEndedAnswer(
+        "What is a cell?",
+        "Unit of life",
+        ["unit", "life"],
+        []
+      );
+
+      expect(result).toEqual({
+        score: 0,
+        maxScore: 5,
+        feedback: "Unable to grade at this time due to a service error."
+      });
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    it('should return safe default when API throws an error', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockGenerateContent.mockRejectedValueOnce(new Error("API Failure"));
+
+      const result = await gradeOpenEndedAnswer(
+        "What is a cell?",
+        "Unit of life",
+        ["unit", "life"],
+        []
+      );
+
+      expect(result).toEqual({
+        score: 0,
+        maxScore: 5,
+        feedback: "Unable to grade at this time due to a service error."
+      });
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
     });
   });
 });

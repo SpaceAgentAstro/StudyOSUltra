@@ -359,23 +359,29 @@ export const gradeOpenEndedAnswer = async (
     3. Be encouraging but strict on terminology.
   `;
 
-  const response = await aiClient.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: "OBJECT",
-        properties: {
-          score: { type: "INTEGER" },
-          maxScore: { type: "INTEGER" },
-          feedback: { type: "STRING" }
+  try {
+    const response = await aiClient.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            score: { type: "INTEGER" },
+            maxScore: { type: "INTEGER" },
+            feedback: { type: "STRING" }
+          }
         }
       }
-    }
-  });
+    });
 
-  const jsonText = response.text;
-  if (!jsonText) return { score: 0, maxScore: 5, feedback: "Error grading" };
-  return JSON.parse(jsonText);
+    const jsonText = response.text;
+    if (!jsonText) return { score: 0, maxScore: 5, feedback: "Error grading" };
+    return JSON.parse(jsonText);
+  } catch (error) {
+    console.error("Grading Error:", error);
+    // Sentinel: Graceful fallback to prevent crash on API error or malformed JSON
+    return { score: 0, maxScore: 5, feedback: "Unable to grade at this time due to a service error." };
+  }
 };
