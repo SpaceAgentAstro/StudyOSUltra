@@ -1,10 +1,20 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { FileDocument, Message, Question, GameMode, AgentRole, DigitalTwin, KnowledgeNode, MetaInsight, CognitiveExercise } from "../types";
+import { FileDocument, Message, Question, GameMode, AgentRole, DigitalTwin, KnowledgeNode, MetaInsight, CognitiveExercise, VideoPlan } from "../types";
 import { SYSTEM_INSTRUCTION_BASE, AGENT_PERSONAS } from "../constants";
 
 const getProvider = () => (process.env.MODEL_PROVIDER || "google").toLowerCase();
-const getApiKey = () => process.env.GEMINI_API_KEY || process.env.API_KEY || "";
+
+// Runtime override so users can set API keys from the UI without rebuilding
+let runtimeApiKey = "";
+export const setRuntimeApiKey = (key: string | null | undefined) => {
+  runtimeApiKey = key?.trim() || "";
+  // clear cached client when key changes
+  cachedClient = null;
+  cachedApiKey = "";
+};
+
+const getApiKey = () => runtimeApiKey || process.env.JULES_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY || "";
 const isGoogleProvider = () => getProvider() === "google" && getApiKey().length > 0;
 const getOllamaConfig = () => ({
   baseUrl: (process.env.OLLAMA_BASE_URL || "http://localhost:11434").replace(/\/$/, ""),
@@ -434,6 +444,145 @@ export const gradeOpenEndedAnswer = async (
   const jsonText = response.text;
   if (!jsonText) return { score: 0, maxScore: 5, feedback: "Error grading" };
   return JSON.parse(jsonText);
+};
+
+// --- GENERATIVE MEDIA ---
+
+const buildPlaceholderImage = (prompt: string) => {
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='675' viewBox='0 0 1200 675'>
+    <defs>
+      <linearGradient id='g' x1='0' x2='1' y1='0' y2='1'>
+        <stop offset='0%' stop-color='#4f46e5'/>
+        <stop offset='100%' stop-color='#a855f7'/>
+      </linearGradient>
+    </defs>
+    <rect width='1200' height='675' fill='url(#g)'/>
+    <text x='50%' y='45%' fill='white' font-family='Inter,Arial,sans-serif' font-size='46' font-weight='700' text-anchor='middle'>AI image placeholder</text>
+    <text x='50%' y='57%' fill='white' opacity='0.8' font-family='Inter,Arial,sans-serif' font-size='26' text-anchor='middle'>${prompt.replace(/'/g, '')}</text>
+  </svg>`;
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
+};
+
+export const generateImage = async (prompt: string): Promise<string> => {
+  if (!isGoogleProvider()) {
+    return buildPlaceholderImage(prompt);
+  }
+  const aiClient = getGoogleClient();
+  if (!aiClient) return buildPlaceholderImage(prompt);
+
+  try {
+    const response = await aiClient.models.generateImages({
+      model: 'imagen-3.0-lighter',
+      prompt,
+      config: { numberOfImages: 1 }
+    });
+    const bytes = response.generatedImages?.[0]?.image?.imageBytes;
+    if (bytes) return `data:image/jpeg;base64,${bytes}`;
+    return buildPlaceholderImage(prompt);
+  } catch (e) {
+    console.error('Image gen error', e);
+    return buildPlaceholderImage(prompt);
+  }
+};
+
+export const generateVideoPlan = async (prompt: string): Promise<VideoPlan> => {
+  const fallback: VideoPlan = {
+    title: 'Focus Sprint Reel',
+    hook: 'What if 25 focused minutes could change your exam?',
+    durationSeconds: 30,
+    coverPrompt: 'student in neon-lit library reaching toward glowing holographic notes, cinematic, 16:9',
+    callToAction: 'Start a 25-minute sprint now.',
+    shots: [
+      { id: '1', title: 'Hook Overlay', visual: 'Fast cut of student closing distracting apps', voiceover: 'Kill the noise. Start a 25-minute sprint.', durationSeconds: 4 },
+      { id: '2', title: 'Micro-goal', visual: 'Notebook close-up with a single objective highlighted', voiceover: 'Pick one small target.', durationSeconds: 6 },
+      { id: '3', title: 'Deep Focus', visual: 'Top-down shot of timer hitting 25:00', voiceover: 'Press start and stay with it.', durationSeconds: 8 },
+      { id: '4', title: 'Reward', visual: 'Student smiles, sip of coffee, quick stretch', voiceover: 'Break for 5 minutes. You earned it.', durationSeconds: 6 },
+      { id: '5', title: 'CTA', visual: 'Big on-screen text: “Sprint now”', voiceover: 'Ready? Sprint with me.', durationSeconds: 6 }
+    ]
+  };
+
+  if (!isGoogleProvider()) return fallback;
+  const aiClient = getGoogleClient();
+  if (!aiClient) return fallback;
+
+  try {
+    const response = await aiClient.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: [
+        { role: 'user', parts: [{ text: `Build a concise video storyboard for a learning or motivation clip.\nPrompt: ${prompt}\nReturn JSON with keys: title, hook, durationSeconds, coverPrompt, callToAction, shots (id,title,visual,voiceover,durationSeconds).` }] }
+      ],
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: 'OBJECT',
+          properties: {
+            title: { type: 'STRING' },
+            hook: { type: 'STRING' },
+            durationSeconds: { type: 'INTEGER' },
+            coverPrompt: { type: 'STRING' },
+            callToAction: { type: 'STRING' },
+            shots: {
+              type: 'ARRAY',
+              items: {
+                type: 'OBJECT',
+                properties: {
+                  id: { type: 'STRING' },
+                  title: { type: 'STRING' },
+                  visual: { type: 'STRING' },
+                  voiceover: { type: 'STRING' },
+                  durationSeconds: { type: 'INTEGER' }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+    const parsed = JSON.parse(response.text || '{}') as VideoPlan;
+    if (parsed?.shots?.length) return parsed;
+    return fallback;
+  } catch (e) {
+    console.error('Video plan error', e);
+    return fallback;
+  }
+};
+
+const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
+
+export const generateVideoClip = async (plan: VideoPlan): Promise<string | null> => {
+  if (!isGoogleProvider()) return null;
+  const aiClient = getGoogleClient();
+  if (!aiClient) return null;
+
+  const combinedPrompt = `
+    Title: ${plan.title}
+    Hook: ${plan.hook}
+    Shots:
+    ${plan.shots.map(s => `- (${s.durationSeconds}s) ${s.title}: ${s.visual} | VO: ${s.voiceover}`).join('\n')}
+    CTA: ${plan.callToAction}
+  `;
+
+  try {
+    let operation = await aiClient.models.generateVideos({
+      model: 'veo-2.0-generate-001',
+      source: { prompt: combinedPrompt },
+      config: { numberOfVideos: 1, durationSeconds: Math.min(plan.durationSeconds, 45) }
+    });
+
+    // Poll a few times; keep light for demo
+    for (let i = 0; i < 6 && !operation.done; i++) {
+      await sleep(4000);
+      operation = await aiClient.operations.getVideosOperation({ operation });
+    }
+
+    const video = operation.response?.generatedVideos?.[0]?.video;
+    if (video?.uri) return video.uri;
+    if (video?.videoBytes) return `data:video/mp4;base64,${video.videoBytes}`;
+    return null;
+  } catch (e) {
+    console.error('Video gen error', e);
+    return null;
+  }
 };
 
 // --- LOCAL / OLLAMA FALLBACK HELPERS ---

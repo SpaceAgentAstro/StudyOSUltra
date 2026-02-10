@@ -1,9 +1,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Message, FileDocument, AgentRole } from '../types';
-import { Send, Paperclip, Brain, Image as ImageIcon, Mic, Zap, StopCircle, Loader, Globe, FileText } from './Icons';
+import { Send, Paperclip, Brain, Image as ImageIcon, Mic, Zap, StopCircle, Loader, Globe, FileText, Volume, Play } from './Icons';
 
 let geminiServicePromise: Promise<typeof import('../services/geminiService')> | null = null;
+
+const API_KEY_STORAGE_KEY = 'study_os_api_key';
 
 interface ChatInterfaceProps {
   files: FileDocument[];
@@ -35,11 +37,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files }) => {
   const [useThinking, setUseThinking] = useState(false);
   const [useSearch, setUseSearch] = useState(false);
   const [useFlashLite, setUseFlashLite] = useState(false);
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const [apiKeySaved, setApiKeySaved] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [lastSpokenId, setLastSpokenId] = useState<string | null>(null);
   
   const [imageAttachment, setImageAttachment] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const recognitionRef = useRef<any>(null);
+
+  const speechSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+  const sttSupported = typeof window !== 'undefined' && !!((window as any).SpeechRecognition || (window as any)?.webkitSpeechRecognition);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -48,6 +59,55 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files }) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Set up speech recognition once
+  useEffect(() => {
+    if (!sttSupported) return;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const rec: any = new SpeechRecognition();
+    rec.continuous = false;
+    rec.interimResults = true;
+    rec.lang = 'en-US';
+    rec.onresult = (e: any) => {
+      let transcript = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        transcript += e.results[i][0].transcript;
+      }
+      setInput((prev) => prev.trim() ? `${prev} ${transcript}` : transcript);
+    };
+    rec.onstart = () => setIsListening(true);
+    rec.onend = () => setIsListening(false);
+    rec.onerror = () => setIsListening(false);
+    recognitionRef.current = rec;
+  }, [sttSupported]);
+
+  // Speak latest assistant message if voice is enabled
+  useEffect(() => {
+    if (!voiceEnabled || !speechSupported) return;
+    const lastModel = [...messages].reverse().find(m => m.role === 'model' && m.text.trim() && !m.isThinking);
+    if (lastModel && lastModel.id !== lastSpokenId) {
+      const clean = lastModel.text.replace(/```[\s\S]*?```/g, '').slice(0, 800);
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(clean);
+      setLastSpokenId(lastModel.id);
+      utter.onend = () => setLastSpokenId(lastModel.id);
+      window.speechSynthesis.speak(utter);
+    }
+  }, [messages, voiceEnabled, speechSupported, lastSpokenId]);
+
+  // Load stored key once on mount
+  useEffect(() => {
+    const stored = localStorage.getItem(API_KEY_STORAGE_KEY);
+    if (stored) {
+      setApiKeyInput(stored);
+      setApiKeySaved(true);
+      // prime service with stored key
+      if (!geminiServicePromise) {
+        geminiServicePromise = import('../services/geminiService');
+      }
+      geminiServicePromise.then(({ setRuntimeApiKey }) => setRuntimeApiKey(stored));
+    }
+  }, []);
 
   const handleStop = () => {
     if (abortControllerRef.current) {
@@ -81,6 +141,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files }) => {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleListen = () => {
+    if (!recognitionRef.current || isListening) return;
+    recognitionRef.current.start();
   };
 
   const handleSend = async (overrideInput?: string, overrideAgent?: AgentRole) => {
@@ -199,6 +264,32 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files }) => {
             ))}
         </div>
 
+        {/* API Key entry */}
+        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+          <input
+            type="password"
+            value={apiKeyInput}
+            onChange={(e) => { setApiKeyInput(e.target.value); setApiKeySaved(false); }}
+            placeholder="Enter Jules API key"
+            className="flex-1 bg-transparent outline-none text-sm text-slate-700"
+          />
+          <button
+            onClick={async () => {
+              localStorage.setItem(API_KEY_STORAGE_KEY, apiKeyInput.trim());
+              setApiKeySaved(true);
+              if (!geminiServicePromise) {
+                geminiServicePromise = import('../services/geminiService');
+              }
+              const { setRuntimeApiKey } = await geminiServicePromise;
+              setRuntimeApiKey(apiKeyInput.trim());
+            }}
+            disabled={!apiKeyInput.trim()}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${apiKeyInput.trim() ? 'bg-indigo-600 text-white border-indigo-700 hover:bg-indigo-500' : 'bg-slate-200 text-slate-500 border-slate-300 cursor-not-allowed'}`}
+          >
+            {apiKeySaved ? 'Saved' : 'Save Key'}
+          </button>
+        </div>
+
         {/* Tools */}
         <div className="flex justify-between items-center">
              <div className="flex gap-2">
@@ -222,6 +313,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files }) => {
                     title="Flash Lite (Fast)"
                 >
                     <Zap className="w-4 h-4" />
+                </button>
+                <button 
+                    onClick={() => setVoiceEnabled(!voiceEnabled)}
+                    className={`p-1.5 rounded-lg border transition-colors ${voiceEnabled ? 'bg-emerald-100 border-emerald-300 text-emerald-700' : 'border-slate-200 text-slate-400'}`}
+                    title="Read replies aloud"
+                >
+                    <Volume className="w-4 h-4" />
                 </button>
              </div>
              <span className="text-xs text-slate-400 font-medium">
@@ -376,6 +474,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files }) => {
              </div>
         )}
 
+        {(isListening || voiceEnabled) && (
+          <div className="mb-3 flex items-center gap-2 text-xs font-semibold">
+            {isListening && <span className="px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">Listening...</span>}
+            {voiceEnabled && speechSupported && <span className="px-2 py-1 rounded-full bg-slate-900 text-white">Voice replies on</span>}
+            {!speechSupported && voiceEnabled && <span className="text-red-500">Speech output not supported in this browser.</span>}
+          </div>
+        )}
+
         <div className="flex gap-2">
           <div className="flex-1 relative">
             <input
@@ -403,6 +509,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files }) => {
                  accept="image/*" 
                  onChange={handleImageUpload} 
                />
+               <button
+                 onClick={handleListen}
+                 disabled={!sttSupported || isListening || isUploading || isLoading}
+                 className={`p-1.5 rounded-lg transition-colors ${isListening ? 'bg-emerald-100 text-emerald-700 border border-emerald-300' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 border border-transparent'}`}
+                 title={sttSupported ? 'Dictate with voice' : 'Speech recognition not supported'}
+               >
+                 <Mic className="w-4 h-4" />
+               </button>
             </div>
           </div>
           

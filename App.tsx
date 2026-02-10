@@ -14,6 +14,7 @@ const SocialHub = lazy(() => import('./components/SocialHub'));
 const KnowledgeUniverse = lazy(() => import('./components/KnowledgeUniverse'));
 const MetaLearningEngine = lazy(() => import('./components/MetaLearningEngine'));
 const CognitiveLab = lazy(() => import('./components/CognitiveLab'));
+const CreativeStudio = lazy(() => import('./components/CreativeStudio'));
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>(AppView.CHAT);
@@ -56,6 +57,8 @@ const App: React.FC = () => {
         return <MetaLearningEngine history={chatHistory} />;
       case AppView.COGNITIVE_LAB:
         return <CognitiveLab />;
+      case AppView.CREATIVE_STUDIO:
+        return <CreativeStudio />;
       case AppView.EXAM_SIMULATOR:
         return <ExamSimulator files={files} />;
       case AppView.SOCIAL_HUB:

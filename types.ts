@@ -43,7 +43,8 @@ export enum AppView {
   // Phase 8 Views
   KNOWLEDGE_UNIVERSE = 'KNOWLEDGE_UNIVERSE',
   META_LEARNING = 'META_LEARNING',
-  COGNITIVE_LAB = 'COGNITIVE_LAB'
+  COGNITIVE_LAB = 'COGNITIVE_LAB',
+  CREATIVE_STUDIO = 'CREATIVE_STUDIO'
 }
 
 export interface SyllabusNode {
@@ -162,4 +163,23 @@ export interface TopicMastery {
   title: string;
   level: 'Novice' | 'Developing' | 'Secure' | 'Exam-Ready';
   xp: number;
+}
+
+// --- Generative Media ---
+
+export interface VideoShot {
+  id: string;
+  title: string;
+  visual: string;
+  voiceover: string;
+  durationSeconds: number;
+}
+
+export interface VideoPlan {
+  title: string;
+  hook: string;
+  durationSeconds: number;
+  coverPrompt: string;
+  shots: VideoShot[];
+  callToAction: string;
 }
