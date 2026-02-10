@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => {
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.JULES_API_KEY': JSON.stringify(env.JULES_API_KEY),
         'process.env.MODEL_PROVIDER': JSON.stringify(env.MODEL_PROVIDER || 'google'),
-        'process.env.OLLAMA_MODEL': JSON.stringify(env.OLLAMA_MODEL || 'llama3.1'),
+        'process.env.OLLAMA_MODEL': JSON.stringify(env.OLLAMA_MODEL || 'llama3'),
         'process.env.OLLAMA_BASE_URL': JSON.stringify(env.OLLAMA_BASE_URL || 'http://localhost:11434')
       },
       resolve: {

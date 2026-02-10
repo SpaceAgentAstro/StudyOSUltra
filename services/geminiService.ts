@@ -18,7 +18,7 @@ const getApiKey = () => runtimeApiKey || process.env.JULES_API_KEY || process.en
 const isGoogleProvider = () => getProvider() === "google" && getApiKey().length > 0;
 const getOllamaConfig = () => ({
   baseUrl: (process.env.OLLAMA_BASE_URL || "http://localhost:11434").replace(/\/$/, ""),
-  model: process.env.OLLAMA_MODEL || "llama3.1",
+  model: process.env.OLLAMA_MODEL || "llama3",
 });
 
 let cachedClient: GoogleGenAI | null = null;
