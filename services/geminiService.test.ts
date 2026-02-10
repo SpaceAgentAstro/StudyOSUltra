@@ -17,7 +17,7 @@ vi.mock('@google/genai', () => ({
   GoogleGenAI: mockGoogleGenAI
 }));
 
-import { streamChatResponse, generateExamPaper, gradeOpenEndedAnswer } from './geminiService';
+import { streamChatResponse, generateExamPaper, gradeOpenEndedAnswer, generateMetaAnalysis } from './geminiService';
 
 describe('geminiService', () => {
   beforeEach(() => {
@@ -89,6 +89,69 @@ describe('geminiService', () => {
       expect(result).toEqual([]);
       expect(consoleErrorSpy).toHaveBeenCalled();
       consoleErrorSpy.mockRestore();
+    });
+  });
+
+  describe('generateMetaAnalysis', () => {
+    it('returns insights on success', async () => {
+      const mockInsights = [
+        {
+          type: 'STRATEGY_SUGGESTION',
+          title: 'Deepen your questions',
+          description: 'Try asking why more often.',
+          timestamp: 1234567890
+        }
+      ];
+
+      mockGenerateContent.mockResolvedValueOnce({
+        text: JSON.stringify(mockInsights)
+      });
+
+      const history: any[] = [
+        { role: 'user', text: 'What is photosynthesis?', id: '1', timestamp: 1 },
+        { role: 'model', text: 'It is...', id: '2', timestamp: 2 }
+      ];
+
+      const result = await generateMetaAnalysis(history as any);
+      expect(result).toEqual(mockInsights);
+
+      const callArgs = mockGenerateContent.mock.calls[0][0];
+      const promptText = callArgs.contents[0].parts[0].text;
+      expect(promptText).toContain('What is photosynthesis?');
+      expect(promptText).not.toContain('It is...');
+    });
+
+    it('returns empty array if no user messages', async () => {
+      const history: any[] = [
+        { role: 'model', text: 'Hello', id: '1', timestamp: 1 }
+      ];
+
+      const result = await generateMetaAnalysis(history as any);
+      expect(result).toEqual([]);
+      expect(mockGenerateContent).not.toHaveBeenCalled();
+    });
+
+    it('returns empty array on API error', async () => {
+      mockGenerateContent.mockRejectedValueOnce(new Error('API Error'));
+
+      const history: any[] = [
+        { role: 'user', text: 'Hi', id: '1', timestamp: 1 }
+      ];
+
+      const result = await generateMetaAnalysis(history as any);
+      expect(result).toEqual([]);
+    });
+
+    it('returns empty array on invalid JSON', async () => {
+      mockGenerateContent.mockResolvedValueOnce({
+        text: 'Invalid JSON'
+      });
+      const history: any[] = [
+        { role: 'user', text: 'Hi', id: '1', timestamp: 1 }
+      ];
+
+      const result = await generateMetaAnalysis(history as any);
+      expect(result).toEqual([]);
     });
   });
 
