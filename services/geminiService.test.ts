@@ -1,4 +1,3 @@
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const { mockGenerateContentStream, mockGenerateContent, mockGoogleGenAI } = vi.hoisted(() => {
@@ -17,7 +16,7 @@ vi.mock('@google/genai', () => ({
   GoogleGenAI: mockGoogleGenAI
 }));
 
-import { streamChatResponse, generateExamPaper, gradeOpenEndedAnswer } from './geminiService';
+import { streamChatResponse, generateExamPaper, gradeOpenEndedAnswer, generateKnowledgeGraph } from './geminiService';
 
 describe('geminiService', () => {
   beforeEach(() => {
@@ -89,6 +88,118 @@ describe('geminiService', () => {
       expect(result).toEqual([]);
       expect(consoleErrorSpy).toHaveBeenCalled();
       consoleErrorSpy.mockRestore();
+    });
+  });
+
+  describe('generateKnowledgeGraph', () => {
+    it('returns parsed knowledge graph nodes on success', async () => {
+      const mockNodes = [
+        { id: '1', label: 'Concept A', category: 'General', connections: ['2'], mastery: 50 }
+      ];
+
+      mockGenerateContent.mockResolvedValueOnce({
+        text: JSON.stringify(mockNodes)
+      });
+
+      const files = [{ name: 'test.txt', content: 'test content', status: 'ready', id: '1', type: 'text/plain' }];
+      // @ts-ignore
+      const result = await generateKnowledgeGraph(files);
+
+      expect(result).toEqual(mockNodes);
+      expect(mockGenerateContent).toHaveBeenCalled();
+
+      // Verify prompt contains content
+      const callArgs = mockGenerateContent.mock.calls[0][0];
+      expect(callArgs.contents[0].parts[0].text).toContain('test content');
+    });
+
+    it('returns empty array on API error', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockGenerateContent.mockRejectedValueOnce(new Error('API Error'));
+
+      const files = [{ name: 'test.txt', content: 'test content', status: 'ready', id: '1', type: 'text/plain' }];
+      // @ts-ignore
+      const result = await generateKnowledgeGraph(files);
+
+      expect(result).toEqual([]);
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('returns empty array on invalid JSON response', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockGenerateContent.mockResolvedValueOnce({
+        text: 'Invalid JSON'
+      });
+
+      const files = [{ name: 'test.txt', content: 'test content', status: 'ready', id: '1', type: 'text/plain' }];
+      // @ts-ignore
+      const result = await generateKnowledgeGraph(files);
+
+      expect(result).toEqual([]);
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('returns empty array immediately if no files provided', async () => {
+      const result = await generateKnowledgeGraph([]);
+      expect(result).toEqual([]);
+      expect(mockGenerateContent).not.toHaveBeenCalled();
+    });
+
+    it('filters out non-ready files', async () => {
+       mockGenerateContent.mockResolvedValueOnce({ text: "[]" });
+
+       const files = [
+         { name: 'ready.txt', content: 'READY_CONTENT', status: 'ready', id: '1', type: 'text/plain' },
+         { name: 'processing.txt', content: 'PROCESSING_CONTENT', status: 'processing', id: '2', type: 'text/plain' }
+       ];
+
+       // @ts-ignore
+       await generateKnowledgeGraph(files);
+
+       const callArgs = mockGenerateContent.mock.calls[0][0];
+       const promptContext = callArgs.contents[0].parts[0].text;
+
+       expect(promptContext).toContain('READY_CONTENT');
+       expect(promptContext).not.toContain('PROCESSING_CONTENT');
+    });
+
+    it('truncates content to 2000 chars per file', async () => {
+       mockGenerateContent.mockResolvedValueOnce({ text: "[]" });
+
+       const content = 'START' + 'x'.repeat(1990) + 'END' + 'OVERFLOW';
+       const files = [{ name: 'test.txt', content, status: 'ready', id: '1', type: 'text/plain' }];
+
+       // @ts-ignore
+       await generateKnowledgeGraph(files);
+
+       const promptContext = mockGenerateContent.mock.calls[0][0].contents[0].parts[0].text;
+       expect(promptContext).toContain('END');
+       expect(promptContext).not.toContain('ERFLOW');
+    });
+
+    it('limits to 3 files', async () => {
+        mockGenerateContent.mockResolvedValue({ text: "[]" });
+
+        const files = Array(5).fill(null).map((_, i) => ({
+            name: `file${i}.txt`,
+            content: `CONTENT_${i}`,
+            status: 'ready',
+            id: `${i}`,
+            type: 'text/plain'
+        }));
+
+        // @ts-ignore
+        await generateKnowledgeGraph(files);
+
+        const promptContext = mockGenerateContent.mock.calls[0][0].contents[0].parts[0].text;
+
+        expect(promptContext).toContain('CONTENT_0');
+        expect(promptContext).toContain('CONTENT_1');
+        expect(promptContext).toContain('CONTENT_2');
+        expect(promptContext).not.toContain('CONTENT_3');
+        expect(promptContext).not.toContain('CONTENT_4');
     });
   });
 
