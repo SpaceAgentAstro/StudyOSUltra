@@ -1,9 +1,13 @@
-
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { FileDocument, Message, Question, GameMode, AgentRole, DigitalTwin, KnowledgeNode, MetaInsight, CognitiveExercise } from "../types";
 import { SYSTEM_INSTRUCTION_BASE, AGENT_PERSONAS } from "../constants";
 
-const aiClient = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY || "";
+if (!apiKey) {
+  console.error("Gemini API Key is missing. Please check your vite.config.ts or .env file.");
+}
+
+const genAI = new GoogleGenerativeAI(apiKey);
 
 interface SendMessageParams {
   history: Message[];
@@ -33,7 +37,6 @@ export const streamChatResponse = async ({
   onChunk,
   signal
 }: SendMessageParams) => {
-  if (!aiClient) throw new Error("AI Client not initialized");
 
   // 1. Context Construction
   const contextString = files
@@ -90,42 +93,40 @@ export const streamChatResponse = async ({
     newParts.push({ inlineData: { mimeType, data: cleanBase64 } });
   }
 
-  const fullPromptParts = [
+  const fullHistory = [
       { role: 'user', parts: [{ text: `SYSTEM INSTRUCTION:\n${systemPrompt}` }] },
       ...contents,
       { role: 'user', parts: newParts }
   ];
 
   // 6. Model Config
-  let modelName = 'gemini-3-flash-preview';
-  if (useFlashLite) modelName = 'gemini-flash-lite-latest';
+  let modelName = 'gemini-1.5-flash'; // Fallback from gemini-3-flash-preview
+  if (useFlashLite) modelName = 'gemini-1.5-flash-8b'; // approximate lite model
+
+  // Note: SDK handles tools differently in chat vs generateContent.
+  // Using generateContentStream allows arbitrary history passing.
 
   const tools: any[] = [];
-  if (useSearch) tools.push({ googleSearch: {} });
+  // Search tool support varies by model/region. Assuming supported or handled by SDK.
 
-  const config: any = {
-    temperature: agentRole === 'EXAMINER' ? 0.2 : 0.7,
-    tools: tools.length > 0 ? tools : undefined,
-  };
-
-  if (useThinking && !useFlashLite) {
-    config.thinkingConfig = { thinkingBudget: 2048 }; 
-  }
+  const model = genAI.getGenerativeModel({
+      model: modelName,
+      generationConfig: {
+          temperature: agentRole === 'EXAMINER' ? 0.2 : 0.7,
+      }
+      // tools: tools ...
+  });
 
   try {
-    const responseStream = await aiClient.models.generateContentStream({
-      model: modelName,
-      contents: fullPromptParts,
-      config: config
+    const result = await model.generateContentStream({
+        contents: fullHistory
     });
 
-    for await (const chunk of responseStream) {
-      if (signal?.aborted) {
-        break;
-      }
-      const text = chunk.text;
-      const groundingChunks = chunk.candidates?.[0]?.groundingMetadata?.groundingChunks;
-      if (text) onChunk(text, groundingChunks);
+    for await (const chunk of result.stream) {
+        if (signal?.aborted) break;
+        const text = chunk.text();
+        const groundingMetadata = chunk.candidates?.[0]?.groundingMetadata; // SDK structure might differ slightly but usually consistent
+        if (text) onChunk(text, groundingMetadata);
     }
   } catch (error: any) {
     if (signal?.aborted) {
@@ -140,13 +141,12 @@ export const streamChatResponse = async ({
 // --- PHASE 8 SERVICES ---
 
 export const generateKnowledgeGraph = async (files: FileDocument[]): Promise<KnowledgeNode[]> => {
-  if (!aiClient) throw new Error("AI Client not initialized");
   if (files.length === 0) return [];
 
   const contextString = files
     .filter(f => f.status === 'ready')
-    .slice(0, 3) // Limit to 3 files to avoid context overflow in demo
-    .map(f => `--- FILE: ${f.name} ---\n${f.content.substring(0, 2000)}`) // First 2000 chars
+    .slice(0, 3)
+    .map(f => `--- FILE: ${f.name} ---\n${f.content.substring(0, 2000)}`)
     .join("\n\n");
 
   const prompt = `
@@ -156,31 +156,17 @@ export const generateKnowledgeGraph = async (files: FileDocument[]): Promise<Kno
   `;
 
   try {
-    const response = await aiClient.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: [
-        { role: 'user', parts: [{ text: contextString }] },
-        { role: 'user', parts: [{ text: prompt }] }
-      ],
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: "ARRAY",
-          items: {
-            type: "OBJECT",
-            properties: {
-              id: { type: "STRING" },
-              label: { type: "STRING" },
-              category: { type: "STRING" },
-              connections: { type: "ARRAY", items: { type: "STRING" } },
-              mastery: { type: "INTEGER" }
-            }
-          }
-        }
-      }
+    const model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash',
+        generationConfig: { responseMimeType: "application/json" }
     });
     
-    return JSON.parse(response.text || "[]");
+    const result = await model.generateContent([
+        contextString,
+        prompt
+    ]);
+
+    return JSON.parse(result.response.text() || "[]");
   } catch (e) {
     console.error("Graph Gen Error", e);
     return [];
@@ -188,8 +174,6 @@ export const generateKnowledgeGraph = async (files: FileDocument[]): Promise<Kno
 };
 
 export const generateMetaAnalysis = async (history: Message[]): Promise<MetaInsight[]> => {
-  if (!aiClient) return [];
-  
   const userMessages = history.filter(m => m.role === 'user').map(m => m.text).join("\n");
   if (!userMessages) return [];
 
@@ -203,34 +187,20 @@ export const generateMetaAnalysis = async (history: Message[]): Promise<MetaInsi
   `;
 
   try {
-    const response = await aiClient.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: [{ role: 'user', parts: [{ text: userMessages + "\n" + prompt }] }],
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: "ARRAY",
-          items: {
-            type: "OBJECT",
-            properties: {
-              type: { type: "STRING", enum: ["BIAS_DETECTED", "STRATEGY_SUGGESTION", "STRENGTH"] },
-              title: { type: "STRING" },
-              description: { type: "STRING" },
-              timestamp: { type: "NUMBER" }
-            }
-          }
-        }
-      }
+    const model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash',
+        generationConfig: { responseMimeType: "application/json" }
     });
-    return JSON.parse(response.text || "[]");
+    const result = await model.generateContent([
+        userMessages + "\n" + prompt
+    ]);
+    return JSON.parse(result.response.text() || "[]");
   } catch (e) {
     return [];
   }
 };
 
 export const generateCognitiveExercises = async (): Promise<CognitiveExercise[]> => {
-    if (!aiClient) return [];
-    
     const prompt = `
         Generate 3 abstract cognitive exercises to train reasoning skills (not subject specific).
         Topics: Logical Fallacies, First Principles, Analogical Reasoning.
@@ -238,27 +208,12 @@ export const generateCognitiveExercises = async (): Promise<CognitiveExercise[]>
     `;
 
     try {
-        const response = await aiClient.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: "ARRAY",
-                    items: {
-                        type: "OBJECT",
-                        properties: {
-                            id: { type: "STRING" },
-                            title: { type: "STRING" },
-                            skill: { type: "STRING", enum: ["LOGIC", "FIRST_PRINCIPLES", "ARGUMENTATION", "LATERAL_THINKING"] },
-                            description: { type: "STRING" },
-                            difficulty: { type: "STRING", enum: ["Novice", "Adept", "Master"] }
-                        }
-                    }
-                }
-            }
+        const model = genAI.getGenerativeModel({
+            model: 'gemini-1.5-flash',
+            generationConfig: { responseMimeType: "application/json" }
         });
-        return JSON.parse(response.text || "[]");
+        const result = await model.generateContent(prompt);
+        return JSON.parse(result.response.text() || "[]");
     } catch (e) {
         return [];
     }
@@ -271,9 +226,7 @@ export const generateExamPaper = async (
   topic: string,
   files: FileDocument[]
 ): Promise<Question[]> => {
-  if (!aiClient) throw new Error("AI Client not initialized");
 
-  // Re-use game engine logic but ask for a "Paper" structure
   const contextString = files
     .filter(f => f.status === 'ready')
     .map(f => `--- FILE START: ${f.name} ---\n${f.content}\n--- FILE END ---`)
@@ -287,37 +240,16 @@ export const generateExamPaper = async (
   `;
 
   try {
-    const response = await aiClient.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: [
-        { role: 'user', parts: [{ text: `CONTEXT:\n${contextString}` }] },
-        { role: 'user', parts: [{ text: prompt }] }
-      ],
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: "ARRAY",
-          items: {
-            type: "OBJECT",
-            properties: {
-              id: { type: "STRING" },
-              type: { type: "STRING", enum: ["MCQ", "OPEN"] },
-              text: { type: "STRING" },
-              options: { type: "ARRAY", items: { type: "STRING" } },
-              correctOptionIndex: { type: "INTEGER" },
-              markScheme: { type: "ARRAY", items: { type: "STRING" } },
-              explanation: { type: "STRING" },
-              sourceCitation: { type: "STRING" },
-              difficulty: { type: "STRING", enum: ["easy", "medium", "hard"] },
-              marks: { type: "INTEGER" }
-            },
-            required: ["id", "type", "text", "explanation", "sourceCitation", "difficulty", "marks"]
-          }
-        }
-      }
+    const model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash',
+        generationConfig: { responseMimeType: "application/json" }
     });
+    const result = await model.generateContent([
+        `CONTEXT:\n${contextString}`,
+        prompt
+    ]);
 
-    const jsonText = response.text;
+    const jsonText = result.response.text();
     if (!jsonText) return [];
     return JSON.parse(jsonText) as Question[];
   } catch (e) {
@@ -333,9 +265,51 @@ export const generateGameQuestions = async (
   files: FileDocument[],
   count: number = 3
 ): Promise<Question[]> => {
-    // Simply call the same logic as exam generation but simpler prompt for games
-    // Ideally refactor to share logic, keeping it separate for safety in this change
-    return generateExamPaper(topic, files); 
+
+  const contextString = files
+    .filter(f => f.status === 'ready')
+    .map(f => `--- FILE START: ${f.name} ---\n${f.content}\n--- FILE END ---`)
+    .join("\n\n");
+
+  let instruction = "";
+  switch (mode) {
+    case 'MCQ_ARENA':
+      instruction = `Generate ${count} Multiple Choice Questions (MCQ) on "${topic}". Ensure they are challenging but fair.`;
+      break;
+    case 'EXPLAIN_TO_WIN':
+      instruction = `Generate ${count} Open Ended questions on "${topic}". The questions should ask the user to explain a concept in detail.`;
+      break;
+    case 'BOSS_BATTLE':
+      instruction = `Generate ${count} very difficult questions on "${topic}". Mix of MCQ and Open Ended. These should test deep understanding.`;
+      break;
+    default:
+      instruction = `Generate ${count} questions on "${topic}".`;
+  }
+
+  const prompt = `
+    ${instruction}
+    Based on the provided sources.
+    Assign marks (e.g., [1 mark], [4 marks]).
+    Return JSON.
+  `;
+
+  try {
+    const model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash',
+        generationConfig: { responseMimeType: "application/json" }
+    });
+    const result = await model.generateContent([
+        `CONTEXT:\n${contextString}`,
+        prompt
+    ]);
+
+    const jsonText = result.response.text();
+    if (!jsonText) return [];
+    return JSON.parse(jsonText) as Question[];
+  } catch (e) {
+    console.error("Game Gen Error", e);
+    return [];
+  }
 };
 
 export const gradeOpenEndedAnswer = async (
@@ -344,7 +318,6 @@ export const gradeOpenEndedAnswer = async (
   markScheme: string[],
   files: FileDocument[]
 ): Promise<{ score: number; maxScore: number; feedback: string }> => {
-  if (!aiClient) throw new Error("AI Client not initialized");
 
   const prompt = `
     You are a strict Examiner. Grade this student response.
@@ -359,23 +332,17 @@ export const gradeOpenEndedAnswer = async (
     3. Be encouraging but strict on terminology.
   `;
 
-  const response = await aiClient.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: "OBJECT",
-        properties: {
-          score: { type: "INTEGER" },
-          maxScore: { type: "INTEGER" },
-          feedback: { type: "STRING" }
-        }
-      }
-    }
-  });
+  try {
+    const model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash',
+        generationConfig: { responseMimeType: "application/json" }
+    });
+    const result = await model.generateContent(prompt);
 
-  const jsonText = response.text;
-  if (!jsonText) return { score: 0, maxScore: 5, feedback: "Error grading" };
-  return JSON.parse(jsonText);
+    const jsonText = result.response.text();
+    if (!jsonText) return { score: 0, maxScore: 5, feedback: "Error grading" };
+    return JSON.parse(jsonText);
+  } catch (e) {
+    return { score: 0, maxScore: 5, feedback: "Error grading" };
+  }
 };

@@ -19,7 +19,15 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>(AppView.CHAT);
   const [files, setFiles] = useState<FileDocument[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [chatHistory, setChatHistory] = useState<Message[]>([]); // Lifted state for Meta Analysis
+  const [chatHistory, setChatHistory] = useState<Message[]>([
+    {
+      id: 'welcome',
+      role: 'model',
+      agent: 'COUNCIL',
+      text: "Welcome to your Study Universe. I am The Council. I will route your queries to the best agent. Try asking for a strict mark scheme check (Examiner) or a simple analogy (Teacher).",
+      timestamp: Date.now()
+    }
+  ]);
 
   useEffect(() => {
       const savedProfile = localStorage.getItem('study_os_profile');
@@ -156,7 +164,7 @@ const App: React.FC = () => {
       default:
         return (
           <div className="h-screen p-4 md:p-6 bg-slate-100/50">
-             <ChatInterface files={files} />
+             <ChatInterface files={files} messages={chatHistory} setMessages={setChatHistory} />
           </div>
         );
     }
