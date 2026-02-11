@@ -24,8 +24,36 @@ export const calculateAccuracy = (score: number, total: number): number => {
 
 /**
  * Generates a random alphanumeric ID.
+ * Uses crypto.randomUUID if available for better security.
  * @returns A random string ID
  */
 export const generateId = (): string => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
   return Math.random().toString(36).substring(2, 11);
+};
+
+/**
+ * Validates a file for size and type.
+ * @param file The file to validate
+ * @returns Object with valid boolean and optional error message
+ */
+export const validateFile = (file: File): { valid: boolean; error?: string } => {
+  const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_EXTENSIONS = ['.txt', '.md', '.csv', '.json', '.pdf', '.docx'];
+
+  if (file.size > MAX_SIZE) {
+    return { valid: false, error: `File "${file.name}" exceeds 5MB limit.` };
+  }
+
+  // Check extension
+  const parts = file.name.split('.');
+  const extension = parts.length > 1 ? '.' + parts.pop()?.toLowerCase() : '';
+
+  if (!ALLOWED_EXTENSIONS.includes(extension)) {
+    return { valid: false, error: `File type "${extension}" not supported.` };
+  }
+
+  return { valid: true };
 };

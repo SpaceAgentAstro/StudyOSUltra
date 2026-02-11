@@ -2,7 +2,7 @@
 import React, { useRef, useState } from 'react';
 import { FileDocument } from '../types';
 import { UploadCloud, FileText, Trash2, CheckCircle, Search } from './Icons';
-import { generateId } from '../utils';
+import { generateId, validateFile } from '../utils';
 
 interface FileUploaderProps {
   files: FileDocument[];
@@ -20,6 +20,12 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
     if (!uploadedFiles) return;
 
     Array.from(uploadedFiles).forEach((file: File) => {
+      const validation = validateFile(file);
+      if (!validation.valid) {
+        alert(validation.error);
+        return;
+      }
+
       const id = generateId();
       
       const newFile: FileDocument = {
