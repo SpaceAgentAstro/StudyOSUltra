@@ -222,10 +222,10 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 font-sans">
+    <div className="flex min-h-screen bg-slate-50 font-sans">
       {!userProfile && <Onboarding onComplete={handleOnboardingComplete} />}
       <Sidebar currentView={currentView} setView={setCurrentView} />
-      <main className="flex-1 h-full overflow-hidden relative">
+      <main className="flex-1 h-full overflow-y-auto relative">
         <Suspense
           fallback={
             <div className="h-full w-full flex items-center justify-center text-slate-500">
