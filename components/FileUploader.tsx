@@ -88,12 +88,21 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
 
       <div 
         onClick={() => fileInputRef.current?.click()}
-        className="border-2 border-dashed border-slate-300 rounded-2xl p-12 text-center hover:border-primary-500 hover:bg-slate-50 transition-colors cursor-pointer group"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            fileInputRef.current?.click();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label="Click or press enter to upload files"
+        className="border-2 border-dashed border-slate-300 rounded-2xl p-12 text-center hover:border-primary-500 hover:bg-slate-50 focus:border-primary-500 focus:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-all cursor-pointer group"
       >
         <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary-100 transition-colors">
           <UploadCloud className="w-8 h-8 text-slate-400 group-hover:text-primary-600" />
         </div>
-        <h3 className="text-lg font-semibold text-slate-900">Click to upload files</h3>
+        <h3 className="text-lg font-semibold text-slate-900">Click or press enter to upload files</h3>
         <p className="text-sm text-slate-500 mt-1">Supports PDF, DOCX, TXT, MD</p>
         <input 
           type="file" 
@@ -114,6 +123,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
                 <input 
                   type="text" 
                   placeholder="Search files..." 
+                  aria-label="Search files"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20"
@@ -158,6 +168,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
               <button 
                 onClick={() => removeFile(file.id)}
                 className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                aria-label={`Remove ${file.name}`}
               >
                 <Trash2 className="w-5 h-5" />
               </button>
