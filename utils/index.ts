@@ -27,7 +27,7 @@ export const calculateAccuracy = (score: number, total: number): number => {
  * @returns A random string ID
  */
 export const generateId = (): string => {
-  return Math.random().toString(36).substring(2, 11);
+  return crypto.randomUUID();
 };
 
 /**
