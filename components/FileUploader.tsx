@@ -89,7 +89,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
   );
 
   return (
-    <div className="p-6 max-w-4xl mx-auto w-full">
+    <div className="p-6 max-w-5xl mx-auto w-full">
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-slate-900 mb-2">Sources & Knowledge Base</h2>
         <p className="text-slate-500">Upload textbooks, notes, and transcripts. Study OS will ground all answers in these files to prevent hallucinations.</p>
@@ -105,7 +105,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
             fileInputRef.current?.click();
           }
         }}
-        className="border-2 border-dashed border-slate-300 rounded-2xl p-12 text-center hover:border-primary-500 hover:bg-slate-50 transition-colors cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+        className="border-2 border-dashed border-slate-300 rounded-2xl p-8 md:p-12 text-center hover:border-primary-500 hover:bg-slate-50 transition-colors cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 sticky top-4 z-10 backdrop-blur-sm bg-white/90"
       >
         <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary-100 transition-colors">
           <UploadCloud className="w-8 h-8 text-slate-400 group-hover:text-primary-600" />
@@ -137,7 +137,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
         </div>
       )}
 
-      <div className="mt-8 space-y-4">
+      <div className="mt-8 space-y-4 max-h-[60vh] overflow-y-auto pr-1">
         {files.length > 0 && (
            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
               <h3 className="font-semibold text-slate-700">Active Sources ({files.length})</h3>
