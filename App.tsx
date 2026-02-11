@@ -8,6 +8,12 @@ import { AppView, FileDocument, UserProfile, Message } from './types';
 import { MOCK_SYLLABUS } from './constants';
 import { CheckCircle } from './components/Icons';
 
+const STORAGE_KEYS = {
+  profile: 'study_os_profile',
+  files: 'study_os_files',
+  chat: 'study_os_chat_history'
+};
+
 const GameCenter = lazy(() => import('./components/GameCenter'));
 const ExamSimulator = lazy(() => import('./components/ExamSimulator'));
 const SocialHub = lazy(() => import('./components/SocialHub'));
@@ -23,11 +29,54 @@ const App: React.FC = () => {
   const [chatHistory, setChatHistory] = useState<Message[]>([]); // Lifted state for Meta Analysis
 
   useEffect(() => {
-      const savedProfile = localStorage.getItem('study_os_profile');
-      if (savedProfile) {
-          setUserProfile(JSON.parse(savedProfile));
+      try {
+        const savedProfile = localStorage.getItem(STORAGE_KEYS.profile);
+        if (savedProfile) {
+            setUserProfile(JSON.parse(savedProfile));
+        }
+      } catch (e) {
+        console.warn('Failed to read saved profile', e);
+      }
+
+      try {
+        const savedFiles = localStorage.getItem(STORAGE_KEYS.files);
+        if (savedFiles) {
+          setFiles(JSON.parse(savedFiles));
+        }
+      } catch (e) {
+        console.warn('Failed to read saved files', e);
+      }
+
+      try {
+        const savedChat = localStorage.getItem(STORAGE_KEYS.chat);
+        if (savedChat) {
+          setChatHistory(JSON.parse(savedChat));
+        }
+      } catch (e) {
+        console.warn('Failed to read saved chat history', e);
       }
   }, []);
+
+  // Persist profile/files/chat locally so sessions survive refreshes
+  useEffect(() => {
+    if (userProfile) {
+      localStorage.setItem(STORAGE_KEYS.profile, JSON.stringify(userProfile));
+    }
+  }, [userProfile]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.files, JSON.stringify(files));
+  }, [files]);
+
+  useEffect(() => {
+    if (chatHistory.length === 0) {
+      localStorage.removeItem(STORAGE_KEYS.chat);
+      return;
+    }
+    // Trim to avoid unbounded storage growth
+    const recent = chatHistory.slice(-60);
+    localStorage.setItem(STORAGE_KEYS.chat, JSON.stringify(recent));
+  }, [chatHistory]);
 
   const handleOnboardingComplete = (profile: UserProfile, initialFiles: FileDocument[]) => {
       // Init Phase 8 props if missing
@@ -46,7 +95,10 @@ const App: React.FC = () => {
       }
       setUserProfile(profile);
       setFiles(initialFiles);
-      localStorage.setItem('study_os_profile', JSON.stringify(profile));
+      setChatHistory([]);
+      localStorage.setItem(STORAGE_KEYS.profile, JSON.stringify(profile));
+      localStorage.setItem(STORAGE_KEYS.files, JSON.stringify(initialFiles));
+      localStorage.removeItem(STORAGE_KEYS.chat);
   };
 
   const renderContent = () => {
@@ -159,7 +211,11 @@ const App: React.FC = () => {
       default:
         return (
           <div className="h-screen p-4 md:p-6 bg-slate-100/50">
-             <ChatInterface files={files} />
+             <ChatInterface 
+                files={files}
+                initialMessages={chatHistory}
+                onMessagesChange={setChatHistory}
+             />
           </div>
         );
     }

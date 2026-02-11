@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Message, FileDocument, AgentRole } from '../types';
+import { generateId } from '../utils';
 import { Send, Paperclip, Brain, Image as ImageIcon, Mic, Zap, StopCircle, Loader, Globe, FileText, Volume, Play } from './Icons';
 
 let geminiServicePromise: Promise<typeof import('../services/geminiService')> | null = null;
@@ -9,6 +10,8 @@ const API_KEY_STORAGE_KEY = 'study_os_api_key';
 
 interface ChatInterfaceProps {
   files: FileDocument[];
+  initialMessages?: Message[];
+  onMessagesChange?: (messages: Message[]) => void;
 }
 
 const AGENTS: {role: AgentRole, label: string, color: string}[] = [
@@ -19,16 +22,18 @@ const AGENTS: {role: AgentRole, label: string, color: string}[] = [
   { role: 'ANALYST', label: 'Analyst', color: 'bg-blue-600' },
 ];
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ files }) => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'welcome',
-      role: 'model',
-      agent: 'COUNCIL',
-      text: "Welcome to your Study Universe. I am The Council. I will route your queries to the best agent. Try asking for a strict mark scheme check (Examiner) or a simple analogy (Teacher).",
-      timestamp: Date.now()
-    }
-  ]);
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = [], onMessagesChange }) => {
+  const [messages, setMessages] = useState<Message[]>(
+    initialMessages.length > 0
+      ? initialMessages
+      : [{
+          id: 'welcome',
+          role: 'model',
+          agent: 'COUNCIL',
+          text: "Welcome to your Study Universe. I am The Council. I will route your queries to the best agent. Try asking for a strict mark scheme check (Examiner) or a simple analogy (Teacher).",
+          timestamp: Date.now()
+        }]
+  );
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -58,7 +63,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files }) => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+    onMessagesChange?.(messages);
+  }, [messages, onMessagesChange]);
+
+  // Hydrate chat from parent when provided (e.g., after refresh)
+  useEffect(() => {
+    if (initialMessages.length === 0) return;
+    // Avoid overwriting active session if already hydrated
+    if (messages.length === 1 && messages[0].id === 'welcome') {
+      setMessages(initialMessages);
+    }
+  }, [initialMessages]);
 
   // Set up speech recognition once
   useEffect(() => {
@@ -114,6 +129,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files }) => {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
       setIsLoading(false);
+      // Mark last assistant message as stopped to give user feedback
+      setMessages(prev => prev.map(m => m.isThinking ? { ...m, isThinking: false, text: (m.text || '') + '\n[stopped]' } : m));
     }
   };
 
@@ -166,6 +183,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files }) => {
       attachments: attachmentToSend ? [{ type: 'image', url: attachmentToSend }] : undefined
     };
 
+    // Build history for LLM including the fresh user message to avoid stale state reads
+    const historyForLLM = [...messages, userMsg];
+
     setMessages(prev => [...prev, userMsg]);
     
     if (isManualSend) {
@@ -175,7 +195,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files }) => {
     
     setIsLoading(true);
 
-    const botMsgId = (Date.now() + 1).toString();
+    const botMsgId = generateId();
     const actingAgent = overrideAgent || selectedAgent; 
 
     setMessages(prev => [...prev, {
@@ -198,7 +218,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files }) => {
     const { streamChatResponse } = await geminiServicePromise;
 
     await streamChatResponse({
-      history: messages,
+      history: historyForLLM,
       newMessage: userMsg.text,
       files,
       imageAttachment: attachmentToSend || undefined,
