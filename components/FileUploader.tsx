@@ -96,8 +96,16 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
       </div>
 
       <div 
+        role="button"
+        tabIndex={0}
         onClick={() => fileInputRef.current?.click()}
-        className="border-2 border-dashed border-slate-300 rounded-2xl p-12 text-center hover:border-primary-500 hover:bg-slate-50 transition-colors cursor-pointer group"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            fileInputRef.current?.click();
+          }
+        }}
+        className="border-2 border-dashed border-slate-300 rounded-2xl p-12 text-center hover:border-primary-500 hover:bg-slate-50 transition-colors cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
       >
         <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary-100 transition-colors">
           <UploadCloud className="w-8 h-8 text-slate-400 group-hover:text-primary-600" />
@@ -137,6 +145,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input 
                   type="text" 
+                  aria-label="Search files"
                   placeholder="Search files..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -181,6 +190,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
               )}
               <button 
                 onClick={() => removeFile(file.id)}
+                aria-label={`Delete ${file.name}`}
                 className="p-2 text-slate-400 hover:text-red-500 transition-colors"
               >
                 <Trash2 className="w-5 h-5" />
