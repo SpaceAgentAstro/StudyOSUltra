@@ -1,6 +1,6 @@
 
 import { describe, it, expect } from 'vitest';
-import { formatTime, calculateAccuracy, generateId } from './index';
+import { formatTime, calculateAccuracy, generateId, validateFile } from './index';
 
 describe('Utility Functions', () => {
   
@@ -48,6 +48,43 @@ describe('Utility Functions', () => {
       const id1 = generateId();
       const id2 = generateId();
       expect(id1).not.toBe(id2);
+    });
+  });
+
+  describe('validateFile', () => {
+    it('accepts valid text files', () => {
+      const file = new File(['content'], 'notes.txt', { type: 'text/plain' });
+      const result = validateFile(file);
+      expect(result.valid).toBe(true);
+    });
+
+    it('accepts valid pdf files', () => {
+      const file = new File(['content'], 'document.pdf', { type: 'application/pdf' });
+      const result = validateFile(file);
+      expect(result.valid).toBe(true);
+    });
+
+    it('rejects files larger than 5MB', () => {
+      const file = new File([''], 'large_video.mp4');
+      // Mock size property to simulate large file
+      Object.defineProperty(file, 'size', { value: 6 * 1024 * 1024 });
+
+      const result = validateFile(file);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain('exceeds 5MB limit');
+    });
+
+    it('rejects unsupported file types', () => {
+      const file = new File([''], 'script.js', { type: 'text/javascript' });
+      const result = validateFile(file);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain('not supported');
+    });
+
+    it('rejects files with no extension', () => {
+      const file = new File([''], 'makefile');
+      const result = validateFile(file);
+      expect(result.valid).toBe(false);
     });
   });
 
