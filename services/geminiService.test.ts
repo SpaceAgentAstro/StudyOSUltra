@@ -1,28 +1,33 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { streamChatResponse, generateExamPaper } from './geminiService';
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-const { mockGenerateContentStream, mockGenerateContent, mockGoogleGenAI } = vi.hoisted(() => {
-  const mockGenerateContentStream = vi.fn();
-  const mockGenerateContent = vi.fn();
-  const mockGoogleGenAI = vi.fn(function (this: any) {
-    this.models = {
-      generateContentStream: mockGenerateContentStream,
-      generateContent: mockGenerateContent,
+// Mock Setup
+const { mockGenerateContent, mockGenerateContentStream } = vi.hoisted(() => {
+    return {
+        mockGenerateContent: vi.fn(),
+        mockGenerateContentStream: vi.fn(),
     };
-  });
-  return { mockGenerateContentStream, mockGenerateContent, mockGoogleGenAI };
 });
 
-vi.mock('@google/genai', () => ({
-  GoogleGenAI: mockGoogleGenAI
+vi.mock('@google/generative-ai', () => ({
+    GoogleGenerativeAI: vi.fn(function() {
+        return {
+            getGenerativeModel: vi.fn().mockReturnValue({
+                generateContent: mockGenerateContent,
+                generateContentStream: mockGenerateContentStream,
+            }),
+        };
+    }),
 }));
-
-import { streamChatResponse, generateExamPaper } from './geminiService';
 
 describe('geminiService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.API_KEY = 'test-key';
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('generateExamPaper', () => {
@@ -32,7 +37,7 @@ describe('geminiService', () => {
       ];
       
       mockGenerateContent.mockResolvedValueOnce({
-        text: JSON.stringify(mockQuestions)
+        response: { text: () => JSON.stringify(mockQuestions) }
       });
 
       const result = await generateExamPaper('Biology', []);
@@ -43,6 +48,7 @@ describe('geminiService', () => {
     it('returns empty array on error', async () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockGenerateContent.mockRejectedValueOnce(new Error('API Error'));
+
       const result = await generateExamPaper('Biology', []);
       expect(result).toEqual([]);
       expect(consoleErrorSpy).toHaveBeenCalled();
@@ -52,15 +58,61 @@ describe('geminiService', () => {
 
   describe('streamChatResponse', () => {
     it('streams content via onChunk callback', async () => {
-      const mockStream = {
-        [Symbol.asyncIterator]: async function* () {
-          yield { text: 'Hello' };
-          yield { text: ' World' };
-        }
-      };
+        const mockStream = {
+            async *[Symbol.asyncIterator]() {
+                yield { text: () => 'Hello', candidates: [{ groundingMetadata: {} }] };
+                yield { text: () => ' World', candidates: [{ groundingMetadata: {} }] };
+            }
+        };
+        mockGenerateContentStream.mockResolvedValueOnce({ stream: mockStream });
 
-      mockGenerateContentStream.mockResolvedValueOnce(mockStream);
+        const onChunk = vi.fn();
+
+        await streamChatResponse({
+            history: [],
+            newMessage: 'Hi',
+            files: [],
+            mode: 'tutor',
+            onChunk
+        });
+
+        expect(onChunk).toHaveBeenCalledTimes(2);
+        expect(onChunk).toHaveBeenNthCalledWith(1, 'Hello', expect.anything());
+        expect(onChunk).toHaveBeenNthCalledWith(2, ' World', expect.anything());
+    });
+
+    it('handles abortion via AbortSignal', async () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      const mockStream = {
+          async *[Symbol.asyncIterator]() {
+              yield { text: () => 'Should not be called' };
+          }
+      };
+      mockGenerateContentStream.mockResolvedValueOnce({ stream: mockStream });
+
       const onChunk = vi.fn();
+
+      await streamChatResponse({
+        history: [],
+        newMessage: 'Hi',
+        files: [],
+        mode: 'tutor',
+        onChunk,
+        signal: controller.signal
+      });
+
+      // It should break immediately and not call onChunk
+      expect(onChunk).not.toHaveBeenCalled();
+    });
+
+    it('handles API errors gracefully', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const onChunk = vi.fn();
+      const errorMsg = 'API Quota Exceeded';
+
+      mockGenerateContentStream.mockRejectedValueOnce(new Error(errorMsg));
 
       await streamChatResponse({
         history: [],
@@ -70,41 +122,10 @@ describe('geminiService', () => {
         onChunk
       });
 
-      expect(onChunk).toHaveBeenCalledTimes(2);
-      expect(onChunk).toHaveBeenNthCalledWith(1, 'Hello', undefined);
-      expect(onChunk).toHaveBeenNthCalledWith(2, ' World', undefined);
-    });
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      expect(onChunk).toHaveBeenCalledWith(expect.stringContaining(errorMsg));
 
-    it('handles abortion via AbortSignal', async () => {
-      const mockStream = {
-         [Symbol.asyncIterator]: async function* () {
-            yield { text: 'Chunk 1' };
-            // Simulate delay
-            await new Promise(resolve => setTimeout(resolve, 10));
-            yield { text: 'Chunk 2' };
-         }
-      };
-      
-      mockGenerateContentStream.mockResolvedValueOnce(mockStream);
-      const onChunk = vi.fn();
-      const controller = new AbortController();
-
-      const promise = streamChatResponse({
-        history: [],
-        newMessage: 'Hi',
-        files: [],
-        mode: 'tutor',
-        onChunk,
-        signal: controller.signal
-      });
-
-      // Abort immediately
-      controller.abort();
-      await promise;
-
-      // Should break loop or handle error. Implementation breaks on signal.aborted check inside loop.
-      // Depending on timing, might get 0 or 1 chunk.
-      // Ideally we ensure it stops.
+      consoleErrorSpy.mockRestore();
     });
   });
 });

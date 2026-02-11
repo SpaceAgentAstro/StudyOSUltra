@@ -1,8 +1,8 @@
 
 import React, { useRef, useState } from 'react';
 import { FileDocument } from '../types';
-import { UploadCloud, FileText, Trash2, CheckCircle, Search } from './Icons';
-import { generateId } from '../utils';
+import { UploadCloud, FileText, Trash2, CheckCircle, Search, AlertTriangle, X } from './Icons';
+import { generateId, validateFile } from '../utils';
 
 interface FileUploaderProps {
   files: FileDocument[];
@@ -14,12 +14,21 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [pipelineStep, setPipelineStep] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFiles = event.target.files;
     if (!uploadedFiles) return;
 
+    setUploadError(null);
+
     Array.from(uploadedFiles).forEach((file: File) => {
+      const validation = validateFile(file);
+      if (!validation.isValid) {
+        setUploadError(validation.error || 'Invalid file');
+        return;
+      }
+
       const id = generateId();
       
       const newFile: FileDocument = {
@@ -87,8 +96,16 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
       </div>
 
       <div 
+        role="button"
+        tabIndex={0}
         onClick={() => fileInputRef.current?.click()}
-        className="border-2 border-dashed border-slate-300 rounded-2xl p-12 text-center hover:border-primary-500 hover:bg-slate-50 transition-colors cursor-pointer group"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            fileInputRef.current?.click();
+          }
+        }}
+        className="border-2 border-dashed border-slate-300 rounded-2xl p-12 text-center hover:border-primary-500 hover:bg-slate-50 transition-colors cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
       >
         <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary-100 transition-colors">
           <UploadCloud className="w-8 h-8 text-slate-400 group-hover:text-primary-600" />
@@ -105,6 +122,21 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
         />
       </div>
 
+      {uploadError && (
+        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center gap-3">
+             <AlertTriangle className="w-5 h-5 text-red-500" />
+             <p className="text-sm font-medium text-red-700">{uploadError}</p>
+          </div>
+          <button
+            onClick={() => setUploadError(null)}
+            className="p-1 hover:bg-red-100 rounded-lg transition-colors"
+          >
+            <X className="w-4 h-4 text-red-400" />
+          </button>
+        </div>
+      )}
+
       <div className="mt-8 space-y-4">
         {files.length > 0 && (
            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
@@ -113,6 +145,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input 
                   type="text" 
+                  aria-label="Search files"
                   placeholder="Search files..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -157,6 +190,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
               )}
               <button 
                 onClick={() => removeFile(file.id)}
+                aria-label={`Delete ${file.name}`}
                 className="p-2 text-slate-400 hover:text-red-500 transition-colors"
               >
                 <Trash2 className="w-5 h-5" />
