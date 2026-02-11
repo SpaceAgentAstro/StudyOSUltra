@@ -201,7 +201,37 @@ const GameCenter: React.FC<GameCenterProps> = ({ files }) => {
     );
   }
 
+  // Handle case where questions might be empty or index out of bounds
+  if (!activeSession.questions || activeSession.questions.length === 0) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center p-8 text-center">
+        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+          <X className="w-8 h-8 text-slate-400" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-900 mb-2">No Questions Available</h2>
+        <p className="text-slate-500 mb-6">Could not generate questions for this topic. Please try again or choose a different topic.</p>
+        <button
+          onClick={() => setView('DASHBOARD')}
+          className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-colors"
+        >
+          Return to Dashboard
+        </button>
+      </div>
+    );
+  }
+
   const currentQ = activeSession.questions[activeSession.currentQuestionIndex];
+
+  // Safety check for invalid index
+  if (!currentQ) {
+     return (
+       <div className="h-full flex flex-col items-center justify-center">
+         <p className="text-red-500">Error: Question index out of bounds.</p>
+         <button onClick={() => setView('DASHBOARD')} className="mt-4 text-indigo-600 underline">Return to Dashboard</button>
+       </div>
+     );
+  }
+
   const hasAnswered = activeSession.answers.some(a => a.questionId === currentQ.id);
   const answerState = activeSession.answers.find(a => a.questionId === currentQ.id);
 
