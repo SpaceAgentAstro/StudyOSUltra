@@ -34,6 +34,7 @@ export interface Citation {
 
 export enum AppView {
   DASHBOARD = 'DASHBOARD',
+  CODEX_SKILLS = 'CODEX_SKILLS',
   CHAT = 'CHAT',
   FILES = 'FILES',
   SYLLABUS = 'SYLLABUS',

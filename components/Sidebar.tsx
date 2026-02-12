@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { AppView } from '../types';
-import { Brain, MessageSquare, BookOpen, UploadCloud, Trophy, Zap, FileText, Network, Activity, Layers, Image as ImageIcon } from './Icons';
+import { Brain, MessageSquare, BookOpen, UploadCloud, Trophy, Zap, FileText, Network, Activity, Layers, Image as ImageIcon, Compass } from './Icons';
 
 interface SidebarProps {
   currentView: AppView;
@@ -11,6 +11,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
   const menuItems = [
     { id: AppView.DASHBOARD, label: 'Dashboard', icon: Brain },
+    { id: AppView.CODEX_SKILLS, label: 'Codex Skills', icon: Compass },
     { id: AppView.KNOWLEDGE_UNIVERSE, label: 'Universe', icon: Network }, // New
     { id: AppView.CHAT, label: 'Council Chat', icon: MessageSquare },
     { id: AppView.META_LEARNING, label: 'Meta Engine', icon: Activity }, // New

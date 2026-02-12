@@ -3,7 +3,12 @@ import { GoogleGenAI } from "@google/genai";
 import { FileDocument, Message, Question, GameMode, AgentRole, DigitalTwin, KnowledgeNode, MetaInsight, CognitiveExercise, VideoPlan } from "../types";
 import { SYSTEM_INSTRUCTION_BASE, AGENT_PERSONAS } from "../constants";
 
-const getProvider = () => (process.env.MODEL_PROVIDER || "google").toLowerCase();
+let runtimeProvider = "";
+const getProvider = () => (runtimeProvider || process.env.MODEL_PROVIDER || "google").toLowerCase();
+
+export const setRuntimeProvider = (provider: string | null | undefined) => {
+  runtimeProvider = provider?.toLowerCase() || "";
+};
 
 // Runtime override so users can set API keys from the UI without rebuilding
 let runtimeApiKey = "";
@@ -16,10 +21,21 @@ export const setRuntimeApiKey = (key: string | null | undefined) => {
 
 const getApiKey = () => runtimeApiKey || process.env.JULES_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY || "";
 const isGoogleProvider = () => getProvider() === "google" && getApiKey().length > 0;
+let runtimeOllama: { baseUrl?: string; model?: string } = {};
+export const setRuntimeOllamaConfig = (config: { baseUrl?: string; model?: string }) => {
+  runtimeOllama = {
+    ...runtimeOllama,
+    ...(config.baseUrl ? { baseUrl: config.baseUrl } : {}),
+    ...(config.model ? { model: config.model } : {}),
+  };
+};
+
 const getOllamaConfig = () => ({
-  baseUrl: (process.env.OLLAMA_BASE_URL || "http://localhost:11434").replace(/\/$/, ""),
-  model: process.env.OLLAMA_MODEL || "llama3",
+  baseUrl: (runtimeOllama.baseUrl || process.env.OLLAMA_BASE_URL || "http://localhost:11434").replace(/\/$/, ""),
+  model: runtimeOllama.model || process.env.OLLAMA_MODEL || "qwen2.5:latest",
 });
+
+const getJulesBaseUrl = () => (process.env.JULES_BASE_URL || "https://jules.googleapis.com").replace(/\/$/, "");
 
 let cachedClient: GoogleGenAI | null = null;
 let cachedApiKey = "";

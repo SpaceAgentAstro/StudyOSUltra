@@ -18,4 +18,14 @@ View your app in AI Studio: https://ai.studio/apps/drive/1TGK1USmkBKq8bi_Q5nRH98
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+
+## Codex Skills Integration
+
+This app includes a `Codex Skills` dashboard view backed by `public/codex-skills.json`.
+
+1. Sync your local Codex skills catalog into the app:
+   `npm run sync:skills`
+2. Start the app and open the `Codex Skills` view in the sidebar.
+
+When skills change in `~/.codex/skills`, run `npm run sync:skills` again to refresh.
 # StudyOSUltra
