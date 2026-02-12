@@ -29,7 +29,10 @@ describe('geminiService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.API_KEY = 'test-key';
+    delete process.env.GEMINI_API_KEY;
+    delete process.env.JULES_API_KEY;
     setRuntimeProvider('auto');
+    setRuntimeApiKeyForProvider('google', '');
     setRuntimeApiKeyForProvider('openai', '');
     setRuntimeApiKeyForProvider('anthropic', '');
   });
@@ -360,6 +363,29 @@ describe('geminiService', () => {
         // @ts-ignore
         globalThis.fetch = originalFetch;
       }
+    });
+
+    it('prefers GEMINI_API_KEY over JULES_API_KEY when both are set', async () => {
+      const mockStream = {
+        [Symbol.asyncIterator]: async function* () {
+          yield { text: 'OK' };
+        }
+      };
+      mockGenerateContentStream.mockResolvedValueOnce(mockStream);
+
+      process.env.GEMINI_API_KEY = 'gemini-priority-key';
+      process.env.JULES_API_KEY = 'jules-fallback-key';
+      setRuntimeProvider('google');
+
+      await streamChatResponse({
+        history: [],
+        newMessage: 'Hi',
+        files: [],
+        mode: 'tutor',
+        onChunk: vi.fn()
+      });
+
+      expect(mockGoogleGenAI).toHaveBeenCalledWith({ apiKey: 'gemini-priority-key' });
     });
   });
 });
