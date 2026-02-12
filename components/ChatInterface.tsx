@@ -7,6 +7,11 @@ import { Send, Paperclip, Brain, Image as ImageIcon, Mic, Zap, StopCircle, Loade
 let geminiServicePromise: Promise<typeof import('../services/geminiService')> | null = null;
 
 const API_KEY_STORAGE_KEY = 'study_os_api_key';
+const PROVIDER_STORAGE_KEY = 'study_os_provider';
+const OLLAMA_BASE_STORAGE_KEY = 'study_os_ollama_base';
+const OLLAMA_MODEL_STORAGE_KEY = 'study_os_ollama_model';
+
+type ModelProvider = 'google' | 'ollama';
 
 interface ChatInterfaceProps {
   files: FileDocument[];
@@ -44,6 +49,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
   const [useFlashLite, setUseFlashLite] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [apiKeySaved, setApiKeySaved] = useState(false);
+  const [provider, setProvider] = useState<ModelProvider>('google');
+  const [ollamaBase, setOllamaBase] = useState('');
+  const [ollamaModel, setOllamaModel] = useState('');
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [lastSpokenId, setLastSpokenId] = useState<string | null>(null);
@@ -112,16 +120,28 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
 
   // Load stored key once on mount
   useEffect(() => {
-    const stored = localStorage.getItem(API_KEY_STORAGE_KEY);
-    if (stored) {
-      setApiKeyInput(stored);
+    const storedKey = localStorage.getItem(API_KEY_STORAGE_KEY);
+    const storedProvider = (localStorage.getItem(PROVIDER_STORAGE_KEY) as ModelProvider | null) || 'google';
+    const storedOllamaBase = localStorage.getItem(OLLAMA_BASE_STORAGE_KEY) || '';
+    const storedOllamaModel = localStorage.getItem(OLLAMA_MODEL_STORAGE_KEY) || '';
+
+    setProvider(storedProvider);
+    if (storedKey) {
+      setApiKeyInput(storedKey);
       setApiKeySaved(true);
-      // prime service with stored key
-      if (!geminiServicePromise) {
-        geminiServicePromise = import('../services/geminiService');
-      }
-      geminiServicePromise.then(({ setRuntimeApiKey }) => setRuntimeApiKey(stored));
     }
+    if (storedOllamaBase) setOllamaBase(storedOllamaBase);
+    if (storedOllamaModel) setOllamaModel(storedOllamaModel);
+
+    if (!geminiServicePromise) {
+      geminiServicePromise = import('../services/geminiService');
+    }
+
+    geminiServicePromise.then(({ setRuntimeApiKey, setRuntimeProvider, setRuntimeOllamaConfig }) => {
+      setRuntimeProvider(storedProvider);
+      setRuntimeApiKey(storedKey);
+      setRuntimeOllamaConfig({ baseUrl: storedOllamaBase, model: storedOllamaModel });
+    });
   }, []);
 
   const handleStop = () => {
@@ -215,7 +235,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
     if (!geminiServicePromise) {
       geminiServicePromise = import('../services/geminiService');
     }
-    const { streamChatResponse } = await geminiServicePromise;
+    const { streamChatResponse, setRuntimeProvider } = await geminiServicePromise;
+
+    // ensure runtime provider matches selection
+    await setRuntimeProvider(provider);
 
     await streamChatResponse({
       history: historyForLLM,
@@ -285,29 +308,93 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
         </div>
 
         {/* API Key entry */}
-        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
-          <input
-            type="password"
-            value={apiKeyInput}
-            onChange={(e) => { setApiKeyInput(e.target.value); setApiKeySaved(false); }}
-            placeholder="Enter Jules API key"
-            className="flex-1 bg-transparent outline-none text-sm text-slate-700"
-          />
-          <button
-            onClick={async () => {
-              localStorage.setItem(API_KEY_STORAGE_KEY, apiKeyInput.trim());
-              setApiKeySaved(true);
-              if (!geminiServicePromise) {
-                geminiServicePromise = import('../services/geminiService');
-              }
-              const { setRuntimeApiKey } = await geminiServicePromise;
-              setRuntimeApiKey(apiKeyInput.trim());
-            }}
-            disabled={!apiKeyInput.trim()}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${apiKeyInput.trim() ? 'bg-indigo-600 text-white border-indigo-700 hover:bg-indigo-500' : 'bg-slate-200 text-slate-500 border-slate-300 cursor-not-allowed'}`}
-          >
-            {apiKeySaved ? 'Saved' : 'Save Key'}
-          </button>
+        <div className="flex flex-col gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+          <div className="flex gap-2 items-center">
+            <label className="text-xs font-semibold text-slate-600">Provider:</label>
+            <select
+              value={provider}
+              onChange={async (e) => {
+                const next = e.target.value as ModelProvider;
+                setProvider(next);
+                localStorage.setItem(PROVIDER_STORAGE_KEY, next);
+                if (!geminiServicePromise) geminiServicePromise = import('../services/geminiService');
+                const { setRuntimeProvider } = await geminiServicePromise;
+                setRuntimeProvider(next);
+              }}
+              className="text-sm border border-slate-200 rounded-lg px-2 py-1 bg-white"
+            >
+              <option value="google">Gemini (Jules)</option>
+              <option value="ollama">Ollama</option>
+            </select>
+            <span className="text-[10px] text-slate-400">Switch runtime model without rebuild</span>
+          </div>
+
+          {provider === 'google' && (
+            <div className="flex items-center gap-2">
+              <input
+                type="password"
+                value={apiKeyInput}
+                onChange={(e) => { setApiKeyInput(e.target.value); setApiKeySaved(false); }}
+                placeholder="Enter Jules/Gemini API key"
+                className="flex-1 bg-transparent outline-none text-sm text-slate-700"
+              />
+              <button
+                onClick={async () => {
+                  const trimmed = apiKeyInput.trim();
+                  localStorage.setItem(API_KEY_STORAGE_KEY, trimmed);
+                  setApiKeySaved(true);
+                  if (!geminiServicePromise) {
+                    geminiServicePromise = import('../services/geminiService');
+                  }
+                  const { setRuntimeApiKey } = await geminiServicePromise;
+                  setRuntimeApiKey(trimmed);
+                }}
+                disabled={!apiKeyInput.trim()}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${apiKeyInput.trim() ? 'bg-indigo-600 text-white border-indigo-700 hover:bg-indigo-500' : 'bg-slate-200 text-slate-500 border-slate-300 cursor-not-allowed'}`}
+              >
+                {apiKeySaved ? 'Saved' : 'Save Key'}
+              </button>
+            </div>
+          )}
+
+          {provider === 'ollama' && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:items-center">
+              <div className="col-span-1 md:col-span-1 flex items-center gap-2">
+                <label className="text-xs font-semibold text-slate-600">Base URL</label>
+                <input
+                  type="text"
+                  value={ollamaBase}
+                  onChange={(e) => setOllamaBase(e.target.value)}
+                  placeholder="http://localhost:11434"
+                  className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm"
+                />
+              </div>
+              <div className="col-span-1 md:col-span-1 flex items-center gap-2">
+                <label className="text-xs font-semibold text-slate-600">Model</label>
+                <input
+                  type="text"
+                  value={ollamaModel}
+                  onChange={(e) => setOllamaModel(e.target.value)}
+                  placeholder="qwen2.5:latest"
+                  className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm"
+                />
+              </div>
+              <div className="col-span-1 flex items-center gap-2 justify-end">
+                <button
+                  onClick={async () => {
+                    localStorage.setItem(OLLAMA_BASE_STORAGE_KEY, ollamaBase.trim());
+                    localStorage.setItem(OLLAMA_MODEL_STORAGE_KEY, ollamaModel.trim());
+                    if (!geminiServicePromise) geminiServicePromise = import('../services/geminiService');
+                    const { setRuntimeOllamaConfig } = await geminiServicePromise;
+                    setRuntimeOllamaConfig({ baseUrl: ollamaBase.trim(), model: ollamaModel.trim() });
+                  }}
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-500 transition-colors"
+                >
+                  Save Ollama
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Tools */}
