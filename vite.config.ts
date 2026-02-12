@@ -6,6 +6,8 @@ export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     const isTest = mode === 'test' || process.env.VITEST === 'true';
     return {
+      // Use relative asset paths in production so GitHub Pages (repo subpaths) works.
+      base: mode === 'production' ? './' : '/',
       server: {
         port: 3000,
         host: '0.0.0.0',

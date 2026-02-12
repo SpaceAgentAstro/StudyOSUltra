@@ -14,6 +14,15 @@ const OLLAMA_MODEL_STORAGE_KEY = 'study_os_ollama_model';
 
 type ModelProvider = 'auto' | 'google' | 'openai' | 'anthropic' | 'ollama';
 type KeyedProvider = Exclude<ModelProvider, 'auto' | 'ollama'>;
+type ApiKeySource = 'runtime' | 'env' | 'none';
+
+interface ProviderStatus {
+  preferred: ModelProvider;
+  resolved: Exclude<ModelProvider, 'auto'>;
+  configured: Record<KeyedProvider | 'ollama', boolean>;
+  keySource: Record<KeyedProvider, ApiKeySource>;
+  ollama: { baseUrl: string; model: string };
+}
 
 const providerNeedsApiKey = (provider: ModelProvider): provider is KeyedProvider =>
   provider === 'google' || provider === 'openai' || provider === 'anthropic';
@@ -27,6 +36,8 @@ const providerLabel: Record<ModelProvider, string> = {
   anthropic: 'Anthropic',
   ollama: 'Ollama'
 };
+
+const healthProviders: Array<KeyedProvider | 'ollama'> = ['google', 'openai', 'anthropic', 'ollama'];
 
 interface ChatInterfaceProps {
   files: FileDocument[];
@@ -65,6 +76,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [apiKeySaved, setApiKeySaved] = useState(false);
   const [provider, setProvider] = useState<ModelProvider>('auto');
+  const [providerStatus, setProviderStatus] = useState<ProviderStatus | null>(null);
   const [ollamaBase, setOllamaBase] = useState('');
   const [ollamaModel, setOllamaModel] = useState('');
   const [voiceEnabled, setVoiceEnabled] = useState(false);
@@ -158,7 +170,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
       geminiServicePromise = import('../services/geminiService');
     }
 
-    geminiServicePromise.then(({ setRuntimeApiKey, setRuntimeApiKeyForProvider, setRuntimeProvider, setRuntimeOllamaConfig }) => {
+    geminiServicePromise.then(({ setRuntimeApiKey, setRuntimeApiKeyForProvider, setRuntimeProvider, setRuntimeOllamaConfig, getProviderRuntimeStatus }) => {
       setRuntimeProvider(storedProvider);
       // Backward compatibility for older service versions.
       if (setRuntimeApiKeyForProvider) {
@@ -169,6 +181,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
         setRuntimeApiKey(storedGoogleKey);
       }
       setRuntimeOllamaConfig({ baseUrl: storedOllamaBase, model: storedOllamaModel });
+      setProviderStatus(getProviderRuntimeStatus() as ProviderStatus);
     });
   }, []);
 
@@ -315,6 +328,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
     abortControllerRef.current = null;
   };
 
+  const resolvedProviderForFeatures: Exclude<ModelProvider, 'auto'> | null =
+    provider === 'auto' ? (providerStatus?.resolved || null) : provider;
+  const disableSearchToggle = resolvedProviderForFeatures ? resolvedProviderForFeatures !== 'google' : false;
+
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       {/* Header with Agent Selector */}
@@ -351,8 +368,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
                 setApiKeyInput(nextStoredKey);
                 setApiKeySaved(Boolean(nextStoredKey));
                 if (!geminiServicePromise) geminiServicePromise = import('../services/geminiService');
-                const { setRuntimeProvider } = await geminiServicePromise;
+                const { setRuntimeProvider, getProviderRuntimeStatus } = await geminiServicePromise;
                 setRuntimeProvider(next);
+                setProviderStatus(getProviderRuntimeStatus() as ProviderStatus);
               }}
               className="text-sm border border-slate-200 rounded-lg px-2 py-1 bg-white"
             >
@@ -385,12 +403,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
                   if (!geminiServicePromise) {
                     geminiServicePromise = import('../services/geminiService');
                   }
-                  const { setRuntimeApiKey, setRuntimeApiKeyForProvider } = await geminiServicePromise;
+                  const { setRuntimeApiKey, setRuntimeApiKeyForProvider, getProviderRuntimeStatus } = await geminiServicePromise;
                   if (setRuntimeApiKeyForProvider) {
                     setRuntimeApiKeyForProvider(provider, trimmed);
                   } else {
                     setRuntimeApiKey(trimmed);
                   }
+                  setProviderStatus(getProviderRuntimeStatus() as ProviderStatus);
                 }}
                 disabled={!apiKeyInput.trim()}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${apiKeyInput.trim() ? 'bg-indigo-600 text-white border-indigo-700 hover:bg-indigo-500' : 'bg-slate-200 text-slate-500 border-slate-300 cursor-not-allowed'}`}
@@ -434,8 +453,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
                     localStorage.setItem(OLLAMA_BASE_STORAGE_KEY, ollamaBase.trim());
                     localStorage.setItem(OLLAMA_MODEL_STORAGE_KEY, ollamaModel.trim());
                     if (!geminiServicePromise) geminiServicePromise = import('../services/geminiService');
-                    const { setRuntimeOllamaConfig } = await geminiServicePromise;
+                    const { setRuntimeOllamaConfig, getProviderRuntimeStatus } = await geminiServicePromise;
                     setRuntimeOllamaConfig({ baseUrl: ollamaBase.trim(), model: ollamaModel.trim() });
+                    setProviderStatus(getProviderRuntimeStatus() as ProviderStatus);
                   }}
                   className="px-3 py-1.5 rounded-lg text-xs font-bold border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-500 transition-colors"
                 >
@@ -444,6 +464,35 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
               </div>
             </div>
           )}
+
+          <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-600">Provider Health</span>
+              <span className="text-xs font-bold text-indigo-700">
+                Active: {providerStatus ? providerLabel[providerStatus.resolved] : 'Checking...'}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {healthProviders.map((p) => {
+                const isConfigured = providerStatus?.configured?.[p] ?? false;
+                const source = p === 'ollama' ? null : providerStatus?.keySource?.[p];
+                return (
+                  <div
+                    key={p}
+                    className={`rounded-lg border px-2 py-1.5 ${isConfigured ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50'}`}
+                  >
+                    <div className={`text-[11px] font-bold ${isConfigured ? 'text-emerald-700' : 'text-slate-600'}`}>
+                      {providerLabel[p]}
+                    </div>
+                    <div className="text-[10px] text-slate-500">
+                      {isConfigured ? 'Configured' : 'Not configured'}
+                      {source ? ` · ${source}` : ''}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         {/* Tools */}
@@ -458,8 +507,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
                 </button>
                 <button 
                     onClick={() => { setUseSearch(!useSearch); }}
-                    disabled={provider === 'openai' || provider === 'anthropic' || provider === 'ollama'}
-                    className={`p-1.5 rounded-lg border transition-colors ${useSearch ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-slate-200 text-slate-400'}`}
+                    disabled={disableSearchToggle}
+                    className={`p-1.5 rounded-lg border transition-colors ${useSearch ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-slate-200 text-slate-400'} ${disableSearchToggle ? 'opacity-50 cursor-not-allowed' : ''}`}
                     title="Web Search (Gemini)"
                 >
                     <Globe className="w-4 h-4" />

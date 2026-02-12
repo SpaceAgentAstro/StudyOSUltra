@@ -1,0 +1,171 @@
+{
+  "generatedAt": "2026-02-12T04:52:15.039Z",
+  "codexHome": "/Users/spaceagentastro/.codex",
+  "source": {
+    "repo": "openai/skills",
+    "curatedPath": "skills/.curated",
+    "experimentalPath": "skills/.experimental"
+  },
+  "curated": {
+    "total": 30,
+    "installedCount": 30,
+    "skills": [
+      {
+        "name": "cloudflare-deploy",
+        "installed": true
+      },
+      {
+        "name": "develop-web-game",
+        "installed": true
+      },
+      {
+        "name": "doc",
+        "installed": true
+      },
+      {
+        "name": "figma",
+        "installed": true
+      },
+      {
+        "name": "figma-implement-design",
+        "installed": true
+      },
+      {
+        "name": "gh-address-comments",
+        "installed": true
+      },
+      {
+        "name": "gh-fix-ci",
+        "installed": true
+      },
+      {
+        "name": "imagegen",
+        "installed": true
+      },
+      {
+        "name": "jupyter-notebook",
+        "installed": true
+      },
+      {
+        "name": "linear",
+        "installed": true
+      },
+      {
+        "name": "netlify-deploy",
+        "installed": true
+      },
+      {
+        "name": "notion-knowledge-capture",
+        "installed": true
+      },
+      {
+        "name": "notion-meeting-intelligence",
+        "installed": true
+      },
+      {
+        "name": "notion-research-documentation",
+        "installed": true
+      },
+      {
+        "name": "notion-spec-to-implementation",
+        "installed": true
+      },
+      {
+        "name": "openai-docs",
+        "installed": true
+      },
+      {
+        "name": "pdf",
+        "installed": true
+      },
+      {
+        "name": "playwright",
+        "installed": true
+      },
+      {
+        "name": "render-deploy",
+        "installed": true
+      },
+      {
+        "name": "screenshot",
+        "installed": true
+      },
+      {
+        "name": "security-best-practices",
+        "installed": true
+      },
+      {
+        "name": "security-ownership-map",
+        "installed": true
+      },
+      {
+        "name": "security-threat-model",
+        "installed": true
+      },
+      {
+        "name": "sentry",
+        "installed": true
+      },
+      {
+        "name": "sora",
+        "installed": true
+      },
+      {
+        "name": "speech",
+        "installed": true
+      },
+      {
+        "name": "spreadsheet",
+        "installed": true
+      },
+      {
+        "name": "transcribe",
+        "installed": true
+      },
+      {
+        "name": "vercel-deploy",
+        "installed": true
+      },
+      {
+        "name": "yeet",
+        "installed": true
+      }
+    ]
+  },
+  "experimental": {
+    "available": false,
+    "error": "Command failed: python3 /Users/spaceagentastro/.codex/skills/.system/skill-installer/scripts/list-skills.py --path skills/.experimental --format json\nError: Skills path not found: https://github.com/openai/skills/tree/main/skills/.experimental\n"
+  },
+  "locallyInstalled": [
+    "cloudflare-deploy",
+    "develop-web-game",
+    "doc",
+    "figma",
+    "figma-implement-design",
+    "gh-address-comments",
+    "gh-fix-ci",
+    "imagegen",
+    "jupyter-notebook",
+    "linear",
+    "netlify-deploy",
+    "notion-knowledge-capture",
+    "notion-meeting-intelligence",
+    "notion-research-documentation",
+    "notion-spec-to-implementation",
+    "openai-docs",
+    "pdf",
+    "playwright",
+    "render-deploy",
+    "screenshot",
+    "security-best-practices",
+    "security-ownership-map",
+    "security-threat-model",
+    "sentry",
+    "sora",
+    "speech",
+    "spreadsheet",
+    "transcribe",
+    "vercel-deploy",
+    "yeet"
+  ]
+}
