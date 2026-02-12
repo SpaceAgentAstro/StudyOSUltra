@@ -49,6 +49,26 @@ export const validateFile = (file: File): { isValid: boolean; error?: string } =
     };
   }
 
+  // Security enhancement: Validate MIME type if available to prevent extension spoofing
+  const MIME_TYPES: Record<string, string[]> = {
+    '.txt': ['text/plain', ''],
+    '.md': ['text/markdown', 'text/x-markdown', 'text/plain', ''],
+    '.csv': ['text/csv', 'application/vnd.ms-excel', 'text/plain', ''],
+    '.json': ['application/json', 'text/plain', ''],
+    '.pdf': ['application/pdf'],
+    '.docx': ['application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+  };
+
+  if (file.type) {
+    const allowedMimes = MIME_TYPES[extension];
+    if (allowedMimes && !allowedMimes.includes(file.type)) {
+       return {
+         isValid: false,
+         error: `MIME type mismatch. File extension ${extension} does not match detected type ${file.type}`
+       };
+    }
+  }
+
   if (file.size > MAX_SIZE) {
     return {
       isValid: false,
