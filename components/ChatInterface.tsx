@@ -6,12 +6,27 @@ import { Send, Paperclip, Brain, Image as ImageIcon, Mic, Zap, StopCircle, Loade
 
 let geminiServicePromise: Promise<typeof import('../services/geminiService')> | null = null;
 
-const API_KEY_STORAGE_KEY = 'study_os_api_key';
+const LEGACY_API_KEY_STORAGE_KEY = 'study_os_api_key';
+const API_KEY_STORAGE_PREFIX = 'study_os_api_key_';
 const PROVIDER_STORAGE_KEY = 'study_os_provider';
 const OLLAMA_BASE_STORAGE_KEY = 'study_os_ollama_base';
 const OLLAMA_MODEL_STORAGE_KEY = 'study_os_ollama_model';
 
-type ModelProvider = 'google' | 'ollama';
+type ModelProvider = 'auto' | 'google' | 'openai' | 'anthropic' | 'ollama';
+type KeyedProvider = Exclude<ModelProvider, 'auto' | 'ollama'>;
+
+const providerNeedsApiKey = (provider: ModelProvider): provider is KeyedProvider =>
+  provider === 'google' || provider === 'openai' || provider === 'anthropic';
+
+const getApiStorageKey = (provider: KeyedProvider) => `${API_KEY_STORAGE_PREFIX}${provider}`;
+
+const providerLabel: Record<ModelProvider, string> = {
+  auto: 'Auto',
+  google: 'Gemini',
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  ollama: 'Ollama'
+};
 
 interface ChatInterfaceProps {
   files: FileDocument[];
@@ -49,7 +64,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
   const [useFlashLite, setUseFlashLite] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [apiKeySaved, setApiKeySaved] = useState(false);
-  const [provider, setProvider] = useState<ModelProvider>('google');
+  const [provider, setProvider] = useState<ModelProvider>('auto');
   const [ollamaBase, setOllamaBase] = useState('');
   const [ollamaModel, setOllamaModel] = useState('');
   const [voiceEnabled, setVoiceEnabled] = useState(false);
@@ -120,16 +135,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
 
   // Load stored key once on mount
   useEffect(() => {
-    const storedKey = localStorage.getItem(API_KEY_STORAGE_KEY);
-    const storedProvider = (localStorage.getItem(PROVIDER_STORAGE_KEY) as ModelProvider | null) || 'google';
+    const storedProvider = (localStorage.getItem(PROVIDER_STORAGE_KEY) as ModelProvider | null) || 'auto';
+    const storedGoogleKey =
+      localStorage.getItem(getApiStorageKey('google')) ||
+      localStorage.getItem(LEGACY_API_KEY_STORAGE_KEY) ||
+      '';
+    const storedOpenAIKey = localStorage.getItem(getApiStorageKey('openai')) || '';
+    const storedAnthropicKey = localStorage.getItem(getApiStorageKey('anthropic')) || '';
     const storedOllamaBase = localStorage.getItem(OLLAMA_BASE_STORAGE_KEY) || '';
     const storedOllamaModel = localStorage.getItem(OLLAMA_MODEL_STORAGE_KEY) || '';
 
     setProvider(storedProvider);
-    if (storedKey) {
-      setApiKeyInput(storedKey);
-      setApiKeySaved(true);
-    }
+    const activeStoredKey = providerNeedsApiKey(storedProvider)
+      ? (storedProvider === 'google' ? storedGoogleKey : storedProvider === 'openai' ? storedOpenAIKey : storedAnthropicKey)
+      : '';
+    setApiKeyInput(activeStoredKey);
+    setApiKeySaved(Boolean(activeStoredKey));
     if (storedOllamaBase) setOllamaBase(storedOllamaBase);
     if (storedOllamaModel) setOllamaModel(storedOllamaModel);
 
@@ -137,9 +158,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
       geminiServicePromise = import('../services/geminiService');
     }
 
-    geminiServicePromise.then(({ setRuntimeApiKey, setRuntimeProvider, setRuntimeOllamaConfig }) => {
+    geminiServicePromise.then(({ setRuntimeApiKey, setRuntimeApiKeyForProvider, setRuntimeProvider, setRuntimeOllamaConfig }) => {
       setRuntimeProvider(storedProvider);
-      setRuntimeApiKey(storedKey);
+      // Backward compatibility for older service versions.
+      if (setRuntimeApiKeyForProvider) {
+        setRuntimeApiKeyForProvider('google', storedGoogleKey);
+        setRuntimeApiKeyForProvider('openai', storedOpenAIKey);
+        setRuntimeApiKeyForProvider('anthropic', storedAnthropicKey);
+      } else {
+        setRuntimeApiKey(storedGoogleKey);
+      }
       setRuntimeOllamaConfig({ baseUrl: storedOllamaBase, model: storedOllamaModel });
     });
   }, []);
@@ -317,43 +345,64 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
                 const next = e.target.value as ModelProvider;
                 setProvider(next);
                 localStorage.setItem(PROVIDER_STORAGE_KEY, next);
+                const nextStoredKey = providerNeedsApiKey(next)
+                  ? localStorage.getItem(getApiStorageKey(next)) || (next === 'google' ? localStorage.getItem(LEGACY_API_KEY_STORAGE_KEY) || '' : '')
+                  : '';
+                setApiKeyInput(nextStoredKey);
+                setApiKeySaved(Boolean(nextStoredKey));
                 if (!geminiServicePromise) geminiServicePromise = import('../services/geminiService');
                 const { setRuntimeProvider } = await geminiServicePromise;
                 setRuntimeProvider(next);
               }}
               className="text-sm border border-slate-200 rounded-lg px-2 py-1 bg-white"
             >
+              <option value="auto">Auto (Best Available)</option>
               <option value="google">Gemini (Jules)</option>
+              <option value="openai">OpenAI</option>
+              <option value="anthropic">Anthropic</option>
               <option value="ollama">Ollama</option>
             </select>
-            <span className="text-[10px] text-slate-400">Switch runtime model without rebuild</span>
+            <span className="text-[10px] text-slate-400">Seamless provider routing across all AI features</span>
           </div>
 
-          {provider === 'google' && (
+          {providerNeedsApiKey(provider) && (
             <div className="flex items-center gap-2">
               <input
                 type="password"
                 value={apiKeyInput}
                 onChange={(e) => { setApiKeyInput(e.target.value); setApiKeySaved(false); }}
-                placeholder="Enter Jules/Gemini API key"
+                placeholder={`Enter ${providerLabel[provider]} API key`}
                 className="flex-1 bg-transparent outline-none text-sm text-slate-700"
               />
               <button
                 onClick={async () => {
                   const trimmed = apiKeyInput.trim();
-                  localStorage.setItem(API_KEY_STORAGE_KEY, trimmed);
+                  localStorage.setItem(getApiStorageKey(provider), trimmed);
+                  if (provider === 'google') {
+                    localStorage.setItem(LEGACY_API_KEY_STORAGE_KEY, trimmed);
+                  }
                   setApiKeySaved(true);
                   if (!geminiServicePromise) {
                     geminiServicePromise = import('../services/geminiService');
                   }
-                  const { setRuntimeApiKey } = await geminiServicePromise;
-                  setRuntimeApiKey(trimmed);
+                  const { setRuntimeApiKey, setRuntimeApiKeyForProvider } = await geminiServicePromise;
+                  if (setRuntimeApiKeyForProvider) {
+                    setRuntimeApiKeyForProvider(provider, trimmed);
+                  } else {
+                    setRuntimeApiKey(trimmed);
+                  }
                 }}
                 disabled={!apiKeyInput.trim()}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${apiKeyInput.trim() ? 'bg-indigo-600 text-white border-indigo-700 hover:bg-indigo-500' : 'bg-slate-200 text-slate-500 border-slate-300 cursor-not-allowed'}`}
               >
                 {apiKeySaved ? 'Saved' : 'Save Key'}
               </button>
+            </div>
+          )}
+
+          {provider === 'auto' && (
+            <div className="text-xs text-slate-500">
+              Auto mode picks the first configured provider in this order: Gemini, OpenAI, Anthropic, then Ollama.
             </div>
           )}
 
@@ -409,8 +458,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
                 </button>
                 <button 
                     onClick={() => { setUseSearch(!useSearch); }}
+                    disabled={provider === 'openai' || provider === 'anthropic' || provider === 'ollama'}
                     className={`p-1.5 rounded-lg border transition-colors ${useSearch ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-slate-200 text-slate-400'}`}
-                    title="Google Search"
+                    title="Web Search (Gemini)"
                 >
                     <Globe className="w-4 h-4" />
                 </button>

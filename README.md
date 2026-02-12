@@ -15,9 +15,12 @@ View your app in AI Studio: https://ai.studio/apps/drive/1TGK1USmkBKq8bi_Q5nRH98
 
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+2. Configure at least one provider key in [.env.local](.env.local):
+   `GEMINI_API_KEY` or `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`
 3. Run the app:
    `npm run dev`
+
+The in-app provider switcher supports `Auto`, `Gemini`, `OpenAI`, `Anthropic`, and `Ollama`.
 
 ## Codex Skills Integration
 

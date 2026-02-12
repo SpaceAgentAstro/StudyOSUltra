@@ -3,45 +3,179 @@ import { GoogleGenAI } from "@google/genai";
 import { FileDocument, Message, Question, GameMode, AgentRole, DigitalTwin, KnowledgeNode, MetaInsight, CognitiveExercise, VideoPlan } from "../types";
 import { SYSTEM_INSTRUCTION_BASE, AGENT_PERSONAS } from "../constants";
 
-let runtimeProvider = "";
-const getProvider = () => (runtimeProvider || process.env.MODEL_PROVIDER || "google").toLowerCase();
+export type ModelProvider = 'auto' | 'google' | 'openai' | 'anthropic' | 'ollama';
+type KeyedProvider = Exclude<ModelProvider, 'auto' | 'ollama'>;
+
+const STORAGE_KEYS = {
+  legacyGoogleApiKey: 'study_os_api_key',
+  provider: 'study_os_provider',
+  ollamaBase: 'study_os_ollama_base',
+  ollamaModel: 'study_os_ollama_model',
+  providerApiKey: {
+    google: 'study_os_api_key_google',
+    openai: 'study_os_api_key_openai',
+    anthropic: 'study_os_api_key_anthropic'
+  } as const
+};
+
+const OPENAI_BASE_DEFAULT = "https://api.openai.com/v1";
+const ANTHROPIC_BASE_DEFAULT = "https://api.anthropic.com/v1";
+
+let runtimeHydrated = false;
+let runtimeProvider: ModelProvider | "" = "";
+let runtimeApiKeys: Record<KeyedProvider, string> = {
+  google: "",
+  openai: "",
+  anthropic: ""
+};
+let runtimeOllama: { baseUrl?: string; model?: string } = {};
+
+const safeStorageGet = (key: string): string => {
+  try {
+    if (typeof window === 'undefined') return "";
+    return window.localStorage.getItem(key) || "";
+  } catch {
+    return "";
+  }
+};
+
+const safeStorageSet = (key: string, value: string) => {
+  try {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(key, value);
+  } catch {
+    // ignore storage failures
+  }
+};
+
+const normalizeProvider = (provider: string | null | undefined): ModelProvider => {
+  switch ((provider || "").toLowerCase()) {
+    case 'google':
+    case 'openai':
+    case 'anthropic':
+    case 'ollama':
+    case 'auto':
+      return provider!.toLowerCase() as ModelProvider;
+    default:
+      return 'auto';
+  }
+};
+
+const ensureRuntimeHydrated = () => {
+  if (runtimeHydrated) return;
+  runtimeHydrated = true;
+
+  const storedProvider = safeStorageGet(STORAGE_KEYS.provider);
+  if (storedProvider) {
+    runtimeProvider = normalizeProvider(storedProvider);
+  }
+
+  const storedGoogle = safeStorageGet(STORAGE_KEYS.providerApiKey.google) || safeStorageGet(STORAGE_KEYS.legacyGoogleApiKey);
+  const storedOpenAI = safeStorageGet(STORAGE_KEYS.providerApiKey.openai);
+  const storedAnthropic = safeStorageGet(STORAGE_KEYS.providerApiKey.anthropic);
+
+  if (storedGoogle) runtimeApiKeys.google = storedGoogle;
+  if (storedOpenAI) runtimeApiKeys.openai = storedOpenAI;
+  if (storedAnthropic) runtimeApiKeys.anthropic = storedAnthropic;
+
+  const storedOllamaBase = safeStorageGet(STORAGE_KEYS.ollamaBase);
+  const storedOllamaModel = safeStorageGet(STORAGE_KEYS.ollamaModel);
+  if (storedOllamaBase) runtimeOllama.baseUrl = storedOllamaBase;
+  if (storedOllamaModel) runtimeOllama.model = storedOllamaModel;
+};
+
+const getPreferredProvider = (): ModelProvider => {
+  ensureRuntimeHydrated();
+  return normalizeProvider(runtimeProvider || process.env.MODEL_PROVIDER || 'auto');
+};
+
+const getApiKey = (provider: KeyedProvider): string => {
+  ensureRuntimeHydrated();
+  if (runtimeApiKeys[provider]) return runtimeApiKeys[provider];
+
+  if (provider === 'google') {
+    return process.env.JULES_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY || "";
+  }
+  if (provider === 'openai') {
+    return process.env.OPENAI_API_KEY || "";
+  }
+  return process.env.ANTHROPIC_API_KEY || "";
+};
+
+const isProviderConfigured = (provider: KeyedProvider): boolean => getApiKey(provider).length > 0;
+
+const getResolvedProvider = (): Exclude<ModelProvider, 'auto'> => {
+  const preferred = getPreferredProvider();
+  if (preferred !== 'auto') return preferred;
+
+  if (isProviderConfigured('google')) return 'google';
+  if (isProviderConfigured('openai')) return 'openai';
+  if (isProviderConfigured('anthropic')) return 'anthropic';
+  return 'ollama';
+};
+
+const isGoogleProvider = () => getResolvedProvider() === "google" && isProviderConfigured('google');
 
 export const setRuntimeProvider = (provider: string | null | undefined) => {
-  runtimeProvider = provider?.toLowerCase() || "";
+  const next = normalizeProvider(provider);
+  runtimeProvider = next;
+  safeStorageSet(STORAGE_KEYS.provider, next);
 };
 
-// Runtime override so users can set API keys from the UI without rebuilding
-let runtimeApiKey = "";
-export const setRuntimeApiKey = (key: string | null | undefined) => {
-  runtimeApiKey = key?.trim() || "";
-  // clear cached client when key changes
-  cachedClient = null;
-  cachedApiKey = "";
+// Backwards-compatible setter; defaults to Google key.
+export const setRuntimeApiKey = (key: string | null | undefined, provider: KeyedProvider = 'google') => {
+  const trimmed = key?.trim() || "";
+  runtimeApiKeys[provider] = trimmed;
+  safeStorageSet(STORAGE_KEYS.providerApiKey[provider], trimmed);
+  if (provider === 'google') safeStorageSet(STORAGE_KEYS.legacyGoogleApiKey, trimmed);
+
+  if (provider === 'google') {
+    cachedClient = null;
+    cachedApiKey = "";
+  }
 };
 
-const getApiKey = () => runtimeApiKey || process.env.JULES_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY || "";
-const isGoogleProvider = () => getProvider() === "google" && getApiKey().length > 0;
-let runtimeOllama: { baseUrl?: string; model?: string } = {};
+export const setRuntimeApiKeyForProvider = (provider: KeyedProvider, key: string | null | undefined) => {
+  setRuntimeApiKey(key, provider);
+};
+
 export const setRuntimeOllamaConfig = (config: { baseUrl?: string; model?: string }) => {
   runtimeOllama = {
     ...runtimeOllama,
     ...(config.baseUrl ? { baseUrl: config.baseUrl } : {}),
     ...(config.model ? { model: config.model } : {}),
   };
+  if (config.baseUrl) safeStorageSet(STORAGE_KEYS.ollamaBase, config.baseUrl);
+  if (config.model) safeStorageSet(STORAGE_KEYS.ollamaModel, config.model);
 };
 
-const getOllamaConfig = () => ({
-  baseUrl: (runtimeOllama.baseUrl || process.env.OLLAMA_BASE_URL || "http://localhost:11434").replace(/\/$/, ""),
-  model: runtimeOllama.model || process.env.OLLAMA_MODEL || "qwen2.5:latest",
+const getOllamaConfig = () => {
+  ensureRuntimeHydrated();
+  return {
+    baseUrl: (runtimeOllama.baseUrl || process.env.OLLAMA_BASE_URL || "http://localhost:11434").replace(/\/$/, ""),
+    model: runtimeOllama.model || process.env.OLLAMA_MODEL || "qwen2.5:latest",
+  };
+};
+
+const getOpenAIConfig = () => ({
+  baseUrl: (process.env.OPENAI_BASE_URL || OPENAI_BASE_DEFAULT).replace(/\/$/, ""),
+  model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
+  imageModel: process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1'
 });
 
-const getJulesBaseUrl = () => (process.env.JULES_BASE_URL || "https://jules.googleapis.com").replace(/\/$/, "");
+const getAnthropicConfig = () => ({
+  baseUrl: (process.env.ANTHROPIC_BASE_URL || ANTHROPIC_BASE_DEFAULT).replace(/\/$/, ""),
+  model: process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-latest'
+});
+
+const getGoogleModel = (useFlashLite = false) => useFlashLite ? 'gemini-flash-lite-latest' : 'gemini-3-flash-preview';
 
 let cachedClient: GoogleGenAI | null = null;
 let cachedApiKey = "";
 const getGoogleClient = () => {
   if (!isGoogleProvider()) return null;
-  const apiKey = getApiKey();
+  const apiKey = getApiKey('google');
+  if (!apiKey) return null;
   if (!cachedClient || cachedApiKey !== apiKey) {
     cachedClient = new GoogleGenAI({ apiKey });
     cachedApiKey = apiKey;
@@ -64,6 +198,349 @@ interface SendMessageParams {
   signal?: AbortSignal;
 }
 
+const parseDataUrl = (dataUrl: string): { mimeType: string; data: string } | null => {
+  const match = dataUrl.match(/^data:(image\/[a-zA-Z0-9+.-]+);base64,(.+)$/);
+  if (!match) return null;
+  return { mimeType: match[1], data: match[2] };
+};
+
+const extractJsonText = (raw: string): string | null => {
+  if (!raw?.trim()) return null;
+  const trimmed = raw.trim();
+
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced?.[1]) return fenced[1].trim();
+
+  const arrayStart = trimmed.indexOf('[');
+  const arrayEnd = trimmed.lastIndexOf(']');
+  if (arrayStart !== -1 && arrayEnd > arrayStart) {
+    return trimmed.slice(arrayStart, arrayEnd + 1);
+  }
+
+  const objectStart = trimmed.indexOf('{');
+  const objectEnd = trimmed.lastIndexOf('}');
+  if (objectStart !== -1 && objectEnd > objectStart) {
+    return trimmed.slice(objectStart, objectEnd + 1);
+  }
+
+  return null;
+};
+
+const parseJsonSafely = <T>(raw: string, fallback: T): T => {
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    const extracted = extractJsonText(raw);
+    if (!extracted) return fallback;
+    try {
+      return JSON.parse(extracted) as T;
+    } catch {
+      return fallback;
+    }
+  }
+};
+
+const joinAnthropicContent = (content: any): string => {
+  if (!Array.isArray(content)) return "";
+  return content
+    .map((item) => (item?.type === 'text' ? item.text : ''))
+    .filter(Boolean)
+    .join('');
+};
+
+const getStatusErrorText = async (response: Response, fallback: string): Promise<string> => {
+  const text = await response.text().catch(() => '');
+  return text || fallback;
+};
+
+const streamOpenAISSE = async ({
+  messages,
+  onChunk,
+  signal,
+  temperature
+}: {
+  messages: any[];
+  onChunk: (text: string, groundingMetadata?: any) => void;
+  signal?: AbortSignal;
+  temperature: number;
+}) => {
+  const apiKey = getApiKey('openai');
+  if (!apiKey) {
+    onChunk('\n[System Error: OpenAI API key not configured]');
+    return;
+  }
+
+  const { baseUrl, model } = getOpenAIConfig();
+  const response = await fetch(`${baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      stream: true,
+      temperature
+    }),
+    signal
+  });
+
+  if (!response.ok) {
+    const err = await getStatusErrorText(response, `OpenAI ${response.status}`);
+    onChunk(`\n[System Error: ${err}]`);
+    return;
+  }
+
+  if (!response.body) {
+    onChunk('\n[System Error: OpenAI stream missing body]');
+    return;
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (!line.startsWith('data:')) continue;
+      const payload = line.slice(5).trim();
+      if (!payload || payload === '[DONE]') return;
+
+      try {
+        const parsed = JSON.parse(payload);
+        const text = parsed?.choices?.[0]?.delta?.content;
+        if (text) onChunk(text);
+      } catch {
+        // ignore malformed events
+      }
+    }
+
+    if (signal?.aborted) {
+      reader.cancel().catch(() => {});
+      onChunk("\n\n[Generation stopped by user]");
+      return;
+    }
+  }
+};
+
+const streamAnthropicSSE = async ({
+  systemPrompt,
+  messages,
+  onChunk,
+  signal,
+  temperature,
+  useFlashLite
+}: {
+  systemPrompt: string;
+  messages: any[];
+  onChunk: (text: string, groundingMetadata?: any) => void;
+  signal?: AbortSignal;
+  temperature: number;
+  useFlashLite?: boolean;
+}) => {
+  const apiKey = getApiKey('anthropic');
+  if (!apiKey) {
+    onChunk('\n[System Error: Anthropic API key not configured]');
+    return;
+  }
+
+  const { baseUrl, model } = getAnthropicConfig();
+  const response = await fetch(`${baseUrl}/messages`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model,
+      system: systemPrompt,
+      messages,
+      stream: true,
+      temperature,
+      max_tokens: useFlashLite ? 700 : 1400
+    }),
+    signal
+  });
+
+  if (!response.ok) {
+    const err = await getStatusErrorText(response, `Anthropic ${response.status}`);
+    onChunk(`\n[System Error: ${err}]`);
+    return;
+  }
+
+  if (!response.body) {
+    onChunk('\n[System Error: Anthropic stream missing body]');
+    return;
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (!line.startsWith('data:')) continue;
+      const payload = line.slice(5).trim();
+      if (!payload || payload === '[DONE]') continue;
+
+      try {
+        const parsed = JSON.parse(payload);
+        if (parsed?.type === 'content_block_delta' && parsed?.delta?.text) {
+          onChunk(parsed.delta.text);
+        }
+      } catch {
+        // ignore malformed events
+      }
+    }
+
+    if (signal?.aborted) {
+      reader.cancel().catch(() => {});
+      onChunk("\n\n[Generation stopped by user]");
+      return;
+    }
+  }
+};
+
+const generateTextWithProvider = async ({
+  prompt,
+  systemPrompt,
+  temperature = 0.2,
+  useFlashLite = false,
+  signal
+}: {
+  prompt: string;
+  systemPrompt?: string;
+  temperature?: number;
+  useFlashLite?: boolean;
+  signal?: AbortSignal;
+}): Promise<string> => {
+  const provider = getResolvedProvider();
+
+  if (provider === 'google') {
+    const aiClient = getGoogleClient();
+    if (!aiClient) throw new Error('Google AI client not configured');
+    const response = await aiClient.models.generateContent({
+      model: getGoogleModel(useFlashLite),
+      contents: [
+        { role: 'user', parts: [{ text: systemPrompt ? `SYSTEM INSTRUCTION:\n${systemPrompt}` : 'SYSTEM INSTRUCTION:\nAnswer accurately and clearly.' }] },
+        { role: 'user', parts: [{ text: prompt }] }
+      ],
+      config: { temperature }
+    });
+    return response.text || "";
+  }
+
+  if (provider === 'openai') {
+    const apiKey = getApiKey('openai');
+    if (!apiKey) throw new Error('OpenAI API key not configured');
+    const { baseUrl, model } = getOpenAIConfig();
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: systemPrompt || 'Answer accurately and clearly.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature
+      }),
+      signal
+    });
+    if (!response.ok) {
+      const err = await getStatusErrorText(response, `OpenAI ${response.status}`);
+      throw new Error(err);
+    }
+    const json = await response.json();
+    return json?.choices?.[0]?.message?.content || "";
+  }
+
+  if (provider === 'anthropic') {
+    const apiKey = getApiKey('anthropic');
+    if (!apiKey) throw new Error('Anthropic API key not configured');
+    const { baseUrl, model } = getAnthropicConfig();
+    const response = await fetch(`${baseUrl}/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model,
+        system: systemPrompt || 'Answer accurately and clearly.',
+        messages: [{ role: 'user', content: prompt }],
+        temperature,
+        max_tokens: useFlashLite ? 700 : 1400
+      }),
+      signal
+    });
+    if (!response.ok) {
+      const err = await getStatusErrorText(response, `Anthropic ${response.status}`);
+      throw new Error(err);
+    }
+    const json = await response.json();
+    return joinAnthropicContent(json?.content);
+  }
+
+  const { baseUrl, model } = getOllamaConfig();
+  const response = await fetch(`${baseUrl}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model,
+      stream: false,
+      messages: [
+        { role: 'system', content: systemPrompt || 'Answer accurately and clearly.' },
+        { role: 'user', content: prompt }
+      ],
+      options: { temperature }
+    }),
+    signal
+  });
+  if (!response.ok) {
+    const err = await getStatusErrorText(response, `Ollama ${response.status}`);
+    throw new Error(err);
+  }
+  const json = await response.json();
+  return json?.message?.content || "";
+};
+
+const generateJsonWithProvider = async <T>(
+  prompt: string,
+  fallback: T,
+  signal?: AbortSignal
+): Promise<T> => {
+  const text = await generateTextWithProvider({
+    systemPrompt: 'Return valid JSON only. Do not use markdown fences. No prose.',
+    prompt,
+    temperature: 0.2,
+    signal
+  });
+  return parseJsonSafely<T>(text, fallback);
+};
+
 export const streamChatResponse = async ({
   history,
   newMessage,
@@ -77,6 +554,16 @@ export const streamChatResponse = async ({
   onChunk,
   signal
 }: SendMessageParams) => {
+  const dedupedHistory = [...history];
+  const lastHistoryMessage = dedupedHistory[dedupedHistory.length - 1];
+  if (
+    lastHistoryMessage &&
+    lastHistoryMessage.role === 'user' &&
+    lastHistoryMessage.text.trim() === newMessage.trim()
+  ) {
+    dedupedHistory.pop();
+  }
+
   // 1. Context Construction
   const contextString = files
     .filter(f => f.status === 'ready')
@@ -119,68 +606,113 @@ export const streamChatResponse = async ({
     ${contextString.length > 0 ? contextString : "No files uploaded yet. Rely on general knowledge (or Google Search if enabled)."}
   `;
 
-  if (getProvider() === 'ollama') {
-    return streamWithOllama({
-      history,
-      newMessage,
-      systemPrompt,
-      onChunk,
-      signal
-    });
-  }
-
-  const aiClient = getGoogleClient();
-  if (!aiClient) {
-    onChunk("\n[System Error: AI provider not configured]");
-    return;
-  }
-
-  // 5. Prompt Construction
-  const contents = history.map(msg => ({
-    role: msg.role,
-    parts: [{ text: msg.text }]
-  }));
-
-  const newParts: any[] = [{ text: newMessage }];
-  if (imageAttachment) {
-    const mimeType = imageAttachment.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
-    const cleanBase64 = imageAttachment.split(',')[1];
-    newParts.push({ inlineData: { mimeType, data: cleanBase64 } });
-  }
-
-  const fullPromptParts = [
-      { role: 'user', parts: [{ text: `SYSTEM INSTRUCTION:\n${systemPrompt}` }] },
-      ...contents,
-      { role: 'user', parts: newParts }
-  ];
-
-  // 6. Model Config
-  let modelName = 'gemini-3-flash-preview';
-  if (useFlashLite) modelName = 'gemini-flash-lite-latest';
-
-  const tools: any[] = [];
-  if (useSearch) tools.push({ googleSearch: {} });
-
-  const config: any = {
-    temperature: agentRole === 'EXAMINER' ? 0.2 : 0.7,
-    tools: tools.length > 0 ? tools : undefined,
-  };
-
-  if (useThinking && !useFlashLite) {
-    config.thinkingConfig = { thinkingBudget: 2048 }; 
-  }
+  const provider = getResolvedProvider();
+  const temperature = agentRole === 'EXAMINER' ? 0.2 : 0.7;
 
   try {
+    if (provider === 'ollama') {
+      return streamWithOllama({
+        history: dedupedHistory,
+        newMessage,
+        systemPrompt,
+        onChunk,
+        signal
+      });
+    }
+
+    if (provider === 'openai') {
+      const messages = [
+        { role: 'system', content: systemPrompt.trim() },
+        ...dedupedHistory.map((m) => ({ role: m.role === 'model' ? 'assistant' : 'user', content: m.text })),
+        {
+          role: 'user',
+          content: imageAttachment
+            ? [
+                { type: 'text', text: newMessage },
+                { type: 'image_url', image_url: { url: imageAttachment } }
+              ]
+            : newMessage
+        }
+      ];
+
+      await streamOpenAISSE({
+        messages,
+        onChunk,
+        signal,
+        temperature
+      });
+      return;
+    }
+
+    if (provider === 'anthropic') {
+      const imagePart = imageAttachment ? parseDataUrl(imageAttachment) : null;
+      const messages = [
+        ...dedupedHistory.map((m) => ({ role: m.role === 'model' ? 'assistant' : 'user', content: m.text })),
+        {
+          role: 'user',
+          content: imagePart
+            ? [
+                { type: 'text', text: newMessage },
+                { type: 'image', source: { type: 'base64', media_type: imagePart.mimeType, data: imagePart.data } }
+              ]
+            : [{ type: 'text', text: newMessage }]
+        }
+      ];
+
+      await streamAnthropicSSE({
+        systemPrompt,
+        messages,
+        onChunk,
+        signal,
+        temperature,
+        useFlashLite
+      });
+      return;
+    }
+
+    const aiClient = getGoogleClient();
+    if (!aiClient) {
+      onChunk("\n[System Error: AI provider not configured]");
+      return;
+    }
+
+    const contents = dedupedHistory.map(msg => ({
+      role: msg.role,
+      parts: [{ text: msg.text }]
+    }));
+
+    const newParts: any[] = [{ text: newMessage }];
+    if (imageAttachment) {
+      const imagePart = parseDataUrl(imageAttachment);
+      if (imagePart) newParts.push({ inlineData: imagePart });
+    }
+
+    const fullPromptParts = [
+        { role: 'user', parts: [{ text: `SYSTEM INSTRUCTION:\n${systemPrompt}` }] },
+        ...contents,
+        { role: 'user', parts: newParts }
+    ];
+
+    const tools: any[] = [];
+    if (useSearch) tools.push({ googleSearch: {} });
+
+    const config: any = {
+      temperature,
+      tools: tools.length > 0 ? tools : undefined,
+    };
+
+    if (useThinking && !useFlashLite) {
+      config.thinkingConfig = { thinkingBudget: 2048 };
+    }
+
     const responseStream = await aiClient.models.generateContentStream({
-      model: modelName,
+      model: getGoogleModel(useFlashLite),
       contents: fullPromptParts,
-      config: config
+      config
     });
 
     for await (const chunk of responseStream) {
-      if (signal?.aborted) {
-        break;
-      }
+      if (signal?.aborted) break;
       const text = chunk.text;
       const groundingChunks = chunk.candidates?.[0]?.groundingMetadata?.groundingChunks;
       if (text) onChunk(text, groundingChunks);
@@ -190,27 +722,22 @@ export const streamChatResponse = async ({
       onChunk("\n\n[Generation stopped by user]");
       return;
     }
-    console.error("Gemini Error:", error);
-    onChunk(`\n[System Error: ${error.message || "Failed to generate response"}]`);
+    const providerLabel = provider === 'google' ? 'Gemini' : provider[0].toUpperCase() + provider.slice(1);
+    console.error(`${providerLabel} Error:`, error);
+    onChunk(`\n[System Error: ${error?.message || "Failed to generate response"}]`);
   }
 };
 
 // --- PHASE 8 SERVICES ---
 
 export const generateKnowledgeGraph = async (files: FileDocument[]): Promise<KnowledgeNode[]> => {
-  if (!isGoogleProvider()) {
-    return buildLocalKnowledgeGraph(files);
-  }
-
-  const aiClient = getGoogleClient();
-  if (!aiClient) {
-    return buildLocalKnowledgeGraph(files);
-  }
   if (files.length === 0) return [];
 
-  const contextString = files
+  const readyFiles = files
     .filter(f => f.status === 'ready')
-    .slice(0, 3) // Limit to 3 files to avoid context overflow in demo
+    .slice(0, 3); // keep prompt bounded for all providers
+
+  const contextString = readyFiles
     .map(f => `--- FILE: ${f.name} ---\n${f.content.substring(0, 2000)}`) // First 2000 chars
     .join("\n\n");
 
@@ -219,6 +746,24 @@ export const generateKnowledgeGraph = async (files: FileDocument[]): Promise<Kno
     Return JSON format: [{ "id": "1", "label": "Concept Name", "category": "Category", "connections": ["2", "3"] }]
     Assign mastery strictly as 50 (default).
   `;
+
+  if (!isGoogleProvider()) {
+    try {
+      const fallback = buildLocalKnowledgeGraph(files);
+      const generated = await generateJsonWithProvider<KnowledgeNode[]>(
+        `SOURCE MATERIAL:\n${contextString}\n\nTASK:\n${prompt}`,
+        fallback
+      );
+      return Array.isArray(generated) && generated.length > 0 ? generated : fallback;
+    } catch {
+      return buildLocalKnowledgeGraph(files);
+    }
+  }
+
+  const aiClient = getGoogleClient();
+  if (!aiClient) {
+    return buildLocalKnowledgeGraph(files);
+  }
 
   try {
     const response = await aiClient.models.generateContent({
@@ -253,13 +798,6 @@ export const generateKnowledgeGraph = async (files: FileDocument[]): Promise<Kno
 };
 
 export const generateMetaAnalysis = async (history: Message[]): Promise<MetaInsight[]> => {
-  if (!isGoogleProvider()) {
-    return buildLocalMetaInsights(history);
-  }
-
-  const aiClient = getGoogleClient();
-  if (!aiClient) return [];
-  
   const userMessages = history.filter(m => m.role === 'user').map(m => m.text).join("\n");
   if (!userMessages) return [];
 
@@ -271,6 +809,22 @@ export const generateMetaAnalysis = async (history: Message[]): Promise<MetaInsi
     
     Return 3 insights in JSON.
   `;
+
+  if (!isGoogleProvider()) {
+    const fallback = buildLocalMetaInsights(history);
+    try {
+      const generated = await generateJsonWithProvider<MetaInsight[]>(
+        `CHAT HISTORY:\n${userMessages}\n\nTASK:\n${prompt}`,
+        fallback
+      );
+      return Array.isArray(generated) && generated.length > 0 ? generated : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  const aiClient = getGoogleClient();
+  if (!aiClient) return [];
 
   try {
     const response = await aiClient.models.generateContent({
@@ -299,41 +853,50 @@ export const generateMetaAnalysis = async (history: Message[]): Promise<MetaInsi
 };
 
 export const generateCognitiveExercises = async (): Promise<CognitiveExercise[]> => {
-    if (!isGoogleProvider()) return buildLocalCognitiveExercises();
-    const aiClient = getGoogleClient();
-    if (!aiClient) return [];
-    
-    const prompt = `
-        Generate 3 abstract cognitive exercises to train reasoning skills (not subject specific).
-        Topics: Logical Fallacies, First Principles, Analogical Reasoning.
-        Return JSON.
-    `;
+  const prompt = `
+      Generate 3 abstract cognitive exercises to train reasoning skills (not subject specific).
+      Topics: Logical Fallacies, First Principles, Analogical Reasoning.
+      Return JSON.
+  `;
 
+  if (!isGoogleProvider()) {
+    const fallback = buildLocalCognitiveExercises();
     try {
-        const response = await aiClient.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: "ARRAY",
-                    items: {
-                        type: "OBJECT",
-                        properties: {
-                            id: { type: "STRING" },
-                            title: { type: "STRING" },
-                            skill: { type: "STRING", enum: ["LOGIC", "FIRST_PRINCIPLES", "ARGUMENTATION", "LATERAL_THINKING"] },
-                            description: { type: "STRING" },
-                            difficulty: { type: "STRING", enum: ["Novice", "Adept", "Master"] }
-                        }
-                    }
-                }
-            }
-        });
-        return JSON.parse(response.text || "[]");
-    } catch (e) {
-        return [];
+      const generated = await generateJsonWithProvider<CognitiveExercise[]>(prompt, fallback);
+      return Array.isArray(generated) && generated.length > 0 ? generated : fallback;
+    } catch {
+      return fallback;
     }
+  }
+
+  const aiClient = getGoogleClient();
+  if (!aiClient) return [];
+
+  try {
+    const response = await aiClient.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "ARRAY",
+          items: {
+            type: "OBJECT",
+            properties: {
+              id: { type: "STRING" },
+              title: { type: "STRING" },
+              skill: { type: "STRING", enum: ["LOGIC", "FIRST_PRINCIPLES", "ARGUMENTATION", "LATERAL_THINKING"] },
+              description: { type: "STRING" },
+              difficulty: { type: "STRING", enum: ["Novice", "Adept", "Master"] }
+            }
+          }
+        }
+      }
+    });
+    return JSON.parse(response.text || "[]");
+  } catch (e) {
+    return [];
+  }
 }
 
 
@@ -343,13 +906,6 @@ export const generateExamPaper = async (
   topic: string,
   files: FileDocument[]
 ): Promise<Question[]> => {
-  if (!isGoogleProvider()) {
-    return buildLocalExamPaper(topic, files);
-  }
-
-  const aiClient = getGoogleClient();
-  if (!aiClient) throw new Error("AI Client not initialized");
-
   // Re-use game engine logic but ask for a "Paper" structure
   const contextString = files
     .filter(f => f.status === 'ready')
@@ -362,6 +918,22 @@ export const generateExamPaper = async (
     Assign marks (e.g., [1 mark], [4 marks]).
     Return JSON.
   `;
+
+  if (!isGoogleProvider()) {
+    const fallback = buildLocalExamPaper(topic, files);
+    try {
+      const generated = await generateJsonWithProvider<Question[]>(
+        `CONTEXT:\n${contextString}\n\nTASK:\n${prompt}`,
+        fallback
+      );
+      return Array.isArray(generated) && generated.length > 0 ? generated : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  const aiClient = getGoogleClient();
+  if (!aiClient) throw new Error("AI Client not initialized");
 
   try {
     const response = await aiClient.models.generateContent({
@@ -410,8 +982,6 @@ export const generateGameQuestions = async (
   files: FileDocument[],
   count: number = 3
 ): Promise<Question[]> => {
-  if (!aiClient) throw new Error("AI Client not initialized");
-
   const contextString = files
     .filter(f => f.status === 'ready')
     .map(f => `--- FILE START: ${f.name} ---\n${f.content}\n--- FILE END ---`)
@@ -438,6 +1008,22 @@ export const generateGameQuestions = async (
     Assign marks (e.g., [1 mark], [4 marks]).
     Return JSON.
   `;
+
+  if (!isGoogleProvider()) {
+    const fallback = buildLocalExamPaper(topic, files).slice(0, count);
+    try {
+      const generated = await generateJsonWithProvider<Question[]>(
+        `CONTEXT:\n${contextString}\n\nTASK:\n${prompt}`,
+        fallback
+      );
+      return Array.isArray(generated) && generated.length > 0 ? generated : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  const aiClient = getGoogleClient();
+  if (!aiClient) throw new Error("AI Client not initialized");
 
   try {
     const response = await aiClient.models.generateContent({
@@ -485,13 +1071,6 @@ export const gradeOpenEndedAnswer = async (
   markScheme: string[],
   files: FileDocument[]
 ): Promise<{ score: number; maxScore: number; feedback: string }> => {
-  if (!isGoogleProvider()) {
-    return gradeOpenEndedAnswerLocally(question, userAnswer, markScheme);
-  }
-
-  const aiClient = getGoogleClient();
-  if (!aiClient) throw new Error("AI Client not initialized");
-
   const prompt = `
     You are a strict Examiner. Grade this student response.
     
@@ -504,6 +1083,25 @@ export const gradeOpenEndedAnswer = async (
     2. Provide constructive feedback on what was missed.
     3. Be encouraging but strict on terminology.
   `;
+
+  if (!isGoogleProvider()) {
+    const fallback = gradeOpenEndedAnswerLocally(question, userAnswer, markScheme);
+    try {
+      const generated = await generateJsonWithProvider<{ score: number; maxScore: number; feedback: string }>(
+        prompt,
+        fallback
+      );
+      const score = Number.isFinite(generated?.score) ? generated.score : fallback.score;
+      const maxScore = Number.isFinite(generated?.maxScore) ? generated.maxScore : fallback.maxScore;
+      const feedback = typeof generated?.feedback === 'string' && generated.feedback.trim() ? generated.feedback : fallback.feedback;
+      return { score, maxScore, feedback };
+    } catch {
+      return fallback;
+    }
+  }
+
+  const aiClient = getGoogleClient();
+  if (!aiClient) throw new Error("AI Client not initialized");
 
   try {
     const response = await aiClient.models.generateContent({
@@ -533,6 +1131,13 @@ export const gradeOpenEndedAnswer = async (
 
 // --- GENERATIVE MEDIA ---
 
+const encodeBase64 = (value: string): string => {
+  if (typeof btoa === 'function') return btoa(value);
+  // Node test/runtime fallback
+  if (typeof Buffer !== 'undefined') return Buffer.from(value, 'utf-8').toString('base64');
+  return '';
+};
+
 const buildPlaceholderImage = (prompt: string) => {
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='675' viewBox='0 0 1200 675'>
     <defs>
@@ -545,13 +1150,49 @@ const buildPlaceholderImage = (prompt: string) => {
     <text x='50%' y='45%' fill='white' font-family='Inter,Arial,sans-serif' font-size='46' font-weight='700' text-anchor='middle'>AI image placeholder</text>
     <text x='50%' y='57%' fill='white' opacity='0.8' font-family='Inter,Arial,sans-serif' font-size='26' text-anchor='middle'>${prompt.replace(/'/g, '')}</text>
   </svg>`;
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
+  return `data:image/svg+xml;base64,${encodeBase64(svg)}`;
 };
 
 export const generateImage = async (prompt: string): Promise<string> => {
-  if (!isGoogleProvider()) {
-    return buildPlaceholderImage(prompt);
+  const provider = getResolvedProvider();
+
+  if (provider === 'openai') {
+    try {
+      const apiKey = getApiKey('openai');
+      if (!apiKey) return buildPlaceholderImage(prompt);
+      const { baseUrl, imageModel } = getOpenAIConfig();
+      const response = await fetch(`${baseUrl}/images/generations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: imageModel,
+          prompt,
+          size: '1024x1024'
+        })
+      });
+
+      if (!response.ok) {
+        const err = await getStatusErrorText(response, `OpenAI image ${response.status}`);
+        console.error('OpenAI image error', err);
+        return buildPlaceholderImage(prompt);
+      }
+
+      const data = await response.json();
+      const item = data?.data?.[0];
+      if (item?.b64_json) return `data:image/png;base64,${item.b64_json}`;
+      if (item?.url) return item.url;
+      return buildPlaceholderImage(prompt);
+    } catch (e) {
+      console.error('OpenAI image gen error', e);
+      return buildPlaceholderImage(prompt);
+    }
   }
+
+  if (provider !== 'google') return buildPlaceholderImage(prompt);
+
   const aiClient = getGoogleClient();
   if (!aiClient) return buildPlaceholderImage(prompt);
 
@@ -586,7 +1227,20 @@ export const generateVideoPlan = async (prompt: string): Promise<VideoPlan> => {
     ]
   };
 
-  if (!isGoogleProvider()) return fallback;
+  if (!isGoogleProvider()) {
+    try {
+      const generated = await generateJsonWithProvider<VideoPlan>(
+        `Build a concise video storyboard for a learning or motivation clip.
+Prompt: ${prompt}
+Return JSON with keys: title, hook, durationSeconds, coverPrompt, callToAction, shots (id,title,visual,voiceover,durationSeconds).`,
+        fallback
+      );
+      if (generated?.shots?.length) return generated;
+      return fallback;
+    } catch {
+      return fallback;
+    }
+  }
   const aiClient = getGoogleClient();
   if (!aiClient) return fallback;
 
