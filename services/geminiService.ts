@@ -108,21 +108,45 @@ const getEnvApiKey = (provider: KeyedProvider): string => {
   return process.env.ANTHROPIC_API_KEY || "";
 };
 
+const looksLikeGoogleApiKey = (value: string): boolean => /^AIza[A-Za-z0-9_-]{16,}$/.test(value.trim());
+
 const getApiKey = (provider: KeyedProvider): string => {
   ensureRuntimeHydrated();
-  if (runtimeApiKeys[provider]) return runtimeApiKeys[provider];
+  if (runtimeApiKeys[provider]) {
+    if (provider !== 'google') return runtimeApiKeys[provider];
+
+    const runtimeGoogleKey = runtimeApiKeys.google.trim();
+    if (looksLikeGoogleApiKey(runtimeGoogleKey)) return runtimeGoogleKey;
+
+    const envGoogleKey = getEnvApiKey('google').trim();
+    if (looksLikeGoogleApiKey(envGoogleKey)) return envGoogleKey;
+
+    return runtimeGoogleKey;
+  }
   return getEnvApiKey(provider);
 };
 
 const isProviderConfigured = (provider: KeyedProvider): boolean => getApiKey(provider).length > 0;
 
-const getResolvedProvider = (): Exclude<ModelProvider, 'auto'> => {
-  const preferred = getPreferredProvider();
-  if (preferred !== 'auto') return preferred;
-
+const getFirstConfiguredCloudProvider = (): KeyedProvider | null => {
   if (isProviderConfigured('google')) return 'google';
   if (isProviderConfigured('openai')) return 'openai';
   if (isProviderConfigured('anthropic')) return 'anthropic';
+  return null;
+};
+
+const getResolvedProvider = (): Exclude<ModelProvider, 'auto'> => {
+  const preferred = getPreferredProvider();
+  const firstConfigured = getFirstConfiguredCloudProvider();
+
+  if (preferred !== 'auto') {
+    if (preferred === 'ollama') return 'ollama';
+    if (isProviderConfigured(preferred)) return preferred;
+    if (firstConfigured) return firstConfigured;
+    return 'ollama';
+  }
+
+  if (firstConfigured) return firstConfigured;
   return 'ollama';
 };
 

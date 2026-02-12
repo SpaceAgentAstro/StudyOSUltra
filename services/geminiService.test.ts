@@ -21,6 +21,7 @@ import {
   generateExamPaper,
   gradeOpenEndedAnswer,
   generateKnowledgeGraph,
+  getProviderRuntimeStatus,
   setRuntimeProvider,
   setRuntimeApiKeyForProvider
 } from './geminiService';
@@ -386,6 +387,69 @@ describe('geminiService', () => {
       });
 
       expect(mockGoogleGenAI).toHaveBeenCalledWith({ apiKey: 'gemini-priority-key' });
+    });
+
+    it('uses env Gemini key when stored runtime Google key is not API-key-shaped', async () => {
+      const mockStream = {
+        [Symbol.asyncIterator]: async function* () {
+          yield { text: 'OK' };
+        }
+      };
+      mockGenerateContentStream.mockResolvedValueOnce(mockStream);
+
+      process.env.GEMINI_API_KEY = 'AIzaSyD1234567890abcdefTESTKEY';
+      setRuntimeApiKeyForProvider('google', 'non-gemini-runtime-key');
+      setRuntimeProvider('google');
+
+      await streamChatResponse({
+        history: [],
+        newMessage: 'Hi',
+        files: [],
+        mode: 'tutor',
+        onChunk: vi.fn()
+      });
+
+      expect(mockGoogleGenAI).toHaveBeenCalledWith({ apiKey: 'AIzaSyD1234567890abcdefTESTKEY' });
+    });
+
+    it('falls back from unconfigured preferred provider to configured Google in auto-resolution', async () => {
+      const onChunk = vi.fn();
+      const mockStream = {
+        [Symbol.asyncIterator]: async function* () {
+          yield { text: 'fallback-ok' };
+        }
+      };
+      mockGenerateContentStream.mockResolvedValueOnce(mockStream);
+
+      process.env.GEMINI_API_KEY = 'gemini-fallback-key';
+      setRuntimeProvider('openai'); // preferred but unconfigured
+      setRuntimeApiKeyForProvider('openai', '');
+      setRuntimeApiKeyForProvider('google', '');
+
+      await streamChatResponse({
+        history: [],
+        newMessage: 'Hi',
+        files: [],
+        mode: 'tutor',
+        onChunk
+      });
+
+      expect(mockGoogleGenAI).toHaveBeenCalledWith({ apiKey: 'gemini-fallback-key' });
+      expect(onChunk).toHaveBeenCalledWith('fallback-ok', undefined);
+      expect(onChunk).not.toHaveBeenCalledWith('\n[System Error: OpenAI API key not configured]');
+    });
+
+    it('reports resolved provider as Google when preferred OpenAI is unconfigured', () => {
+      process.env.GEMINI_API_KEY = 'gemini-status-key';
+      setRuntimeProvider('openai');
+      setRuntimeApiKeyForProvider('openai', '');
+      setRuntimeApiKeyForProvider('google', '');
+
+      const status = getProviderRuntimeStatus();
+      expect(status.preferred).toBe('openai');
+      expect(status.resolved).toBe('google');
+      expect(status.configured.google).toBe(true);
+      expect(status.configured.openai).toBe(false);
     });
   });
 });
