@@ -22,6 +22,14 @@ View your app in AI Studio: https://ai.studio/apps/drive/1TGK1USmkBKq8bi_Q5nRH98
 
 The in-app provider switcher supports `Auto`, `Gemini`, `OpenAI`, `Anthropic`, and `Ollama`.
 
+## GitHub Pages
+
+This repo serves Pages from `docs/`. To publish the actual app (not markdown docs):
+
+1. Build and publish to `docs/`:
+   `npm run build:pages`
+2. Commit and push the updated `docs/` contents.
+
 ## Codex Skills Integration
 
 This app includes a `Codex Skills` dashboard view backed by `public/codex-skills.json`.

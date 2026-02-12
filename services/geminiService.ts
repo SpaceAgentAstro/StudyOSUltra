@@ -5,6 +5,15 @@ import { SYSTEM_INSTRUCTION_BASE, AGENT_PERSONAS } from "../constants";
 
 export type ModelProvider = 'auto' | 'google' | 'openai' | 'anthropic' | 'ollama';
 type KeyedProvider = Exclude<ModelProvider, 'auto' | 'ollama'>;
+type ApiKeySource = 'runtime' | 'env' | 'none';
+
+export interface ProviderRuntimeStatus {
+  preferred: ModelProvider;
+  resolved: Exclude<ModelProvider, 'auto'>;
+  configured: Record<KeyedProvider | 'ollama', boolean>;
+  keySource: Record<KeyedProvider, ApiKeySource>;
+  ollama: { baseUrl: string; model: string };
+}
 
 const STORAGE_KEYS = {
   legacyGoogleApiKey: 'study_os_api_key',
@@ -89,10 +98,7 @@ const getPreferredProvider = (): ModelProvider => {
   return normalizeProvider(runtimeProvider || process.env.MODEL_PROVIDER || 'auto');
 };
 
-const getApiKey = (provider: KeyedProvider): string => {
-  ensureRuntimeHydrated();
-  if (runtimeApiKeys[provider]) return runtimeApiKeys[provider];
-
+const getEnvApiKey = (provider: KeyedProvider): string => {
   if (provider === 'google') {
     return process.env.JULES_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY || "";
   }
@@ -100,6 +106,12 @@ const getApiKey = (provider: KeyedProvider): string => {
     return process.env.OPENAI_API_KEY || "";
   }
   return process.env.ANTHROPIC_API_KEY || "";
+};
+
+const getApiKey = (provider: KeyedProvider): string => {
+  ensureRuntimeHydrated();
+  if (runtimeApiKeys[provider]) return runtimeApiKeys[provider];
+  return getEnvApiKey(provider);
 };
 
 const isProviderConfigured = (provider: KeyedProvider): boolean => getApiKey(provider).length > 0;
@@ -115,6 +127,33 @@ const getResolvedProvider = (): Exclude<ModelProvider, 'auto'> => {
 };
 
 const isGoogleProvider = () => getResolvedProvider() === "google" && isProviderConfigured('google');
+
+const getApiKeySource = (provider: KeyedProvider): ApiKeySource => {
+  ensureRuntimeHydrated();
+  if (runtimeApiKeys[provider]) return 'runtime';
+  if (getEnvApiKey(provider)) return 'env';
+  return 'none';
+};
+
+export const getProviderRuntimeStatus = (): ProviderRuntimeStatus => {
+  const ollama = getOllamaConfig();
+  return {
+    preferred: getPreferredProvider(),
+    resolved: getResolvedProvider(),
+    configured: {
+      google: isProviderConfigured('google'),
+      openai: isProviderConfigured('openai'),
+      anthropic: isProviderConfigured('anthropic'),
+      ollama: Boolean(ollama.baseUrl && ollama.model)
+    },
+    keySource: {
+      google: getApiKeySource('google'),
+      openai: getApiKeySource('openai'),
+      anthropic: getApiKeySource('anthropic')
+    },
+    ollama
+  };
+};
 
 export const setRuntimeProvider = (provider: string | null | undefined) => {
   const next = normalizeProvider(provider);
