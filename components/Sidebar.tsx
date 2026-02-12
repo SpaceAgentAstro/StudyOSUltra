@@ -1,14 +1,27 @@
 
 import React from 'react';
-import { AppView } from '../types';
+import { AppView, AuthIdentity } from '../types';
 import { Brain, MessageSquare, BookOpen, UploadCloud, Trophy, Zap, FileText, Network, Activity, Layers, Image as ImageIcon, Compass } from './Icons';
 
 interface SidebarProps {
   currentView: AppView;
   setView: (view: AppView) => void;
+  authUser: AuthIdentity | null;
+  guestMode: boolean;
+  authBusy?: boolean;
+  onSignOut: () => void | Promise<void>;
+  onSwitchToSignIn: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
+const Sidebar: React.FC<SidebarProps> = ({
+  currentView,
+  setView,
+  authUser,
+  guestMode,
+  authBusy = false,
+  onSignOut,
+  onSwitchToSignIn,
+}) => {
   const menuItems = [
     { id: AppView.DASHBOARD, label: 'Dashboard', icon: Brain },
     { id: AppView.CODEX_SKILLS, label: 'Codex Skills', icon: Compass },
@@ -50,12 +63,49 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
         ))}
       </nav>
 
-      <div className="p-4 border-t border-slate-800">
+      <div className="p-4 border-t border-slate-800 space-y-3">
         <div className="bg-slate-800/50 rounded-lg p-3">
           <p className="text-xs text-slate-400 hidden md:block mb-2">Study Streak</p>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
             <span className="text-sm font-bold hidden md:block">Day 1</span>
+          </div>
+        </div>
+
+        <div className="bg-slate-800/60 rounded-lg p-3">
+          {authUser ? (
+            <>
+              <p className="text-xs text-slate-400 hidden md:block">Signed in</p>
+              <p className="text-sm font-semibold text-slate-100 hidden md:block truncate">
+                {authUser.displayName || authUser.email || 'Study OS User'}
+              </p>
+              <p className="text-xs text-slate-500 hidden md:block truncate">
+                {authUser.email || authUser.providerId || 'Connected account'}
+              </p>
+              <button
+                type="button"
+                disabled={authBusy}
+                onClick={onSignOut}
+                className="mt-3 w-full rounded-lg border border-slate-600 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {authBusy ? 'Signing out...' : 'Sign Out'}
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-slate-400 hidden md:block">Guest session</p>
+              <p className="text-sm font-semibold text-slate-100 hidden md:block">Local mode</p>
+              <button
+                type="button"
+                onClick={onSwitchToSignIn}
+                className="mt-3 w-full rounded-lg border border-slate-600 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-700"
+              >
+                Sign In
+              </button>
+            </>
+          )}
+          <div className="md:hidden text-center text-xs text-slate-300 font-semibold">
+            {guestMode ? 'Guest' : 'Account'}
           </div>
         </div>
       </div>
