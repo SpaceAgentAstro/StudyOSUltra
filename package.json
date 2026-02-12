@@ -8,6 +8,7 @@
     "build": "vite build",
     "build:pages": "npm run build && node scripts/publish-github-pages.js",
     "preview": "vite preview",
+    "test": "vitest run",
     "debug:agent": "node scripts/debug-agent.js",
     "sync:skills": "node scripts/sync-codex-skills.js"
   },
