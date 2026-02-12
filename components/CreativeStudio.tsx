@@ -135,7 +135,7 @@ const CreativeStudio: React.FC = () => {
         </div>
         <h1 className="text-3xl font-bold text-slate-900">Creative Studio</h1>
         <p className="text-slate-600 max-w-3xl">
-          Ship visuals, storyboards, and spoken feedback without leaving Study OS. Powered by Gemini media APIs with in-browser voice.
+          Ship visuals, storyboards, and spoken feedback without leaving Study OS. Powered by your active AI provider with in-browser voice.
         </p>
       </header>
 
