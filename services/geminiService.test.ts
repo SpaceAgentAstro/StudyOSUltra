@@ -16,12 +16,22 @@ vi.mock('@google/genai', () => ({
   GoogleGenAI: mockGoogleGenAI
 }));
 
-import { streamChatResponse, generateExamPaper, gradeOpenEndedAnswer, generateKnowledgeGraph } from './geminiService';
+import {
+  streamChatResponse,
+  generateExamPaper,
+  gradeOpenEndedAnswer,
+  generateKnowledgeGraph,
+  setRuntimeProvider,
+  setRuntimeApiKeyForProvider
+} from './geminiService';
 
 describe('geminiService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.API_KEY = 'test-key';
+    setRuntimeProvider('auto');
+    setRuntimeApiKeyForProvider('openai', '');
+    setRuntimeApiKeyForProvider('anthropic', '');
   });
 
   describe('gradeOpenEndedAnswer', () => {
@@ -312,6 +322,44 @@ describe('geminiService', () => {
       );
 
       consoleErrorSpy.mockRestore();
+    });
+
+    it('maps Anthropic billing errors to a friendly message', async () => {
+      const onChunk = vi.fn();
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 402,
+        text: async () => JSON.stringify({
+          type: 'error',
+          error: {
+            type: 'invalid_request_error',
+            message: 'Your credit balance is too low to access the Anthropic API.'
+          }
+        })
+      });
+      const originalFetch = globalThis.fetch;
+      // @ts-ignore
+      globalThis.fetch = fetchMock;
+
+      setRuntimeProvider('anthropic');
+      setRuntimeApiKeyForProvider('anthropic', 'anthropic-test-key');
+
+      try {
+        await streamChatResponse({
+          history: [],
+          newMessage: 'Hi',
+          files: [],
+          mode: 'tutor',
+          onChunk
+        });
+
+        expect(onChunk).toHaveBeenCalledWith(
+          '\n[System Error: Anthropic billing limit reached. Add credits or update billing, then retry.]'
+        );
+      } finally {
+        // @ts-ignore
+        globalThis.fetch = originalFetch;
+      }
     });
   });
 });
