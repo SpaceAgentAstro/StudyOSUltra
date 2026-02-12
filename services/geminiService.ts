@@ -298,6 +298,18 @@ const toDisplayError = (provider: Exclude<ModelProvider, 'auto'>, error: unknown
     return `${providerLabel} authentication failed. Please verify your API key and provider settings.`;
   }
 
+  if (
+    (provider === 'openai' || provider === 'anthropic') &&
+    (
+      normalized.includes('credit balance is too low') ||
+      normalized.includes('insufficient_quota') ||
+      normalized.includes('quota exceeded') ||
+      normalized.includes('billing')
+    )
+  ) {
+    return `${providerLabel} billing limit reached. Add credits or update billing, then retry.`;
+  }
+
   return message;
 };
 
@@ -385,7 +397,7 @@ const streamOpenAISSE = async ({
 
   if (!response.ok) {
     const err = await getStatusErrorText(response, `OpenAI ${response.status}`);
-    onChunk(`\n[System Error: ${err}]`);
+    onChunk(`\n[System Error: ${toDisplayError('openai', err)}]`);
     return;
   }
 
@@ -471,7 +483,7 @@ const streamAnthropicSSE = async ({
 
   if (!response.ok) {
     const err = await getStatusErrorText(response, `Anthropic ${response.status}`);
-    onChunk(`\n[System Error: ${err}]`);
+    onChunk(`\n[System Error: ${toDisplayError('anthropic', err)}]`);
     return;
   }
 
