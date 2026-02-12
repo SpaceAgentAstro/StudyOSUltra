@@ -73,10 +73,10 @@ describe('Utility Functions', () => {
     });
 
     it('returns error for file exceeding size limit', () => {
-      const file = { name: 'large.pdf', size: 6 * 1024 * 1024 } as File;
+      const file = { name: 'large.pdf', size: 501 * 1024 * 1024 } as File;
       const result = validateFile(file);
       expect(result.isValid).toBe(false);
-      expect(result.error).toContain('exceeds the 5MB size limit');
+      expect(result.error).toContain('exceeds the 500MB size limit');
     });
 
     it('is case-insensitive for extensions', () => {
