@@ -100,7 +100,7 @@ const getPreferredProvider = (): ModelProvider => {
 
 const getEnvApiKey = (provider: KeyedProvider): string => {
   if (provider === 'google') {
-    return process.env.JULES_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY || "";
+    return process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.JULES_API_KEY || "";
   }
   if (provider === 'openai') {
     return process.env.OPENAI_API_KEY || "";
