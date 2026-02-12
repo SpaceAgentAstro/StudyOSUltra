@@ -25,6 +25,16 @@ export interface Message {
   isThinking?: boolean;
 }
 
+export type AuthProviderOption = 'google' | 'microsoft' | 'apple';
+
+export interface AuthIdentity {
+  uid: string;
+  displayName: string | null;
+  email: string | null;
+  photoURL: string | null;
+  providerId: string | null;
+}
+
 export interface Citation {
   sourceId: string;
   sourceName: string;

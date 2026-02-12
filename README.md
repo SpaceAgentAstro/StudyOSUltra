@@ -22,6 +22,24 @@ View your app in AI Studio: https://ai.studio/apps/drive/1TGK1USmkBKq8bi_Q5nRH98
 
 The in-app provider switcher supports `Auto`, `Gemini`, `OpenAI`, `Anthropic`, and `Ollama`.
 
+## Optional: Account Login (Firebase)
+
+Study OS now supports account login/logout with Google, Microsoft, and Apple via Firebase Auth.
+
+1. Add these keys to `.env.local`:
+   - `FIREBASE_API_KEY`
+   - `FIREBASE_AUTH_DOMAIN`
+   - `FIREBASE_PROJECT_ID`
+   - `FIREBASE_APP_ID`
+   - Optional: `FIREBASE_STORAGE_BUCKET`, `FIREBASE_MESSAGING_SENDER_ID`
+2. In Firebase Console, enable providers under `Authentication > Sign-in method`:
+   - Google
+   - Microsoft
+   - Apple
+3. Add your local/dev URL (for example `http://localhost:3000`) to Firebase authorized domains.
+
+If Firebase keys are missing, the app still allows `Continue as Guest`.
+
 ## GitHub Pages
 
 This repo serves Pages from `docs/`. To publish the actual app (not markdown docs):
