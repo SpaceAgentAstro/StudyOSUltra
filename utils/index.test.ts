@@ -54,34 +54,42 @@ describe('Utility Functions', () => {
 
   describe('validateFile', () => {
     it('returns valid for allowed file type and size', () => {
-      const file = { name: 'test.txt', size: 1024 } as File;
+      const file = { name: 'test.txt', size: 1024, type: 'text/plain' } as File;
       expect(validateFile(file)).toEqual({ isValid: true });
     });
 
     it('returns error for invalid file extension', () => {
-      const file = { name: 'test.exe', size: 1024 } as File;
+      const file = { name: 'test.exe', size: 1024, type: 'application/x-msdownload' } as File;
       const result = validateFile(file);
       expect(result.isValid).toBe(false);
       expect(result.error).toContain('Invalid file type: .exe');
     });
 
     it('returns error for file without extension', () => {
-      const file = { name: 'testfile', size: 1024 } as File;
+      const file = { name: 'testfile', size: 1024, type: 'text/plain' } as File;
       const result = validateFile(file);
       expect(result.isValid).toBe(false);
       expect(result.error).toContain('no extension');
     });
 
     it('returns error for file exceeding size limit', () => {
-      const file = { name: 'large.pdf', size: 6 * 1024 * 1024 } as File;
+      const file = { name: 'large.pdf', size: 6 * 1024 * 1024, type: 'application/pdf' } as File;
       const result = validateFile(file);
       expect(result.isValid).toBe(false);
       expect(result.error).toContain('exceeds the 5MB size limit');
     });
 
     it('is case-insensitive for extensions', () => {
-      const file = { name: 'TEST.PDF', size: 1024 } as File;
+      const file = { name: 'TEST.PDF', size: 1024, type: 'application/pdf' } as File;
       expect(validateFile(file)).toEqual({ isValid: true });
+    });
+
+    it('returns error for mismatched MIME type', () => {
+      // Simulate an XSS attempt via PDF extension but HTML content type
+      const file = { name: 'test.pdf', size: 1024, type: 'text/html' } as File;
+      const result = validateFile(file);
+      expect(result.isValid).toBe(false);
+      expect(result.error).toContain('MIME type mismatch');
     });
   });
 
