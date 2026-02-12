@@ -113,7 +113,7 @@ const App: React.FC = () => {
       case AppView.COGNITIVE_LAB:
         return <CognitiveLab />;
       case AppView.CREATIVE_STUDIO:
-        return <CreativeStudio />;
+        return <CreativeStudio onNavigate={setCurrentView} />;
       case AppView.EXAM_SIMULATOR:
         return <ExamSimulator files={files} />;
       case AppView.SOCIAL_HUB:
