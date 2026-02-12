@@ -410,6 +410,7 @@ export const generateGameQuestions = async (
   files: FileDocument[],
   count: number = 3
 ): Promise<Question[]> => {
+  const aiClient = getGoogleClient();
   if (!aiClient) throw new Error("AI Client not initialized");
 
   const contextString = files
