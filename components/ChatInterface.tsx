@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Message, FileDocument, AgentRole } from '../types';
 import { generateId } from '../utils';
 import { Send, Paperclip, Brain, Image as ImageIcon, Mic, Zap, StopCircle, Loader, Globe, FileText, Volume, Play } from './Icons';
+import { AGENTS } from '../constants';
 
 let geminiServicePromise: Promise<typeof import('../services/geminiService')> | null = null;
 
@@ -18,14 +19,6 @@ interface ChatInterfaceProps {
   initialMessages?: Message[];
   onMessagesChange?: (messages: Message[]) => void;
 }
-
-const AGENTS: {role: AgentRole, label: string, color: string}[] = [
-  { role: 'COUNCIL', label: 'The Council (Auto)', color: 'bg-indigo-600' },
-  { role: 'TEACHER', label: 'Teacher', color: 'bg-emerald-600' },
-  { role: 'EXAMINER', label: 'Examiner', color: 'bg-red-600' },
-  { role: 'COACH', label: 'Coach', color: 'bg-amber-500' },
-  { role: 'ANALYST', label: 'Analyst', color: 'bg-blue-600' },
-];
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = [], onMessagesChange }) => {
   const [messages, setMessages] = useState<Message[]>(
