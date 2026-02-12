@@ -243,6 +243,64 @@ const parseDataUrl = (dataUrl: string): { mimeType: string; data: string } | nul
   return { mimeType: match[1], data: match[2] };
 };
 
+const extractNestedErrorMessage = (value: unknown): string | null => {
+  if (!value) return null;
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      return extractNestedErrorMessage(parsed) || trimmed;
+    } catch {
+      return trimmed;
+    }
+  }
+
+  if (value instanceof Error) {
+    return extractNestedErrorMessage(value.message) || value.message;
+  }
+
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+
+    const direct = extractNestedErrorMessage(record.message);
+    if (direct) return direct;
+
+    const nested = record.error as Record<string, unknown> | undefined;
+    if (nested) {
+      const nestedMessage = extractNestedErrorMessage(nested.message);
+      if (nestedMessage) return nestedMessage;
+    }
+  }
+
+  return null;
+};
+
+const toDisplayError = (provider: Exclude<ModelProvider, 'auto'>, error: unknown): string => {
+  const fallback = 'Failed to generate response';
+  const message = extractNestedErrorMessage(error) || fallback;
+  const normalized = message.toLowerCase();
+  const providerLabel = provider === 'google' ? 'Gemini' : provider[0].toUpperCase() + provider.slice(1);
+
+  if (
+    provider === 'google' &&
+    (normalized.includes('api keys are not supported by this api') ||
+      normalized.includes('oauth2 access token') ||
+      normalized.includes('credentials_missing') ||
+      normalized.includes('unauthenticated'))
+  ) {
+    return 'Gemini authentication failed. This endpoint does not accept API keys and requires OAuth credentials. Update Gemini credentials or switch to OpenAI/Anthropic/Ollama.';
+  }
+
+  if (normalized.includes('401') || normalized.includes('unauthenticated') || normalized.includes('invalid api key')) {
+    return `${providerLabel} authentication failed. Please verify your API key and provider settings.`;
+  }
+
+  return message;
+};
+
 const extractJsonText = (raw: string): string | null => {
   if (!raw?.trim()) return null;
   const trimmed = raw.trim();
@@ -763,7 +821,7 @@ export const streamChatResponse = async ({
     }
     const providerLabel = provider === 'google' ? 'Gemini' : provider[0].toUpperCase() + provider.slice(1);
     console.error(`${providerLabel} Error:`, error);
-    onChunk(`\n[System Error: ${error?.message || "Failed to generate response"}]`);
+    onChunk(`\n[System Error: ${toDisplayError(provider, error)}]`);
   }
 };
 

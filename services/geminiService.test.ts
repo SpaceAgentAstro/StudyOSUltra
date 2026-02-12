@@ -280,5 +280,38 @@ describe('geminiService', () => {
 
       consoleErrorSpy.mockRestore();
     });
+
+    it('maps nested Gemini auth errors to a friendly message', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const onChunk = vi.fn();
+      const nestedError = {
+        error: {
+          message: JSON.stringify({
+            error: {
+              code: 401,
+              message: 'API keys are not supported by this API. Expected OAuth2 access token.',
+              status: 'UNAUTHENTICATED'
+            }
+          })
+        }
+      };
+
+      mockGenerateContentStream.mockRejectedValueOnce(nestedError);
+
+      await streamChatResponse({
+        history: [],
+        newMessage: 'Hi',
+        files: [],
+        mode: 'tutor',
+        onChunk
+      });
+
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      expect(onChunk).toHaveBeenCalledWith(
+        `\n[System Error: Gemini authentication failed. This endpoint does not accept API keys and requires OAuth credentials. Update Gemini credentials or switch to OpenAI/Anthropic/Ollama.]`
+      );
+
+      consoleErrorSpy.mockRestore();
+    });
   });
 });
