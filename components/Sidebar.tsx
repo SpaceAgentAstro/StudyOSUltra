@@ -1,7 +1,19 @@
-
-import React from 'react';
-import { AppView, AuthIdentity } from '../types';
-import { Brain, MessageSquare, BookOpen, UploadCloud, Trophy, Zap, FileText, Network, Activity, Layers, Image as ImageIcon, Compass } from './Icons';
+import React from "react";
+import { AppView, AuthIdentity } from "../types";
+import {
+  Brain,
+  MessageSquare,
+  BookOpen,
+  UploadCloud,
+  Trophy,
+  Zap,
+  FileText,
+  Network,
+  Activity,
+  Layers,
+  Image as ImageIcon,
+  Compass,
+} from "./Icons";
 
 interface SidebarProps {
   currentView: AppView;
@@ -23,41 +35,48 @@ const Sidebar: React.FC<SidebarProps> = ({
   onSwitchToSignIn,
 }) => {
   const menuItems = [
-    { id: AppView.DASHBOARD, label: 'Dashboard', icon: Brain },
-    { id: AppView.CODEX_SKILLS, label: 'Codex Skills', icon: Compass },
-    { id: AppView.KNOWLEDGE_UNIVERSE, label: 'Universe', icon: Network }, // New
-    { id: AppView.CHAT, label: 'Council Chat', icon: MessageSquare },
-    { id: AppView.META_LEARNING, label: 'Meta Engine', icon: Activity }, // New
-    { id: AppView.COGNITIVE_LAB, label: 'Skills Lab', icon: Layers }, // New
-    { id: AppView.CREATIVE_STUDIO, label: 'Creative Studio', icon: ImageIcon }, // Media gen
-    { id: AppView.GAME_CENTER, label: 'Game Center', icon: Trophy },
-    { id: AppView.EXAM_SIMULATOR, label: 'Exam Simulator', icon: FileText },
-    { id: AppView.SOCIAL_HUB, label: 'Social Hub', icon: Zap },
-    { id: AppView.FILES, label: 'Sources', icon: UploadCloud },
-    { id: AppView.SYLLABUS, label: 'Syllabus', icon: BookOpen },
+    { id: AppView.DASHBOARD, label: "Dashboard", icon: Brain },
+    { id: AppView.CODEX_SKILLS, label: "Codex Skills", icon: Compass },
+    { id: AppView.KNOWLEDGE_UNIVERSE, label: "Universe", icon: Network }, // New
+    { id: AppView.CHAT, label: "Council Chat", icon: MessageSquare },
+    { id: AppView.META_LEARNING, label: "Meta Engine", icon: Activity }, // New
+    { id: AppView.COGNITIVE_LAB, label: "Skills Lab", icon: Layers }, // New
+    { id: AppView.CREATIVE_STUDIO, label: "Creative Studio", icon: ImageIcon }, // Media gen
+    { id: AppView.GAME_CENTER, label: "Game Center", icon: Trophy },
+    { id: AppView.EXAM_SIMULATOR, label: "Exam Simulator", icon: FileText },
+    { id: AppView.SOCIAL_HUB, label: "Social Hub", icon: Zap },
+    { id: AppView.FILES, label: "Sources", icon: UploadCloud },
+    { id: AppView.SYLLABUS, label: "Syllabus", icon: BookOpen },
   ];
 
   return (
     <div className="w-20 md:w-64 bg-slate-900 text-white flex flex-col h-screen border-r border-slate-800">
       <div className="p-4 md:p-6 flex items-center justify-center md:justify-start gap-3 border-b border-slate-800">
         <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-primary-500/20">
-            <span className="font-bold text-lg">S</span>
+          <span className="font-bold text-lg">S</span>
         </div>
-        <span className="hidden md:block font-bold text-xl tracking-tight">Study OS</span>
+        <span className="hidden md:block font-bold text-xl tracking-tight">
+          Study OS
+        </span>
       </div>
-      
+
       <nav className="flex-1 py-6 px-2 md:px-4 space-y-2 overflow-y-auto">
         {menuItems.map((item) => (
           <button
             key={item.id}
             onClick={() => setView(item.id)}
+            aria-label={item.label}
+            title={item.label}
             className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group
-              ${currentView === item.id 
-                ? 'bg-primary-600 text-white shadow-md' 
-                : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+              ${
+                currentView === item.id
+                  ? "bg-primary-600 text-white shadow-md"
+                  : "text-slate-400 hover:bg-slate-800 hover:text-white"
               }`}
           >
-            <item.icon className={`w-5 h-5 ${currentView === item.id ? 'text-white' : 'text-slate-500 group-hover:text-white'}`} />
+            <item.icon
+              className={`w-5 h-5 ${currentView === item.id ? "text-white" : "text-slate-500 group-hover:text-white"}`}
+            />
             <span className="hidden md:block font-medium">{item.label}</span>
           </button>
         ))}
@@ -65,7 +84,9 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       <div className="p-4 border-t border-slate-800 space-y-3">
         <div className="bg-slate-800/50 rounded-lg p-3">
-          <p className="text-xs text-slate-400 hidden md:block mb-2">Study Streak</p>
+          <p className="text-xs text-slate-400 hidden md:block mb-2">
+            Study Streak
+          </p>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
             <span className="text-sm font-bold hidden md:block">Day 1</span>
@@ -75,12 +96,14 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="bg-slate-800/60 rounded-lg p-3">
           {authUser ? (
             <>
-              <p className="text-xs text-slate-400 hidden md:block">Signed in</p>
+              <p className="text-xs text-slate-400 hidden md:block">
+                Signed in
+              </p>
               <p className="text-sm font-semibold text-slate-100 hidden md:block truncate">
-                {authUser.displayName || authUser.email || 'Study OS User'}
+                {authUser.displayName || authUser.email || "Study OS User"}
               </p>
               <p className="text-xs text-slate-500 hidden md:block truncate">
-                {authUser.email || authUser.providerId || 'Connected account'}
+                {authUser.email || authUser.providerId || "Connected account"}
               </p>
               <button
                 type="button"
@@ -88,13 +111,17 @@ const Sidebar: React.FC<SidebarProps> = ({
                 onClick={onSignOut}
                 className="mt-3 w-full rounded-lg border border-slate-600 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {authBusy ? 'Signing out...' : 'Sign Out'}
+                {authBusy ? "Signing out..." : "Sign Out"}
               </button>
             </>
           ) : (
             <>
-              <p className="text-xs text-slate-400 hidden md:block">Guest session</p>
-              <p className="text-sm font-semibold text-slate-100 hidden md:block">Local mode</p>
+              <p className="text-xs text-slate-400 hidden md:block">
+                Guest session
+              </p>
+              <p className="text-sm font-semibold text-slate-100 hidden md:block">
+                Local mode
+              </p>
               <button
                 type="button"
                 onClick={onSwitchToSignIn}
@@ -105,7 +132,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             </>
           )}
           <div className="md:hidden text-center text-xs text-slate-300 font-semibold">
-            {guestMode ? 'Guest' : 'Account'}
+            {guestMode ? "Guest" : "Account"}
           </div>
         </div>
       </div>
