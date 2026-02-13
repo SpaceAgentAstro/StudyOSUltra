@@ -41,7 +41,7 @@ const CodexSkills: React.FC = () => {
     const loadCatalog = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${import.meta.env.BASE_URL}codex-skills.json`);
+        const response = await fetch('/codex-skills.json');
         if (!response.ok) {
           throw new Error(`Failed to load catalog: ${response.status}`);
         }

@@ -27,34 +27,8 @@ export const calculateAccuracy = (score: number, total: number): number => {
  * @returns A random string ID
  */
 export const generateId = (): string => {
-  return crypto.randomUUID();
-};
-
-/**
- * Validates file size and type.
- * @param file The file to validate
- * @returns Object with validity status and error message if invalid
- */
-export const validateFile = (file: File): { isValid: boolean; error?: string } => {
-  const MAX_SIZE = 500 * 1024 * 1024; // 500MB
-  const ALLOWED_EXTENSIONS = ['.txt', '.md', '.csv', '.json', '.pdf', '.docx'];
-
-  const dotIndex = file.name.lastIndexOf('.');
-  const extension = dotIndex !== -1 ? file.name.slice(dotIndex).toLowerCase() : '';
-
-  if (!ALLOWED_EXTENSIONS.includes(extension)) {
-    return {
-      isValid: false,
-      error: `Invalid file type: ${extension || 'no extension'}. Supported types: ${ALLOWED_EXTENSIONS.join(', ')}`
-    };
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
   }
-
-  if (file.size > MAX_SIZE) {
-    return {
-      isValid: false,
-      error: `File "${file.name}" exceeds the 500MB size limit.`
-    };
-  }
-
-  return { isValid: true };
+  return Math.random().toString(36).substring(2, 11);
 };
