@@ -5,7 +5,7 @@ import { formatTime, calculateAccuracy, generateId, validateFile } from './index
 describe('Utility Functions', () => {
   
   describe('formatTime', () => {
-    it('formats seconds into MM:SS correctly', () => {
+    it('formats seconds into MM:SS string', () => {
       expect(formatTime(0)).toBe('0:00');
       expect(formatTime(59)).toBe('0:59');
       expect(formatTime(60)).toBe('1:00');
@@ -73,10 +73,17 @@ describe('Utility Functions', () => {
     });
 
     it('returns error for file exceeding size limit', () => {
-      const file = { name: 'large.pdf', size: 501 * 1024 * 1024 } as File;
+      const file = { name: 'large.pdf', size: 11 * 1024 * 1024 } as File; // 11MB
       const result = validateFile(file);
       expect(result.isValid).toBe(false);
-      expect(result.error).toContain('exceeds the 500MB size limit');
+      expect(result.error).toContain('exceeds the 10MB size limit');
+    });
+
+    it('returns error for empty file', () => {
+      const file = { name: 'empty.txt', size: 0 } as File;
+      const result = validateFile(file);
+      expect(result.isValid).toBe(false);
+      expect(result.error).toContain('File is empty');
     });
 
     it('is case-insensitive for extensions', () => {
