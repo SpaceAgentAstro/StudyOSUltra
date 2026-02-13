@@ -237,7 +237,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
     const attachmentToSend = (isManualSend && imageAttachment) ? imageAttachment : null;
 
     const userMsg: Message = {
-      id: Date.now().toString(),
+      id: generateId(),
       role: 'user',
       text: textToSend,
       timestamp: Date.now(),

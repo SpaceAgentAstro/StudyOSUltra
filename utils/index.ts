@@ -36,8 +36,15 @@ export const generateId = (): string => {
  * @returns Object with validity status and error message if invalid
  */
 export const validateFile = (file: File): { isValid: boolean; error?: string } => {
-  const MAX_SIZE = 500 * 1024 * 1024; // 500MB
+  const MAX_SIZE = 10 * 1024 * 1024; // 10MB
   const ALLOWED_EXTENSIONS = ['.txt', '.md', '.csv', '.json', '.pdf', '.docx'];
+
+  if (file.size === 0) {
+    return {
+      isValid: false,
+      error: 'File is empty'
+    };
+  }
 
   const dotIndex = file.name.lastIndexOf('.');
   const extension = dotIndex !== -1 ? file.name.slice(dotIndex).toLowerCase() : '';
@@ -52,7 +59,7 @@ export const validateFile = (file: File): { isValid: boolean; error?: string } =
   if (file.size > MAX_SIZE) {
     return {
       isValid: false,
-      error: `File "${file.name}" exceeds the 500MB size limit.`
+      error: `File "${file.name}" exceeds the 10MB size limit.`
     };
   }
 
