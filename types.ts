@@ -25,16 +25,6 @@ export interface Message {
   isThinking?: boolean;
 }
 
-export type AuthProviderOption = 'google' | 'microsoft' | 'apple';
-
-export interface AuthIdentity {
-  uid: string;
-  displayName: string | null;
-  email: string | null;
-  photoURL: string | null;
-  providerId: string | null;
-}
-
 export interface Citation {
   sourceId: string;
   sourceName: string;
@@ -44,7 +34,6 @@ export interface Citation {
 
 export enum AppView {
   DASHBOARD = 'DASHBOARD',
-  CODEX_SKILLS = 'CODEX_SKILLS',
   CHAT = 'CHAT',
   FILES = 'FILES',
   SYLLABUS = 'SYLLABUS',
@@ -54,8 +43,7 @@ export enum AppView {
   // Phase 8 Views
   KNOWLEDGE_UNIVERSE = 'KNOWLEDGE_UNIVERSE',
   META_LEARNING = 'META_LEARNING',
-  COGNITIVE_LAB = 'COGNITIVE_LAB',
-  CREATIVE_STUDIO = 'CREATIVE_STUDIO'
+  COGNITIVE_LAB = 'COGNITIVE_LAB'
 }
 
 export interface SyllabusNode {
@@ -174,23 +162,4 @@ export interface TopicMastery {
   title: string;
   level: 'Novice' | 'Developing' | 'Secure' | 'Exam-Ready';
   xp: number;
-}
-
-// --- Generative Media ---
-
-export interface VideoShot {
-  id: string;
-  title: string;
-  visual: string;
-  voiceover: string;
-  durationSeconds: number;
-}
-
-export interface VideoPlan {
-  title: string;
-  hook: string;
-  durationSeconds: number;
-  coverPrompt: string;
-  shots: VideoShot[];
-  callToAction: string;
 }
