@@ -87,6 +87,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
   const speechSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
   const sttSupported = typeof window !== 'undefined' && !!((window as any).SpeechRecognition || (window as any)?.webkitSpeechRecognition);
 
+  // Stable ref for handleSend to avoid breaking React.memo in MessageItem
+  const handleSendRef = useRef<(overrideInput?: string, overrideAgent?: AgentRole) => Promise<void>>(null as any);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
