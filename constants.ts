@@ -38,6 +38,14 @@ export const AGENT_PERSONAS = {
   `
 };
 
+export const AGENTS: {role: AgentRole, label: string, color: string}[] = [
+  { role: 'COUNCIL', label: 'The Council (Auto)', color: 'bg-indigo-600' },
+  { role: 'TEACHER', label: 'Teacher', color: 'bg-emerald-600' },
+  { role: 'EXAMINER', label: 'Examiner', color: 'bg-red-600' },
+  { role: 'COACH', label: 'Coach', color: 'bg-amber-500' },
+  { role: 'ANALYST', label: 'Analyst', color: 'bg-blue-600' },
+];
+
 export const MOCK_SYLLABUS: SyllabusNode[] = [
   {
     id: '1',
