@@ -24,6 +24,7 @@ export const calculateAccuracy = (score: number, total: number): number => {
 
 /**
  * Generates a random alphanumeric ID.
+ * Uses crypto.randomUUID if available for better security.
  * @returns A random string ID
  */
 export const generateId = (): string => {

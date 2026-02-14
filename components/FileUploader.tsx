@@ -19,6 +19,12 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
     if (!uploadedFiles) return;
 
     Array.from(uploadedFiles).forEach((file: File) => {
+      const validation = validateFile(file);
+      if (!validation.valid) {
+        alert(validation.error);
+        return;
+      }
+
       const id = generateId();
       const validationError = validateFile(file);
       
