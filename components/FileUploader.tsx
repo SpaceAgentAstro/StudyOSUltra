@@ -138,6 +138,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
                   id="search-files"
                   type="text" 
                   placeholder="Search files..." 
+                  aria-label="Search files"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20"
