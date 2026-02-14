@@ -1,8 +1,10 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Message, FileDocument, AgentRole } from '../types';
 import { generateId } from '../utils';
 import { Send, Paperclip, Brain, Image as ImageIcon, Mic, Zap, StopCircle, Loader, Globe, FileText, Volume, Play } from './Icons';
+import { AGENTS_CONFIG } from '../constants';
+import ChatMessage from './ChatMessage';
 
 let geminiServicePromise: Promise<typeof import('../services/geminiService')> | null = null;
 
@@ -44,14 +46,6 @@ interface ChatInterfaceProps {
   initialMessages?: Message[];
   onMessagesChange?: (messages: Message[]) => void;
 }
-
-const AGENTS: {role: AgentRole, label: string, color: string}[] = [
-  { role: 'COUNCIL', label: 'The Council (Auto)', color: 'bg-indigo-600' },
-  { role: 'TEACHER', label: 'Teacher', color: 'bg-emerald-600' },
-  { role: 'EXAMINER', label: 'Examiner', color: 'bg-red-600' },
-  { role: 'COACH', label: 'Coach', color: 'bg-amber-500' },
-  { role: 'ANALYST', label: 'Analyst', color: 'bg-blue-600' },
-];
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = [], onMessagesChange }) => {
   const [messages, setMessages] = useState<Message[]>(
@@ -328,6 +322,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
     abortControllerRef.current = null;
   };
 
+  // Keep a ref to the latest handleSend to avoid re-creating handleExplain on every render
+  const handleSendRef = useRef(handleSend);
+  useEffect(() => {
+    handleSendRef.current = handleSend;
+  }, [handleSend]);
+
+  const handleExplain = useCallback((code: string, agent: AgentRole) => {
+    handleSendRef.current(`Could you explain this code in detail as a teacher?\n\n${code}`, agent);
+  }, []);
+
   const resolvedProviderForFeatures: Exclude<ModelProvider, 'auto'> | null =
     provider === 'auto' ? (providerStatus?.resolved || null) : provider;
   const disableSearchToggle = resolvedProviderForFeatures ? resolvedProviderForFeatures !== 'google' : false;
@@ -337,7 +341,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
       {/* Header with Agent Selector */}
       <div className="p-3 border-b border-slate-100 bg-white z-10 flex flex-col gap-3">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {AGENTS.map((agent) => (
+            {AGENTS_CONFIG.map((agent) => (
                 <button
                     key={agent.role}
                     onClick={() => setSelectedAgent(agent.role)}
@@ -537,112 +541,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
       {/* Chat Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-slate-50/50">
         {messages.map((msg) => {
-           const agentInfo = AGENTS.find(a => a.role === msg.agent) || AGENTS[0];
+           // Optimization: Only pass volatile props to the active message
+           const isActive = msg.isThinking && !msg.text;
            
            return (
-            <div key={msg.id} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm
-                ${msg.role === 'model' ? `${agentInfo.color} text-white` : 'bg-slate-900 text-white'}`}>
-                {msg.role === 'model' ? (
-                    <span className="text-[10px] font-bold">{msg.agent?.[0] || 'C'}</span>
-                ) : <span className="font-bold text-xs">U</span>}
-                </div>
-
-                <div className={`max-w-[85%] space-y-2`}>
-                <div className={`p-4 rounded-2xl shadow-sm relative
-                    ${msg.role === 'user' 
-                    ? 'bg-slate-900 text-white rounded-tr-none' 
-                    : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none'}`}>
-                    
-                    {msg.role === 'model' && (
-                        <div className={`absolute -top-3 left-4 px-2 py-0.5 rounded-full text-[10px] font-bold text-white ${agentInfo.color}`}>
-                            {agentInfo.label}
-                        </div>
-                    )}
-
-                    {msg.attachments?.map((att, idx) => (
-                    <div key={idx} className="mb-3 rounded-lg overflow-hidden border border-slate-200">
-                        <img src={att.url} alt="attachment" className="max-h-64 object-contain" />
-                    </div>
-                    ))}
-
-                    {msg.isThinking && !msg.text ? (
-                    <div className="flex flex-col gap-2 mt-2">
-                        <div className="flex gap-1 h-6 items-center">
-                            <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"></span>
-                            <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce delay-100"></span>
-                            <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce delay-200"></span>
-                        </div>
-                        {useThinking && <span className="text-xs text-indigo-400 font-medium animate-pulse">Thinking deeply...</span>}
-                        {useSearch && <span className="text-xs text-blue-400 font-medium animate-pulse">Searching the web...</span>}
-                    </div>
-                    ) : (
-                    <div className="prose prose-sm max-w-none whitespace-pre-wrap mt-1">
-                        {msg.text.split(/(```[\s\S]*?```)/g).map((blockPart, blockIdx) => {
-                            // Code Block Handling
-                            if (blockPart.startsWith('```') && blockPart.endsWith('```')) {
-                                const codeContent = blockPart.replace(/^```\w*\n?/, '').replace(/```$/, '');
-                                return (
-                                    <div key={blockIdx} className="my-3 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 group">
-                                        <div className="flex items-center justify-between px-3 py-2 bg-slate-100 border-b border-slate-200">
-                                            <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">Code Snippet</span>
-                                            <button 
-                                                onClick={() => handleSend(`Could you explain this code in detail as a teacher?\n\n${codeContent}`, 'TEACHER')}
-                                                className="flex items-center gap-1.5 text-[10px] font-bold text-indigo-600 hover:text-indigo-700 bg-white border border-slate-200 px-2 py-1 rounded hover:bg-indigo-50 transition-colors shadow-sm"
-                                                title="Ask Teacher to explain"
-                                            >
-                                                <Brain className="w-3 h-3" /> Explain
-                                            </button>
-                                        </div>
-                                        <pre className="p-3 overflow-x-auto text-xs font-mono text-slate-800 bg-white">
-                                            <code>{codeContent}</code>
-                                        </pre>
-                                    </div>
-                                );
-                            }
-
-                            // Regular Text with Citations
-                            return (
-                                <span key={blockIdx}>
-                                    {blockPart.split(/(\[.*?\])/g).map((part, i) => {
-                                        if (part.startsWith('[') && part.endsWith(']')) {
-                                            const isFile = files.some(f => part.includes(f.name));
-                                            return (
-                                                <span 
-                                                    key={i} 
-                                                    className={`text-xs font-bold px-1 py-0.5 rounded cursor-pointer transition-colors ${isFile ? 'text-emerald-700 bg-emerald-100 hover:bg-emerald-200' : 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100'}`}
-                                                >
-                                                    {part}
-                                                </span>
-                                            );
-                                        }
-                                        return part;
-                                    })}
-                                </span>
-                            );
-                        })}
-                    </div>
-                    )}
-                </div>
-                
-                {msg.groundingUrls && msg.groundingUrls.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                        {msg.groundingUrls.map((url, idx) => (
-                            <a 
-                                key={idx} 
-                                href={url.uri} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-600 hover:text-blue-600 hover:border-blue-200 transition-colors shadow-sm"
-                            >
-                                <Globe className="w-3 h-3 text-blue-500" />
-                                <span className="truncate max-w-[150px]">{url.title}</span>
-                            </a>
-                        ))}
-                    </div>
-                )}
-                </div>
-            </div>
+            <ChatMessage
+                key={msg.id}
+                message={msg}
+                files={files}
+                onExplain={handleExplain}
+                isThinkingMode={isActive ? useThinking : undefined}
+                isSearchMode={isActive ? useSearch : undefined}
+            />
            );
         })}
         <div ref={messagesEndRef} />
@@ -695,7 +605,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder={`Ask ${AGENTS.find(a => a.role === selectedAgent)?.label}...`}
+              placeholder={`Ask ${AGENTS_CONFIG.find(a => a.role === selectedAgent)?.label}...`}
               disabled={isLoading || isUploading}
               className="w-full pl-4 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all text-sm disabled:opacity-60 disabled:cursor-not-allowed"
             />
