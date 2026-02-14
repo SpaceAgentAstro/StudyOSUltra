@@ -8,12 +8,17 @@ const { mockGenerateContentStream, mockGenerateContent, mockGoogleGenAI } = vi.h
       generateContentStream: mockGenerateContentStream,
       generateContent: mockGenerateContent,
     };
-  });
-  return { mockGenerateContentStream, mockGenerateContent, mockGoogleGenAI };
 });
 
-vi.mock('@google/genai', () => ({
-  GoogleGenAI: mockGoogleGenAI
+vi.mock('@google/generative-ai', () => ({
+    GoogleGenerativeAI: vi.fn(function() {
+        return {
+            getGenerativeModel: vi.fn().mockReturnValue({
+                generateContent: mockGenerateContent,
+                generateContentStream: mockGenerateContentStream,
+            }),
+        };
+    }),
 }));
 
 import {
@@ -78,6 +83,10 @@ describe('geminiService', () => {
 
       consoleErrorSpy.mockRestore();
     });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('generateExamPaper', () => {
@@ -341,6 +350,26 @@ describe('geminiService', () => {
       });
 
       expect(onChunk).toHaveBeenCalledWith(expect.stringContaining("stopped by user"));
+    });
+
+    it('handles API errors gracefully', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const onChunk = vi.fn();
+      const errorMsg = 'API Quota Exceeded';
+
+      mockGenerateContentStream.mockRejectedValueOnce(new Error(errorMsg));
+
+      await streamChatResponse({
+        history: [],
+        newMessage: 'Hi',
+        files: [],
+        mode: 'tutor',
+        onChunk,
+        signal: controller.signal
+      });
+
+      // It should break immediately and not call onChunk
+      expect(onChunk).not.toHaveBeenCalled();
     });
 
     it('handles API errors gracefully', async () => {

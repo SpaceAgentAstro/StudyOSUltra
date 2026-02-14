@@ -1231,37 +1231,16 @@ export const generateGameQuestions = async (
   if (!aiClient) throw new Error("AI Client not initialized");
 
   try {
-    const response = await aiClient.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: [
-        { role: 'user', parts: [{ text: `CONTEXT:\n${contextString}` }] },
-        { role: 'user', parts: [{ text: prompt }] }
-      ],
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: "ARRAY",
-          items: {
-            type: "OBJECT",
-            properties: {
-              id: { type: "STRING" },
-              type: { type: "STRING", enum: ["MCQ", "OPEN"] },
-              text: { type: "STRING" },
-              options: { type: "ARRAY", items: { type: "STRING" } },
-              correctOptionIndex: { type: "INTEGER" },
-              markScheme: { type: "ARRAY", items: { type: "STRING" } },
-              explanation: { type: "STRING" },
-              sourceCitation: { type: "STRING" },
-              difficulty: { type: "STRING", enum: ["easy", "medium", "hard"] },
-              marks: { type: "INTEGER" }
-            },
-            required: ["id", "type", "text", "explanation", "sourceCitation", "difficulty", "marks"]
-          }
-        }
-      }
+    const model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash',
+        generationConfig: { responseMimeType: "application/json" }
     });
+    const result = await model.generateContent([
+        `CONTEXT:\n${contextString}`,
+        prompt
+    ]);
 
-    const jsonText = response.text;
+    const jsonText = result.response.text();
     if (!jsonText) return [];
     return JSON.parse(jsonText) as Question[];
   } catch (e) {
