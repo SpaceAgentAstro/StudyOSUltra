@@ -1,7 +1,7 @@
 import React from 'react';
 import { Message, FileDocument, AgentRole } from '../types';
+import { AGENTS } from '../constants';
 import { Brain, Globe } from './Icons';
-import { AGENTS_CONFIG } from '../constants';
 
 interface ChatMessageProps {
   message: Message;
@@ -18,7 +18,7 @@ const ChatMessage: React.FC<ChatMessageProps> = React.memo(({
   isThinkingMode,
   isSearchMode
 }) => {
-  const agentInfo = AGENTS_CONFIG.find(a => a.role === msg.agent) || AGENTS_CONFIG[0];
+  const agentInfo = AGENTS.find(a => a.role === msg.agent) || AGENTS[0];
   const isUser = msg.role === 'user';
 
   return (
@@ -26,11 +26,11 @@ const ChatMessage: React.FC<ChatMessageProps> = React.memo(({
       <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm
         ${!isUser ? `${agentInfo.color} text-white` : 'bg-slate-900 text-white'}`}>
         {!isUser ? (
-            <span className="text-[10px] font-bold">{msg.agent?.[0] || 'C'}</span>
+          <span className="text-[10px] font-bold">{msg.agent?.[0] || 'C'}</span>
         ) : <span className="font-bold text-xs">U</span>}
       </div>
 
-      <div className={`max-w-[85%] space-y-2`}>
+      <div className="max-w-[85%] space-y-2">
         <div className={`p-4 rounded-2xl shadow-sm relative
             ${isUser
             ? 'bg-slate-900 text-white rounded-tr-none'

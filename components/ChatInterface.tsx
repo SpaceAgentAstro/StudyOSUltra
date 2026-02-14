@@ -2,9 +2,9 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Message, FileDocument, AgentRole } from '../types';
 import { generateId } from '../utils';
-import { Send, Paperclip, Brain, Image as ImageIcon, Mic, Zap, StopCircle, Loader, Globe, FileText, Volume, Play } from './Icons';
-import { AGENTS_CONFIG } from '../constants';
+import { AGENTS } from '../constants';
 import ChatMessage from './ChatMessage';
+import { Send, Paperclip, Brain, Image as ImageIcon, Mic, Zap, StopCircle, Loader, Globe, FileText, Volume, Play } from './Icons';
 
 let geminiServicePromise: Promise<typeof import('../services/geminiService')> | null = null;
 
@@ -82,6 +82,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const recognitionRef = useRef<any>(null);
+  const handleSendRef = useRef<any>(null);
 
   const speechSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
   const sttSupported = typeof window !== 'undefined' && !!((window as any).SpeechRecognition || (window as any)?.webkitSpeechRecognition);
@@ -341,7 +342,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
       {/* Header with Agent Selector */}
       <div className="p-3 border-b border-slate-100 bg-white z-10 flex flex-col gap-3">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {AGENTS_CONFIG.map((agent) => (
+            {AGENTS.map((agent) => (
                 <button
                     key={agent.role}
                     onClick={() => setSelectedAgent(agent.role)}
@@ -541,19 +542,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
       {/* Chat Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-slate-50/50">
         {messages.map((msg) => {
-           // Optimization: Only pass volatile props to the active message
-           const isActive = msg.isThinking && !msg.text;
-           
-           return (
+          // Optimization: Only pass volatile props to the active message
+          const isActive = msg.isThinking && !msg.text;
+
+          return (
             <ChatMessage
-                key={msg.id}
-                message={msg}
-                files={files}
-                onExplain={handleExplain}
-                isThinkingMode={isActive ? useThinking : undefined}
-                isSearchMode={isActive ? useSearch : undefined}
+              key={msg.id}
+              message={msg}
+              files={files}
+              onExplain={handleExplain}
+              isThinkingMode={isActive ? useThinking : undefined}
+              isSearchMode={isActive ? useSearch : undefined}
             />
-           );
+          );
         })}
         <div ref={messagesEndRef} />
       </div>
@@ -605,7 +606,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder={`Ask ${AGENTS_CONFIG.find(a => a.role === selectedAgent)?.label}...`}
+              placeholder={`Ask ${AGENTS.find(a => a.role === selectedAgent)?.label}...`}
               disabled={isLoading || isUploading}
               className="w-full pl-4 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all text-sm disabled:opacity-60 disabled:cursor-not-allowed"
             />
