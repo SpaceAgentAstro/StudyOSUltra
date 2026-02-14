@@ -235,6 +235,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
                     onClick={() => { setUseSearch(!useSearch); }}
                     className={`p-1.5 rounded-lg border transition-colors ${useSearch ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-slate-200 text-slate-400'}`}
                     title="Google Search"
+                    aria-label="Toggle Google Search"
                 >
                     <Globe className="w-4 h-4" />
                 </button>
