@@ -113,7 +113,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
         <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary-100 transition-colors">
           <UploadCloud className="w-8 h-8 text-slate-400 group-hover:text-primary-600" />
         </div>
-        <h3 className="text-lg font-semibold text-slate-900">Click to upload files</h3>
+        <h3 className="text-lg font-semibold text-slate-900">Click or press enter to upload files</h3>
         <p className="text-sm text-slate-500 mt-1">Supports PDF, DOCX, TXT, MD</p>
         <input 
           type="file" 
@@ -184,6 +184,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
                 onClick={() => removeFile(file.id)}
                 aria-label={`Remove file ${file.name}`}
                 className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                aria-label={`Remove ${file.name}`}
               >
                 <Trash2 className="w-5 h-5" />
               </button>
