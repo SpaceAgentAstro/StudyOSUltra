@@ -98,19 +98,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
     const textToSend = overrideInput || input;
     const isManualSend = !overrideInput;
 
-    // Check valid input: either text exists, or (if manual) an image exists
-    if (!textToSend.trim() && (!isManualSend || !imageAttachment)) return;
+    if (!isValidInput(textToSend, isManualSend, imageAttachment)) return;
     if (isLoading || isUploading) return;
 
     const attachmentToSend = (isManualSend && imageAttachment) ? imageAttachment : null;
-
-    const userMsg: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      text: textToSend,
-      timestamp: Date.now(),
-      attachments: attachmentToSend ? [{ type: 'image', url: attachmentToSend }] : undefined
-    };
+    const userMsg = createUserMessage(textToSend, attachmentToSend, Date.now());
 
     setMessages(prev => [...prev, userMsg]);
     
@@ -121,17 +113,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
     
     setIsLoading(true);
 
-    const botMsgId = (Date.now() + 1).toString();
     const actingAgent = overrideAgent || selectedAgent; 
+    const botMsg = createBotMessage(actingAgent, Date.now() + 1);
 
-    setMessages(prev => [...prev, {
-      id: botMsgId,
-      role: 'model',
-      agent: actingAgent,
-      text: '', 
-      timestamp: Date.now(),
-      isThinking: true
-    }]);
+    setMessages(prev => [...prev, botMsg]);
 
     abortControllerRef.current = new AbortController();
 
@@ -162,19 +147,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
       signal: abortControllerRef.current.signal,
       onChunk: (text, groundingChunks) => {
         fullResponse += text;
-        
-        if (groundingChunks) {
-          groundingChunks.forEach((chunk: any) => {
-            if (chunk.web && chunk.web.uri && chunk.web.title) {
-               if (!accumulatedGrounding.some(g => g.uri === chunk.web.uri)) {
-                 accumulatedGrounding.push({ title: chunk.web.title, uri: chunk.web.uri });
-               }
-            }
-          });
-        }
+        accumulatedGrounding = processGroundingChunks(accumulatedGrounding, groundingChunks);
 
         setMessages(prev => prev.map(msg => 
-          msg.id === botMsgId 
+          msg.id === botMsg.id
             ? { 
                 ...msg, 
                 text: fullResponse, 
