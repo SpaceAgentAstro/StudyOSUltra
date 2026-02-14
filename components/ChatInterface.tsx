@@ -5,6 +5,7 @@ import { generateId } from '../utils';
 import { AGENTS } from '../constants';
 import ChatMessage from './ChatMessage';
 import { Send, Paperclip, Brain, Image as ImageIcon, Mic, Zap, StopCircle, Loader, Globe, FileText, Volume, Play } from './Icons';
+import { AGENTS } from '../constants';
 
 let geminiServicePromise: Promise<typeof import('../services/geminiService')> | null = null;
 
