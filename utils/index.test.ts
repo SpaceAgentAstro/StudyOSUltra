@@ -5,7 +5,7 @@ import { formatTime, calculateAccuracy, generateId, validateFile } from './index
 describe('Utility Functions', () => {
   
   describe('formatTime', () => {
-    it('formats seconds into MM:SS correctly', () => {
+    it('formats seconds into MM:SS string', () => {
       expect(formatTime(0)).toBe('0:00');
       expect(formatTime(59)).toBe('0:59');
       expect(formatTime(60)).toBe('1:00');
