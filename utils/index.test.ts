@@ -1,6 +1,6 @@
 
 import { describe, it, expect } from 'vitest';
-import { formatTime, calculateAccuracy, generateId } from './index';
+import { formatTime, calculateAccuracy, generateId, validateFile } from './index';
 
 describe('Utility Functions', () => {
   
@@ -48,6 +48,40 @@ describe('Utility Functions', () => {
       const id1 = generateId();
       const id2 = generateId();
       expect(id1).not.toBe(id2);
+    });
+  });
+
+  describe('validateFile', () => {
+    const validFile = { name: 'document.pdf', size: 1024 * 1024 }; // 1MB
+
+    it('returns null for valid file', () => {
+      expect(validateFile(validFile)).toBeNull();
+    });
+
+    it('returns error for file exceeding size limit', () => {
+      const largeFile = { name: 'large.pdf', size: 6 * 1024 * 1024 }; // 6MB
+      expect(validateFile(largeFile)).toBe('File size exceeds 5MB limit');
+    });
+
+    it('returns error for invalid file extension', () => {
+      const invalidExtFile = { name: 'script.js', size: 1024 };
+      expect(validateFile(invalidExtFile)).toContain('File type not supported');
+    });
+
+    it('returns error for file without extension', () => {
+      const noExtFile = { name: 'README', size: 1024 };
+      expect(validateFile(noExtFile)).toContain('File type not supported');
+    });
+
+    it('allows all supported extensions', () => {
+      const extensions = ['.txt', '.md', '.csv', '.json', '.pdf', '.docx'];
+      extensions.forEach(ext => {
+        expect(validateFile({ name: `test${ext}`, size: 100 })).toBeNull();
+      });
+    });
+
+    it('checks extension case-insensitively', () => {
+      expect(validateFile({ name: 'TEST.PDF', size: 100 })).toBeNull();
     });
   });
 
