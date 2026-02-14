@@ -48,6 +48,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
   // Stable ref for handleSend to avoid breaking React.memo in MessageItem
   const handleSendRef = useRef<(overrideInput?: string, overrideAgent?: AgentRole) => Promise<void>>(null as any);
 
+  // Optimization: Stable reference to handleSend for memoized children
+  // This allows passing a callback to ChatMessage without breaking memoization
+  const handleSendRef = useRef<(overrideInput?: string, overrideAgent?: AgentRole) => Promise<void>>(async () => {});
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
