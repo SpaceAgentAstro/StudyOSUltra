@@ -37,15 +37,31 @@ export const generateId = (): string => {
  */
 export const validateFile = (file: File): { isValid: boolean; error?: string } => {
   const MAX_SIZE = 500 * 1024 * 1024; // 500MB
-  const ALLOWED_EXTENSIONS = ['.txt', '.md', '.csv', '.json', '.pdf', '.docx'];
+
+  // Map extensions to allowed MIME types for stricter security
+  const ALLOWED_TYPES: Record<string, string[]> = {
+    '.txt': ['text/plain', ''],
+    '.md': ['text/markdown', 'text/plain', 'text/x-markdown', ''],
+    '.csv': ['text/csv', 'application/vnd.ms-excel', 'text/plain', ''],
+    '.json': ['application/json', 'text/plain', ''],
+    '.pdf': ['application/pdf'],
+    '.docx': ['application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+  };
 
   const dotIndex = file.name.lastIndexOf('.');
   const extension = dotIndex !== -1 ? file.name.slice(dotIndex).toLowerCase() : '';
 
-  if (!ALLOWED_EXTENSIONS.includes(extension)) {
+  if (!Object.keys(ALLOWED_TYPES).includes(extension)) {
     return {
       isValid: false,
-      error: `Invalid file type: ${extension || 'no extension'}. Supported types: ${ALLOWED_EXTENSIONS.join(', ')}`
+      error: `Invalid file type: ${extension || 'no extension'}. Supported types: ${Object.keys(ALLOWED_TYPES).join(', ')}`
+    };
+  }
+
+  if (file.size === 0) {
+    return {
+      isValid: false,
+      error: `File "${file.name}" is empty.`
     };
   }
 
@@ -54,6 +70,16 @@ export const validateFile = (file: File): { isValid: boolean; error?: string } =
       isValid: false,
       error: `File "${file.name}" exceeds the 500MB size limit.`
     };
+  }
+
+  // Strict MIME type check for binary formats (prevents renaming attacks)
+  if (file.type) {
+    if (extension === '.pdf' && file.type !== 'application/pdf') {
+       return { isValid: false, error: `Invalid file content for PDF (detected ${file.type}).` };
+    }
+    if (extension === '.docx' && !file.type.includes('wordprocessingml')) {
+       return { isValid: false, error: `Invalid file content for DOCX (detected ${file.type}).` };
+    }
   }
 
   return { isValid: true };
