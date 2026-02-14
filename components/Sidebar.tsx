@@ -43,7 +43,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-primary-500/20">
             <span className="font-bold text-lg">S</span>
         </div>
-        <span className="hidden md:block font-bold text-xl tracking-tight">Study OS</span>
+        <span className="hidden md:block font-bold text-xl tracking-tight">Galactic Maestro</span>
       </div>
       
       <nav className="flex-1 py-6 px-2 md:px-4 space-y-2 overflow-y-auto">
@@ -77,7 +77,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <>
               <p className="text-xs text-slate-400 hidden md:block">Signed in</p>
               <p className="text-sm font-semibold text-slate-100 hidden md:block truncate">
-                {authUser.displayName || authUser.email || 'Study OS User'}
+                {authUser.displayName || authUser.email || 'Galactic Maestro User'}
               </p>
               <p className="text-xs text-slate-500 hidden md:block truncate">
                 {authUser.email || authUser.providerId || 'Connected account'}

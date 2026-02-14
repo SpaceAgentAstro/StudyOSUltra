@@ -32,7 +32,7 @@ const AuthGate: React.FC<AuthGateProps> = ({
     <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-xl rounded-3xl border border-slate-800 bg-slate-900/80 backdrop-blur-sm shadow-2xl overflow-hidden">
         <div className="p-8 border-b border-slate-800">
-          <h1 className="text-3xl font-bold tracking-tight">Study OS</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Galactic Maestro</h1>
           <p className="text-slate-400 mt-2">
             Sign in to load your personal workspace, or continue in guest mode.
           </p>

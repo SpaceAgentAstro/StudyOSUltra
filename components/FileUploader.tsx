@@ -92,7 +92,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
     <div className="p-6 max-w-5xl mx-auto w-full">
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-slate-900 mb-2">Sources & Knowledge Base</h2>
-        <p className="text-slate-500">Upload textbooks, notes, and transcripts. Study OS will ground all answers in these files to prevent hallucinations.</p>
+        <p className="text-slate-500">Upload textbooks, notes, and transcripts. Galactic Maestro will ground all answers in these files to prevent hallucinations.</p>
       </div>
 
       <div 

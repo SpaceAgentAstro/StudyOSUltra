@@ -313,7 +313,7 @@ const ExamSimulator: React.FC<ExamSimulatorProps> = ({ files }) => {
                  {/* Paper Header */}
                 <div className="text-center border-b-2 border-slate-900 pb-8 mb-12">
                     <h2 className="text-3xl font-serif font-bold text-slate-900 mb-2">{currentExam?.title}</h2>
-                    <p className="text-slate-600 font-serif italic">Candidate Name: Study OS User</p>
+                    <p className="text-slate-600 font-serif italic">Candidate Name: Galactic Maestro User</p>
                     <p className="text-slate-600 font-serif italic">Time Allowed: {currentExam?.durationMinutes} minutes</p>
                 </div>
 

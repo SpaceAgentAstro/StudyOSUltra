@@ -326,7 +326,7 @@ const App: React.FC = () => {
       <div className="min-h-screen bg-slate-950 text-slate-200 flex items-center justify-center">
         <div className="flex items-center gap-3 text-sm">
           <div className="w-5 h-5 border-2 border-slate-500 border-t-slate-200 rounded-full animate-spin" />
-          <span>Preparing Study OS...</span>
+          <span>Preparing Galactic Maestro...</span>
         </div>
       </div>
     );

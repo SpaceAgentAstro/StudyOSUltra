@@ -341,7 +341,7 @@ const GameCenter: React.FC<GameCenterProps> = ({ files }) => {
                 <div className="flex-1">
                    <div className="flex items-center gap-2 mb-2 text-indigo-300 font-bold text-xs uppercase tracking-wider">
                      <BookOpen className="w-4 h-4" />
-                     Study OS Logic
+                     Galactic Maestro Logic
                    </div>
                    <p className="text-slate-100 leading-relaxed">
                      {currentQ.explanation}
