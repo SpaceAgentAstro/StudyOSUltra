@@ -4,7 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"npm run start:server\" \"vite\"",
+    "start:server": "node server.js",
     "build": "vite build",
     "build:pages": "npm run build && node scripts/publish-github-pages.js",
     "preview": "vite preview",

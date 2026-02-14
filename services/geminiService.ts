@@ -899,7 +899,7 @@ export const generateKnowledgeGraph = async (files: FileDocument[]): Promise<Kno
   }
 
   try {
-    const response = await aiClient.models.generateContent({
+    const response = await callApi('/api/generate', {
       model: 'gemini-3-flash-preview',
       contents: [
         { role: 'user', parts: [{ text: contextString }] },
@@ -960,7 +960,7 @@ export const generateMetaAnalysis = async (history: Message[]): Promise<MetaInsi
   if (!aiClient) return [];
 
   try {
-    const response = await aiClient.models.generateContent({
+    const response = await callApi('/api/generate', {
       model: 'gemini-3-flash-preview',
       contents: [{ role: 'user', parts: [{ text: userMessages + "\n" + prompt }] }],
       config: {
@@ -1069,7 +1069,7 @@ export const generateExamPaper = async (
   if (!aiClient) throw new Error("AI Client not initialized");
 
   try {
-    const response = await aiClient.models.generateContent({
+    const response = await callApi('/api/generate', {
       model: 'gemini-3-flash-preview',
       contents: [
         { role: 'user', parts: [{ text: `CONTEXT:\n${contextString}` }] },
