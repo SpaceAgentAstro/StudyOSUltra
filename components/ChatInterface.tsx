@@ -9,42 +9,8 @@ import { AGENTS } from '../constants';
 
 let geminiServicePromise: Promise<typeof import('../services/geminiService')> | null = null;
 
-const LEGACY_API_KEY_STORAGE_KEY = 'study_os_api_key';
-const API_KEY_STORAGE_PREFIX = 'study_os_api_key_';
-const PROVIDER_STORAGE_KEY = 'study_os_provider';
-const OLLAMA_BASE_STORAGE_KEY = 'study_os_ollama_base';
-const OLLAMA_MODEL_STORAGE_KEY = 'study_os_ollama_model';
-
-type ModelProvider = 'auto' | 'google' | 'openai' | 'anthropic' | 'ollama';
-type KeyedProvider = Exclude<ModelProvider, 'auto' | 'ollama'>;
-type ApiKeySource = 'runtime' | 'env' | 'none';
-
-interface ProviderStatus {
-  preferred: ModelProvider;
-  resolved: Exclude<ModelProvider, 'auto'>;
-  configured: Record<KeyedProvider | 'ollama', boolean>;
-  keySource: Record<KeyedProvider, ApiKeySource>;
-  ollama: { baseUrl: string; model: string };
-}
-
-const providerNeedsApiKey = (provider: ModelProvider): provider is KeyedProvider =>
-  provider === 'google' || provider === 'openai' || provider === 'anthropic';
-
-const getApiStorageKey = (provider: KeyedProvider) => `${API_KEY_STORAGE_PREFIX}${provider}`;
-
-const providerLabel: Record<ModelProvider, string> = {
-  auto: 'Auto',
-  google: 'Gemini',
-  openai: 'OpenAI',
-  anthropic: 'Anthropic',
-  ollama: 'Ollama'
-};
-
-const healthProviders: Array<KeyedProvider | 'ollama'> = ['google', 'openai', 'anthropic', 'ollama'];
-
 interface ChatInterfaceProps {
   files: FileDocument[];
-  initialMessages?: Message[];
   onMessagesChange?: (messages: Message[]) => void;
 }
 
@@ -68,15 +34,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
   const [useThinking, setUseThinking] = useState(false);
   const [useSearch, setUseSearch] = useState(false);
   const [useFlashLite, setUseFlashLite] = useState(false);
-  const [apiKeyInput, setApiKeyInput] = useState('');
-  const [apiKeySaved, setApiKeySaved] = useState(false);
-  const [provider, setProvider] = useState<ModelProvider>('auto');
-  const [providerStatus, setProviderStatus] = useState<ProviderStatus | null>(null);
-  const [ollamaBase, setOllamaBase] = useState('');
-  const [ollamaModel, setOllamaModel] = useState('');
-  const [voiceEnabled, setVoiceEnabled] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const [lastSpokenId, setLastSpokenId] = useState<string | null>(null);
   
   const [imageAttachment, setImageAttachment] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -97,100 +54,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
 
   useEffect(() => {
     scrollToBottom();
-    onMessagesChange?.(messages);
-  }, [messages, onMessagesChange]);
-
-  // Hydrate chat from parent when provided (e.g., after refresh)
-  useEffect(() => {
-    if (initialMessages.length === 0) return;
-    // Avoid overwriting active session if already hydrated
-    if (messages.length === 1 && messages[0].id === 'welcome') {
-      setMessages(initialMessages);
-    }
-  }, [initialMessages]);
-
-  // Set up speech recognition once
-  useEffect(() => {
-    if (!sttSupported) return;
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const rec: any = new SpeechRecognition();
-    rec.continuous = false;
-    rec.interimResults = true;
-    rec.lang = 'en-US';
-    rec.onresult = (e: any) => {
-      let transcript = '';
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        transcript += e.results[i][0].transcript;
-      }
-      setInput((prev) => prev.trim() ? `${prev} ${transcript}` : transcript);
-    };
-    rec.onstart = () => setIsListening(true);
-    rec.onend = () => setIsListening(false);
-    rec.onerror = () => setIsListening(false);
-    recognitionRef.current = rec;
-  }, [sttSupported]);
-
-  // Speak latest assistant message if voice is enabled
-  useEffect(() => {
-    if (!voiceEnabled || !speechSupported) return;
-    const lastModel = [...messages].reverse().find(m => m.role === 'model' && m.text.trim() && !m.isThinking);
-    if (lastModel && lastModel.id !== lastSpokenId) {
-      const clean = lastModel.text.replace(/```[\s\S]*?```/g, '').slice(0, 800);
-      window.speechSynthesis.cancel();
-      const utter = new SpeechSynthesisUtterance(clean);
-      setLastSpokenId(lastModel.id);
-      utter.onend = () => setLastSpokenId(lastModel.id);
-      window.speechSynthesis.speak(utter);
-    }
-  }, [messages, voiceEnabled, speechSupported, lastSpokenId]);
-
-  // Load stored key once on mount
-  useEffect(() => {
-    const storedProvider = (localStorage.getItem(PROVIDER_STORAGE_KEY) as ModelProvider | null) || 'auto';
-    const storedGoogleKey =
-      localStorage.getItem(getApiStorageKey('google')) ||
-      localStorage.getItem(LEGACY_API_KEY_STORAGE_KEY) ||
-      '';
-    const storedOpenAIKey = localStorage.getItem(getApiStorageKey('openai')) || '';
-    const storedAnthropicKey = localStorage.getItem(getApiStorageKey('anthropic')) || '';
-    const storedOllamaBase = localStorage.getItem(OLLAMA_BASE_STORAGE_KEY) || '';
-    const storedOllamaModel = localStorage.getItem(OLLAMA_MODEL_STORAGE_KEY) || '';
-
-    setProvider(storedProvider);
-    const activeStoredKey = providerNeedsApiKey(storedProvider)
-      ? (storedProvider === 'google' ? storedGoogleKey : storedProvider === 'openai' ? storedOpenAIKey : storedAnthropicKey)
-      : '';
-    setApiKeyInput(activeStoredKey);
-    setApiKeySaved(Boolean(activeStoredKey));
-    if (storedOllamaBase) setOllamaBase(storedOllamaBase);
-    if (storedOllamaModel) setOllamaModel(storedOllamaModel);
-
-    if (!geminiServicePromise) {
-      geminiServicePromise = import('../services/geminiService');
-    }
-
-    geminiServicePromise.then(({ setRuntimeApiKey, setRuntimeApiKeyForProvider, setRuntimeProvider, setRuntimeOllamaConfig, getProviderRuntimeStatus }) => {
-      setRuntimeProvider(storedProvider);
-      // Backward compatibility for older service versions.
-      if (setRuntimeApiKeyForProvider) {
-        setRuntimeApiKeyForProvider('google', storedGoogleKey);
-        setRuntimeApiKeyForProvider('openai', storedOpenAIKey);
-        setRuntimeApiKeyForProvider('anthropic', storedAnthropicKey);
-      } else {
-        setRuntimeApiKey(storedGoogleKey);
-      }
-      setRuntimeOllamaConfig({ baseUrl: storedOllamaBase, model: storedOllamaModel });
-      setProviderStatus(getProviderRuntimeStatus() as ProviderStatus);
-    });
-  }, []);
+  }, [messages]);
 
   const handleStop = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
       setIsLoading(false);
-      // Mark last assistant message as stopped to give user feedback
-      setMessages(prev => prev.map(m => m.isThinking ? { ...m, isThinking: false, text: (m.text || '') + '\n[stopped]' } : m));
     }
   };
 
@@ -220,11 +90,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
     }
   };
 
-  const handleListen = () => {
-    if (!recognitionRef.current || isListening) return;
-    recognitionRef.current.start();
-  };
-
   const handleSend = async (overrideInput?: string, overrideAgent?: AgentRole) => {
     const textToSend = overrideInput || input;
     const isManualSend = !overrideInput;
@@ -243,9 +108,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
       attachments: attachmentToSend ? [{ type: 'image', url: attachmentToSend }] : undefined
     };
 
-    // Build history for LLM including the fresh user message to avoid stale state reads
-    const historyForLLM = [...messages, userMsg];
-
     setMessages(prev => [...prev, userMsg]);
     
     if (isManualSend) {
@@ -255,7 +117,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
     
     setIsLoading(true);
 
-    const botMsgId = generateId();
+    const botMsgId = (Date.now() + 1).toString();
     const actingAgent = overrideAgent || selectedAgent; 
 
     setMessages(prev => [...prev, {
@@ -275,13 +137,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
     if (!geminiServicePromise) {
       geminiServicePromise = import('../services/geminiService');
     }
-    const { streamChatResponse, setRuntimeProvider } = await geminiServicePromise;
-
-    // ensure runtime provider matches selection
-    await setRuntimeProvider(provider);
+    const { streamChatResponse } = await geminiServicePromise;
 
     await streamChatResponse({
-      history: historyForLLM,
+      history: messages,
       newMessage: userMsg.text,
       files,
       imageAttachment: attachmentToSend || undefined,
@@ -361,149 +220,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
             ))}
         </div>
 
-        {/* API Key entry */}
-        <div className="flex flex-col gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
-          <div className="flex gap-2 items-center">
-            <label className="text-xs font-semibold text-slate-600">Provider:</label>
-            <select
-              value={provider}
-              onChange={async (e) => {
-                const next = e.target.value as ModelProvider;
-                setProvider(next);
-                localStorage.setItem(PROVIDER_STORAGE_KEY, next);
-                const nextStoredKey = providerNeedsApiKey(next)
-                  ? localStorage.getItem(getApiStorageKey(next)) || (next === 'google' ? localStorage.getItem(LEGACY_API_KEY_STORAGE_KEY) || '' : '')
-                  : '';
-                setApiKeyInput(nextStoredKey);
-                setApiKeySaved(Boolean(nextStoredKey));
-                if (!geminiServicePromise) geminiServicePromise = import('../services/geminiService');
-                const { setRuntimeProvider, getProviderRuntimeStatus } = await geminiServicePromise;
-                setRuntimeProvider(next);
-                setProviderStatus(getProviderRuntimeStatus() as ProviderStatus);
-              }}
-              className="text-sm border border-slate-200 rounded-lg px-2 py-1 bg-white"
-            >
-              <option value="auto">Auto (Best Available)</option>
-              <option value="google">Gemini (Jules)</option>
-              <option value="openai">OpenAI</option>
-              <option value="anthropic">Anthropic</option>
-              <option value="ollama">Ollama</option>
-            </select>
-            <span className="text-[10px] text-slate-400">Seamless provider routing across all AI features</span>
-          </div>
-
-          {providerNeedsApiKey(provider) && (
-            <div className="flex items-center gap-2">
-              <input
-                type="password"
-                value={apiKeyInput}
-                onChange={(e) => { setApiKeyInput(e.target.value); setApiKeySaved(false); }}
-                placeholder={`Enter ${providerLabel[provider]} API key`}
-                className="flex-1 bg-transparent outline-none text-sm text-slate-700"
-              />
-              <button
-                onClick={async () => {
-                  const trimmed = apiKeyInput.trim();
-                  localStorage.setItem(getApiStorageKey(provider), trimmed);
-                  if (provider === 'google') {
-                    localStorage.setItem(LEGACY_API_KEY_STORAGE_KEY, trimmed);
-                  }
-                  setApiKeySaved(true);
-                  if (!geminiServicePromise) {
-                    geminiServicePromise = import('../services/geminiService');
-                  }
-                  const { setRuntimeApiKey, setRuntimeApiKeyForProvider, getProviderRuntimeStatus } = await geminiServicePromise;
-                  if (setRuntimeApiKeyForProvider) {
-                    setRuntimeApiKeyForProvider(provider, trimmed);
-                  } else {
-                    setRuntimeApiKey(trimmed);
-                  }
-                  setProviderStatus(getProviderRuntimeStatus() as ProviderStatus);
-                }}
-                disabled={!apiKeyInput.trim()}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${apiKeyInput.trim() ? 'bg-indigo-600 text-white border-indigo-700 hover:bg-indigo-500' : 'bg-slate-200 text-slate-500 border-slate-300 cursor-not-allowed'}`}
-              >
-                {apiKeySaved ? 'Saved' : 'Save Key'}
-              </button>
-            </div>
-          )}
-
-          {provider === 'auto' && (
-            <div className="text-xs text-slate-500">
-              Auto mode picks the first configured provider in this order: Gemini, OpenAI, Anthropic, then Ollama.
-            </div>
-          )}
-
-          {provider === 'ollama' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:items-center">
-              <div className="col-span-1 md:col-span-1 flex items-center gap-2">
-                <label className="text-xs font-semibold text-slate-600">Base URL</label>
-                <input
-                  type="text"
-                  value={ollamaBase}
-                  onChange={(e) => setOllamaBase(e.target.value)}
-                  placeholder="http://localhost:11434"
-                  className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm"
-                />
-              </div>
-              <div className="col-span-1 md:col-span-1 flex items-center gap-2">
-                <label className="text-xs font-semibold text-slate-600">Model</label>
-                <input
-                  type="text"
-                  value={ollamaModel}
-                  onChange={(e) => setOllamaModel(e.target.value)}
-                  placeholder="qwen2.5:latest"
-                  className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm"
-                />
-              </div>
-              <div className="col-span-1 flex items-center gap-2 justify-end">
-                <button
-                  onClick={async () => {
-                    localStorage.setItem(OLLAMA_BASE_STORAGE_KEY, ollamaBase.trim());
-                    localStorage.setItem(OLLAMA_MODEL_STORAGE_KEY, ollamaModel.trim());
-                    if (!geminiServicePromise) geminiServicePromise = import('../services/geminiService');
-                    const { setRuntimeOllamaConfig, getProviderRuntimeStatus } = await geminiServicePromise;
-                    setRuntimeOllamaConfig({ baseUrl: ollamaBase.trim(), model: ollamaModel.trim() });
-                    setProviderStatus(getProviderRuntimeStatus() as ProviderStatus);
-                  }}
-                  className="px-3 py-1.5 rounded-lg text-xs font-bold border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-500 transition-colors"
-                >
-                  Save Ollama
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-600">Provider Health</span>
-              <span className="text-xs font-bold text-indigo-700">
-                Active: {providerStatus ? providerLabel[providerStatus.resolved] : 'Checking...'}
-              </span>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              {healthProviders.map((p) => {
-                const isConfigured = providerStatus?.configured?.[p] ?? false;
-                const source = p === 'ollama' ? null : providerStatus?.keySource?.[p];
-                return (
-                  <div
-                    key={p}
-                    className={`rounded-lg border px-2 py-1.5 ${isConfigured ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50'}`}
-                  >
-                    <div className={`text-[11px] font-bold ${isConfigured ? 'text-emerald-700' : 'text-slate-600'}`}>
-                      {providerLabel[p]}
-                    </div>
-                    <div className="text-[10px] text-slate-500">
-                      {isConfigured ? 'Configured' : 'Not configured'}
-                      {source ? ` · ${source}` : ''}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
         {/* Tools */}
         <div className="flex justify-between items-center">
              <div className="flex gap-2">
@@ -517,9 +233,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
                 </button>
                 <button 
                     onClick={() => { setUseSearch(!useSearch); }}
-                    disabled={disableSearchToggle}
-                    className={`p-1.5 rounded-lg border transition-colors ${useSearch ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-slate-200 text-slate-400'} ${disableSearchToggle ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    title="Web Search (Gemini)"
+                    className={`p-1.5 rounded-lg border transition-colors ${useSearch ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-slate-200 text-slate-400'}`}
+                    title="Google Search"
                 >
                     <Globe className="w-4 h-4" />
                 </button>
@@ -530,13 +245,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
                     aria-label="Toggle Flash Lite (Fast Mode)"
                 >
                     <Zap className="w-4 h-4" />
-                </button>
-                <button 
-                    onClick={() => setVoiceEnabled(!voiceEnabled)}
-                    className={`p-1.5 rounded-lg border transition-colors ${voiceEnabled ? 'bg-emerald-100 border-emerald-300 text-emerald-700' : 'border-slate-200 text-slate-400'}`}
-                    title="Read replies aloud"
-                >
-                    <Volume className="w-4 h-4" />
                 </button>
              </div>
              <span className="text-xs text-slate-400 font-medium">
@@ -601,14 +309,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
              </div>
         )}
 
-        {(isListening || voiceEnabled) && (
-          <div className="mb-3 flex items-center gap-2 text-xs font-semibold">
-            {isListening && <span className="px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">Listening...</span>}
-            {voiceEnabled && speechSupported && <span className="px-2 py-1 rounded-full bg-slate-900 text-white">Voice replies on</span>}
-            {!speechSupported && voiceEnabled && <span className="text-red-500">Speech output not supported in this browser.</span>}
-          </div>
-        )}
-
         <div className="flex gap-2">
           <div className="flex-1 relative">
             <input
@@ -638,14 +338,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
                  accept="image/*" 
                  onChange={handleImageUpload} 
                />
-               <button
-                 onClick={handleListen}
-                 disabled={!sttSupported || isListening || isUploading || isLoading}
-                 className={`p-1.5 rounded-lg transition-colors ${isListening ? 'bg-emerald-100 text-emerald-700 border border-emerald-300' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 border border-transparent'}`}
-                 title={sttSupported ? 'Dictate with voice' : 'Speech recognition not supported'}
-               >
-                 <Mic className="w-4 h-4" />
-               </button>
             </div>
           </div>
           
