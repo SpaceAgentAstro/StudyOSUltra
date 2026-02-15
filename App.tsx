@@ -114,29 +114,41 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!sessionScope || !sessionStateLoaded) return;
     const profileKey = getScopedStorageKey('profile', sessionScope);
-    if (userProfile) {
-      localStorage.setItem(profileKey, JSON.stringify(userProfile));
-    } else {
-      localStorage.removeItem(profileKey);
+    try {
+      if (userProfile) {
+        localStorage.setItem(profileKey, JSON.stringify(userProfile));
+      } else {
+        localStorage.removeItem(profileKey);
+      }
+    } catch (e) {
+      console.error('Failed to save profile to localStorage', e);
     }
   }, [userProfile, sessionScope, sessionStateLoaded]);
 
   useEffect(() => {
     if (!sessionScope || !sessionStateLoaded) return;
     const filesKey = getScopedStorageKey('files', sessionScope);
-    localStorage.setItem(filesKey, JSON.stringify(files));
+    try {
+      localStorage.setItem(filesKey, JSON.stringify(files));
+    } catch (e) {
+      console.error('Failed to save files to localStorage. Quota exceeded?', e);
+    }
   }, [files, sessionScope, sessionStateLoaded]);
 
   useEffect(() => {
     if (!sessionScope || !sessionStateLoaded) return;
     const chatKey = getScopedStorageKey('chat', sessionScope);
-    if (chatHistory.length === 0) {
-      localStorage.removeItem(chatKey);
-      return;
+    try {
+      if (chatHistory.length === 0) {
+        localStorage.removeItem(chatKey);
+        return;
+      }
+      // Trim to avoid unbounded storage growth
+      const recent = chatHistory.slice(-60);
+      localStorage.setItem(chatKey, JSON.stringify(recent));
+    } catch (e) {
+      console.error('Failed to save chat history to localStorage', e);
     }
-    // Trim to avoid unbounded storage growth
-    const recent = chatHistory.slice(-60);
-    localStorage.setItem(chatKey, JSON.stringify(recent));
   }, [chatHistory, sessionScope, sessionStateLoaded]);
 
   const handleOnboardingComplete = (profile: UserProfile, initialFiles: FileDocument[]) => {
