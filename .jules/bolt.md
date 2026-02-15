@@ -1,0 +1,3 @@
+## 2025-02-18 - Chat Interface Re-rendering Bottleneck
+**Learning:** The `ChatInterface` component manages both the controlled input state (`input`) and the message list (`messages`). This causes the entire message history to re-render on every keystroke, which is a significant performance bottleneck as the conversation grows, especially with complex markdown/code block parsing in each message.
+**Action:** Extract individual message rendering into a `React.memo` wrapped component (`ChatMessage`). Use `useRef` to maintain stable callback references for actions like `onExplain` to ensure props remain referentially stable and memoization is effective.
