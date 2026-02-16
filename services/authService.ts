@@ -26,7 +26,7 @@ const hasRequiredFirebaseConfig = () =>
 let cachedApp: FirebaseApp | null = null;
 let cachedAuth: Auth | null = null;
 
-const ensureAuth = (): Auth | null => {
+export const ensureAuth = (): Auth | null => {
   if (!hasRequiredFirebaseConfig()) return null;
   if (cachedAuth) return cachedAuth;
 
