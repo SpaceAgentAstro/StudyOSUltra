@@ -42,6 +42,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
   const recognitionRef = useRef<any>(null);
   const handleSendRef = useRef<any>(null);
 
+  // Ref to hold the current handleSend function for the stable callback
+  const handleSendRef = useRef<(overrideInput?: string, overrideAgent?: AgentRole) => Promise<void>>(async () => {});
+
   const speechSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
   const sttSupported = typeof window !== 'undefined' && !!((window as any).SpeechRecognition || (window as any)?.webkitSpeechRecognition);
 
@@ -185,7 +188,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
       {/* Header with Agent Selector */}
       <div className="p-3 border-b border-slate-100 bg-white z-10 flex flex-col gap-3">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {AGENTS.map((agent) => (
+            {AGENTS_CONFIG.map((agent) => (
                 <button
                     key={agent.role}
                     onClick={() => setSelectedAgent(agent.role)}
@@ -297,7 +300,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder={`Ask ${AGENTS.find(a => a.role === selectedAgent)?.label}...`}
+              placeholder={`Ask ${AGENTS_CONFIG.find(a => a.role === selectedAgent)?.label}...`}
               disabled={isLoading || isUploading}
               className="w-full pl-4 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all text-sm disabled:opacity-60 disabled:cursor-not-allowed"
               aria-label="Message input"
