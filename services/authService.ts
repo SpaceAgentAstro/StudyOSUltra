@@ -57,7 +57,7 @@ const providerFromOption = (provider: AuthProviderOption) => {
   return oauthProvider;
 };
 
-const toAuthErrorMessage = (error: unknown): string => {
+export const toAuthErrorMessage = (error: unknown): string => {
   const code = (error as { code?: string })?.code || '';
   if (code === 'auth/popup-closed-by-user') return 'Sign-in popup was closed before completing login.';
   if (code === 'auth/popup-blocked') return 'Popup was blocked by your browser. Allow popups and try again.';
