@@ -375,10 +375,13 @@ const parseJsonSafely = <T>(raw: string, fallback: T): T => {
 
 const joinAnthropicContent = (content: any): string => {
   if (!Array.isArray(content)) return "";
-  return content
-    .map((item) => (item?.type === 'text' ? item.text : ''))
-    .filter(Boolean)
-    .join('');
+  let result = "";
+  for (const item of content) {
+    if (item?.type === 'text' && item.text) {
+      result += item.text;
+    }
+  }
+  return result;
 };
 
 const getStatusErrorText = async (response: Response, fallback: string): Promise<string> => {
