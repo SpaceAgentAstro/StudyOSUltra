@@ -22,6 +22,7 @@ import {
   gradeOpenEndedAnswer,
   generateKnowledgeGraph,
   getProviderRuntimeStatus,
+  normalizeProvider,
   setRuntimeProvider,
   setRuntimeApiKeyForProvider
 } from './geminiService';
@@ -38,7 +39,36 @@ describe('geminiService', () => {
     setRuntimeApiKeyForProvider('anthropic', '');
   });
 
+
+  describe('normalizeProvider', () => {
+    it('returns valid providers as-is', () => {
+      expect(normalizeProvider('google')).toBe('google');
+      expect(normalizeProvider('openai')).toBe('openai');
+      expect(normalizeProvider('anthropic')).toBe('anthropic');
+      expect(normalizeProvider('ollama')).toBe('ollama');
+      expect(normalizeProvider('auto')).toBe('auto');
+    });
+
+    it('handles case insensitivity', () => {
+      expect(normalizeProvider('Google')).toBe('google');
+      expect(normalizeProvider('OPENAI')).toBe('openai');
+      expect(normalizeProvider('AnThRoPiC')).toBe('anthropic');
+    });
+
+    it('defaults to auto for null/undefined/empty', () => {
+      expect(normalizeProvider(null)).toBe('auto');
+      expect(normalizeProvider(undefined)).toBe('auto');
+      expect(normalizeProvider('')).toBe('auto');
+    });
+
+    it('defaults to auto for invalid providers', () => {
+      expect(normalizeProvider('unknown')).toBe('auto');
+      expect(normalizeProvider('random-provider')).toBe('auto');
+    });
+  });
+
   describe('gradeOpenEndedAnswer', () => {
+
     it('returns graded response on success', async () => {
       const mockGrade = {
         score: 4,

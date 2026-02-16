@@ -57,7 +57,7 @@ const safeStorageSet = (key: string, value: string) => {
   }
 };
 
-const normalizeProvider = (provider: string | null | undefined): ModelProvider => {
+export const normalizeProvider = (provider: string | null | undefined): ModelProvider => {
   switch ((provider || "").toLowerCase()) {
     case 'google':
     case 'openai':
