@@ -1,0 +1,1 @@
+normalizeProvider in services/geminiService.ts was internal and needed export for testing. vitest is used for testing.
