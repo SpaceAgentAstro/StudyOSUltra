@@ -1,6 +1,8 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Message, FileDocument, AgentRole } from '../types';
+import { AGENTS } from '../constants';
+import ChatMessage from './ChatMessage';
 import { generateId } from '../utils';
 import { AGENTS } from '../constants';
 import ChatMessage from './ChatMessage';
