@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from 'react';
 import { FileDocument } from '../types';
 import { UploadCloud, FileText, Trash2, CheckCircle, Search, AlertTriangle } from './Icons';
@@ -19,31 +18,32 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
     if (!uploadedFiles) return;
 
     Array.from(uploadedFiles).forEach((file: File) => {
-      const validation = validateFile(file);
-      if (!validation.valid) {
-        alert(validation.error);
+      const validationError = validateFile(file);
+      if (validationError) {
+        alert(validationError);
         return;
       }
 
       const id = generateId();
-      const validationError = validateFile(file);
-      
+      const lowerName = file.name.toLowerCase();
+      const detectedType: FileDocument['type'] = lowerName.endsWith('.pdf')
+        ? 'pdf'
+        : lowerName.endsWith('.docx')
+          ? 'docx'
+          : 'txt';
+
       const newFile: FileDocument = {
         id: id,
         name: file.name,
-        type: file.name.endsWith('.pdf') ? 'pdf' : 'txt',
-        content: '', 
+        type: detectedType,
+        content: '',
         uploadDate: Date.now(),
-        status: validationError ? 'error' : 'processing',
-        progress: validationError ? 0 : 0,
-        errorMessage: validationError || undefined
+        status: 'processing',
+        progress: 0,
       };
 
       setFiles(prev => [...prev, newFile]);
-
-      if (!validationError) {
-        simulateIngestionPipeline(id, file);
-      }
+      simulateIngestionPipeline(id, file);
     });
   };
 
@@ -197,7 +197,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
                 onClick={() => removeFile(file.id)}
                 aria-label={`Remove file ${file.name}`}
                 className="p-2 text-slate-400 hover:text-red-500 transition-colors"
-                aria-label={`Remove ${file.name}`}
               >
                 <Trash2 className="w-5 h-5" />
               </button>

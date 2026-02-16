@@ -1,29 +1,54 @@
-
 import React from 'react';
-import { AppView } from '../types';
-import { Brain, MessageSquare, BookOpen, UploadCloud, Trophy, Zap, FileText, Network, Activity, Layers } from './Icons';
+import { AppView, AuthIdentity } from '../types';
+import {
+  Activity,
+  BookOpen,
+  Brain,
+  FileText,
+  Layers,
+  MessageSquare,
+  Network,
+  Trophy,
+  UploadCloud,
+  Video,
+  Zap,
+} from './Icons';
 
 interface SidebarProps {
   currentView: AppView;
   setView: (view: AppView) => void;
+  authUser?: AuthIdentity | null;
+  guestMode?: boolean;
+  authBusy?: boolean;
+  onSignOut?: () => void;
+  onSwitchToSignIn?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
+const Sidebar: React.FC<SidebarProps> = ({
+  currentView,
+  setView,
+  authUser = null,
+  guestMode = false,
+  authBusy = false,
+  onSignOut,
+  onSwitchToSignIn,
+}) => {
   const menuItems = [
     { id: AppView.DASHBOARD, label: 'Dashboard', icon: Brain },
-    { id: AppView.KNOWLEDGE_UNIVERSE, label: 'Universe', icon: Network }, // New
+    { id: AppView.LESSON_STUDIO, label: 'Lesson Studio', icon: Zap },
     { id: AppView.CHAT, label: 'Council Chat', icon: MessageSquare },
-    { id: AppView.META_LEARNING, label: 'Meta Engine', icon: Activity }, // New
-    { id: AppView.COGNITIVE_LAB, label: 'Skills Lab', icon: Layers }, // New
+    { id: AppView.CREATIVE_STUDIO, label: 'Creative Studio', icon: Video },
+    { id: AppView.KNOWLEDGE_UNIVERSE, label: 'Universe', icon: Network },
+    { id: AppView.META_LEARNING, label: 'Meta Engine', icon: Activity },
+    { id: AppView.COGNITIVE_LAB, label: 'Skills Lab', icon: Layers },
     { id: AppView.GAME_CENTER, label: 'Game Center', icon: Trophy },
     { id: AppView.EXAM_SIMULATOR, label: 'Exam Simulator', icon: FileText },
-    { id: AppView.SOCIAL_HUB, label: 'Social Hub', icon: Zap },
     { id: AppView.FILES, label: 'Sources', icon: UploadCloud },
     { id: AppView.SYLLABUS, label: 'Syllabus', icon: BookOpen },
   ];
 
   return (
-    <div className="w-20 md:w-64 bg-slate-900 text-white flex flex-col h-screen border-r border-slate-800">
+    <div className="w-20 md:w-72 bg-slate-900 text-white flex flex-col h-screen border-r border-slate-800">
       <div className="p-4 md:p-6 flex items-center justify-center md:justify-start gap-3 border-b border-slate-800">
         <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-primary-500/20">
           <span className="font-bold text-lg">S</span>
@@ -39,27 +64,27 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
             aria-label={item.label}
             title={item.label}
             aria-current={currentView === item.id ? 'page' : undefined}
-            className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none
-              ${currentView === item.id 
-                ? 'bg-primary-600 text-white shadow-md' 
+            className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none ${
+              currentView === item.id
+                ? 'bg-primary-600 text-white shadow-md'
                 : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-              }`}
+            }`}
           >
             <item.icon
-              className={`w-5 h-5 ${currentView === item.id ? "text-white" : "text-slate-500 group-hover:text-white"}`}
+              className={`w-5 h-5 ${
+                currentView === item.id ? 'text-white' : 'text-slate-500 group-hover:text-white'
+              }`}
             />
             <span className="hidden md:block font-medium">{item.label}</span>
           </button>
         ))}
       </nav>
 
-      <div className="p-4 border-t border-slate-800">
+      <div className="p-4 border-t border-slate-800 space-y-3">
         <div className="bg-slate-800/50 rounded-lg p-3">
-          <p className="text-xs text-slate-400 hidden md:block mb-2">
-            Study Streak
-          </p>
+          <p className="text-xs text-slate-400 hidden md:block mb-2">Study Streak</p>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+            <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
             <span className="text-sm font-bold hidden md:block">Day 1</span>
           </div>
         </div>
@@ -67,43 +92,41 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
         <div className="bg-slate-800/60 rounded-lg p-3">
           {authUser ? (
             <>
-              <p className="text-xs text-slate-400 hidden md:block">
-                Signed in
-              </p>
+              <p className="text-xs text-slate-400 hidden md:block">Signed in</p>
               <p className="text-sm font-semibold text-slate-100 hidden md:block truncate">
                 {authUser.displayName || authUser.email || 'Galactic Maestro User'}
               </p>
               <p className="text-xs text-slate-500 hidden md:block truncate">
-                {authUser.email || authUser.providerId || "Connected account"}
+                {authUser.email || authUser.providerId || 'Connected account'}
               </p>
-              <button
-                type="button"
-                disabled={authBusy}
-                onClick={onSignOut}
-                className="mt-3 w-full rounded-lg border border-slate-600 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {authBusy ? "Signing out..." : "Sign Out"}
-              </button>
+              {onSignOut && (
+                <button
+                  type="button"
+                  disabled={authBusy}
+                  onClick={onSignOut}
+                  className="mt-3 w-full rounded-lg border border-slate-600 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {authBusy ? 'Signing out...' : 'Sign Out'}
+                </button>
+              )}
             </>
           ) : (
             <>
-              <p className="text-xs text-slate-400 hidden md:block">
-                Guest session
-              </p>
-              <p className="text-sm font-semibold text-slate-100 hidden md:block">
-                Local mode
-              </p>
-              <button
-                type="button"
-                onClick={onSwitchToSignIn}
-                className="mt-3 w-full rounded-lg border border-slate-600 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-700"
-              >
-                Sign In
-              </button>
+              <p className="text-xs text-slate-400 hidden md:block">Guest session</p>
+              <p className="text-sm font-semibold text-slate-100 hidden md:block">Local mode</p>
+              {onSwitchToSignIn && (
+                <button
+                  type="button"
+                  onClick={onSwitchToSignIn}
+                  className="mt-3 w-full rounded-lg border border-slate-600 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-700"
+                >
+                  Sign In
+                </button>
+              )}
             </>
           )}
           <div className="md:hidden text-center text-xs text-slate-300 font-semibold">
-            {guestMode ? "Guest" : "Account"}
+            {guestMode || !authUser ? 'Guest' : 'Account'}
           </div>
         </div>
       </div>
