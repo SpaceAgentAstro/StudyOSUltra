@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import Sidebar from './components/Sidebar';
 import ChatInterface from './components/ChatInterface';
@@ -199,6 +198,10 @@ const App: React.FC = () => {
         >
           {currentView !== AppView.CHAT && renderContent()}
         </Suspense>
+
+        <div style={{ display: currentView === AppView.CHAT ? 'block' : 'none', height: '100%' }}>
+           <ChatInterface files={files} />
+        </div>
       </main>
     </div>
   );
