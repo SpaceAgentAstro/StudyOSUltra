@@ -51,6 +51,8 @@ const Sidebar: React.FC<SidebarProps> = ({
           <button
             key={item.id}
             onClick={() => setView(item.id)}
+            aria-label={item.label}
+            title={item.label}
             className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group
               ${currentView === item.id 
                 ? 'bg-primary-600 text-white shadow-md' 

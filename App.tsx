@@ -307,17 +307,8 @@ const App: React.FC = () => {
             </div>
           </div>
         )
-      case AppView.CHAT:
       default:
-        return (
-          <div className="h-screen p-4 md:p-6 bg-slate-100/50">
-            <ChatInterface
-              files={files}
-              initialMessages={chatHistory}
-              onMessagesChange={setChatHistory}
-            />
-          </div>
-        );
+        return null;
     }
   };
 
@@ -371,7 +362,16 @@ const App: React.FC = () => {
             </div>
           }
         >
-          {renderContent()}
+          <div style={{ display: currentView === AppView.CHAT ? 'block' : 'none', height: '100%' }}>
+            <div className="h-screen p-4 md:p-6 bg-slate-100/50">
+              <ChatInterface
+                files={files}
+                initialMessages={chatHistory}
+                onMessagesChange={setChatHistory}
+              />
+            </div>
+          </div>
+          {currentView !== AppView.CHAT && renderContent()}
         </Suspense>
       </main>
     </div>
