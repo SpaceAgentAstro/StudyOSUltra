@@ -364,15 +364,33 @@ const App: React.FC = () => {
             </div>
           </div>
         )}
-        <Suspense
-          fallback={
-            <div className="h-full w-full flex items-center justify-center text-slate-500">
-              Loading view...
-            </div>
-          }
+
+        {/* Optimized Chat View - Always Mounted */}
+        <div
+          style={{ display: currentView === AppView.CHAT ? 'block' : 'none' }}
+          className="h-full"
         >
-          {renderContent()}
-        </Suspense>
+          <div className="h-screen p-4 md:p-6 bg-slate-100/50">
+            <ChatInterface
+              files={files}
+              initialMessages={chatHistory}
+              onMessagesChange={setChatHistory}
+            />
+          </div>
+        </div>
+
+        {/* Other Views - Lazily Loaded */}
+        {currentView !== AppView.CHAT && (
+          <Suspense
+            fallback={
+              <div className="h-full w-full flex items-center justify-center text-slate-500">
+                Loading view...
+              </div>
+            }
+          >
+            {renderContent()}
+          </Suspense>
+        )}
       </main>
     </div>
   );

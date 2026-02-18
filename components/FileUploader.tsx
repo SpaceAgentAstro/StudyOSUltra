@@ -114,6 +114,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
         <p className="text-sm text-slate-500 mt-1">Supports PDF, DOCX, TXT, MD</p>
         <input 
           type="file" 
+          aria-label="Upload files"
           ref={fileInputRef}
           className="hidden" 
           multiple

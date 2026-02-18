@@ -1,4 +1,14 @@
-import { SyllabusNode } from './types';
+import { SyllabusNode, AgentRole } from './types';
+
+export const AGENTS_CONFIG: { role: AgentRole; label: string; color: string }[] = [
+  { role: 'COUNCIL', label: 'The Council', color: 'bg-indigo-500' },
+  { role: 'TEACHER', label: 'Teacher', color: 'bg-emerald-500' },
+  { role: 'EXAMINER', label: 'Examiner', color: 'bg-red-500' },
+  { role: 'COACH', label: 'Coach', color: 'bg-amber-500' },
+  { role: 'ANALYST', label: 'Analyst', color: 'bg-blue-500' },
+];
+
+export const AGENTS = AGENTS_CONFIG;
 
 export const SYSTEM_INSTRUCTION_BASE = `
 You are Study OS, an advanced, hallucination-proof AI tutor. 
