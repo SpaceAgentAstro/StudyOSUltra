@@ -147,15 +147,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
 
   // Load stored key once on mount
   useEffect(() => {
-    const storedProvider = (localStorage.getItem(PROVIDER_STORAGE_KEY) as ModelProvider | null) || 'auto';
+    const getStored = (key: string) => sessionStorage.getItem(key) || localStorage.getItem(key) || '';
+
+    const storedProvider = (getStored(PROVIDER_STORAGE_KEY) as ModelProvider | null) || 'auto';
     const storedGoogleKey =
-      localStorage.getItem(getApiStorageKey('google')) ||
-      localStorage.getItem(LEGACY_API_KEY_STORAGE_KEY) ||
-      '';
-    const storedOpenAIKey = localStorage.getItem(getApiStorageKey('openai')) || '';
-    const storedAnthropicKey = localStorage.getItem(getApiStorageKey('anthropic')) || '';
-    const storedOllamaBase = localStorage.getItem(OLLAMA_BASE_STORAGE_KEY) || '';
-    const storedOllamaModel = localStorage.getItem(OLLAMA_MODEL_STORAGE_KEY) || '';
+      getStored(getApiStorageKey('google')) ||
+      getStored(LEGACY_API_KEY_STORAGE_KEY);
+    const storedOpenAIKey = getStored(getApiStorageKey('openai'));
+    const storedAnthropicKey = getStored(getApiStorageKey('anthropic'));
+    const storedOllamaBase = getStored(OLLAMA_BASE_STORAGE_KEY);
+    const storedOllamaModel = getStored(OLLAMA_MODEL_STORAGE_KEY);
 
     setProvider(storedProvider);
     const activeStoredKey = providerNeedsApiKey(storedProvider)
@@ -361,9 +362,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
               onChange={async (e) => {
                 const next = e.target.value as ModelProvider;
                 setProvider(next);
-                localStorage.setItem(PROVIDER_STORAGE_KEY, next);
+                sessionStorage.setItem(PROVIDER_STORAGE_KEY, next);
+                localStorage.removeItem(PROVIDER_STORAGE_KEY);
+
+                const getStored = (key: string) => sessionStorage.getItem(key) || localStorage.getItem(key) || '';
                 const nextStoredKey = providerNeedsApiKey(next)
-                  ? localStorage.getItem(getApiStorageKey(next)) || (next === 'google' ? localStorage.getItem(LEGACY_API_KEY_STORAGE_KEY) || '' : '')
+                  ? getStored(getApiStorageKey(next)) || (next === 'google' ? getStored(LEGACY_API_KEY_STORAGE_KEY) : '')
                   : '';
                 setApiKeyInput(nextStoredKey);
                 setApiKeySaved(Boolean(nextStoredKey));
@@ -395,9 +399,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
               <button
                 onClick={async () => {
                   const trimmed = apiKeyInput.trim();
-                  localStorage.setItem(getApiStorageKey(provider), trimmed);
+                  sessionStorage.setItem(getApiStorageKey(provider), trimmed);
+                  localStorage.removeItem(getApiStorageKey(provider));
+
                   if (provider === 'google') {
-                    localStorage.setItem(LEGACY_API_KEY_STORAGE_KEY, trimmed);
+                    sessionStorage.setItem(LEGACY_API_KEY_STORAGE_KEY, trimmed);
+                    localStorage.removeItem(LEGACY_API_KEY_STORAGE_KEY);
                   }
                   setApiKeySaved(true);
                   if (!geminiServicePromise) {
@@ -450,8 +457,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
               <div className="col-span-1 flex items-center gap-2 justify-end">
                 <button
                   onClick={async () => {
-                    localStorage.setItem(OLLAMA_BASE_STORAGE_KEY, ollamaBase.trim());
-                    localStorage.setItem(OLLAMA_MODEL_STORAGE_KEY, ollamaModel.trim());
+                    sessionStorage.setItem(OLLAMA_BASE_STORAGE_KEY, ollamaBase.trim());
+                    localStorage.removeItem(OLLAMA_BASE_STORAGE_KEY);
+                    sessionStorage.setItem(OLLAMA_MODEL_STORAGE_KEY, ollamaModel.trim());
+                    localStorage.removeItem(OLLAMA_MODEL_STORAGE_KEY);
+
                     if (!geminiServicePromise) geminiServicePromise = import('../services/geminiService');
                     const { setRuntimeOllamaConfig, getProviderRuntimeStatus } = await geminiServicePromise;
                     setRuntimeOllamaConfig({ baseUrl: ollamaBase.trim(), model: ollamaModel.trim() });

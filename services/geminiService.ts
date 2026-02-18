@@ -42,7 +42,7 @@ let runtimeOllama: { baseUrl?: string; model?: string } = {};
 const safeStorageGet = (key: string): string => {
   try {
     if (typeof window === 'undefined') return "";
-    return window.localStorage.getItem(key) || "";
+    return window.sessionStorage.getItem(key) || window.localStorage.getItem(key) || "";
   } catch {
     return "";
   }
@@ -51,9 +51,35 @@ const safeStorageGet = (key: string): string => {
 const safeStorageSet = (key: string, value: string) => {
   try {
     if (typeof window === 'undefined') return;
-    window.localStorage.setItem(key, value);
+    window.sessionStorage.setItem(key, value);
+    window.localStorage.removeItem(key);
   } catch {
     // ignore storage failures
+  }
+};
+
+const migrateKeysFromLocalToSession = () => {
+  try {
+    if (typeof window === 'undefined') return;
+
+    // List of all keys to migrate
+    const keys = [
+      STORAGE_KEYS.legacyGoogleApiKey,
+      STORAGE_KEYS.provider,
+      STORAGE_KEYS.ollamaBase,
+      STORAGE_KEYS.ollamaModel,
+      ...Object.values(STORAGE_KEYS.providerApiKey)
+    ];
+
+    keys.forEach(key => {
+      const localVal = window.localStorage.getItem(key);
+      if (localVal) {
+        window.sessionStorage.setItem(key, localVal);
+        window.localStorage.removeItem(key);
+      }
+    });
+  } catch {
+    // ignore
   }
 };
 
@@ -73,6 +99,8 @@ const normalizeProvider = (provider: string | null | undefined): ModelProvider =
 const ensureRuntimeHydrated = () => {
   if (runtimeHydrated) return;
   runtimeHydrated = true;
+
+  migrateKeysFromLocalToSession();
 
   const storedProvider = safeStorageGet(STORAGE_KEYS.provider);
   if (storedProvider) {
