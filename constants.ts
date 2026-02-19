@@ -1,4 +1,4 @@
-import { SyllabusNode } from './types';
+import { SyllabusNode, AgentRole } from './types';
 
 export const SYSTEM_INSTRUCTION_BASE = `
 You are Study OS, an advanced, hallucination-proof AI tutor. 
@@ -37,6 +37,16 @@ export const AGENT_PERSONAS = {
     GOAL: Synthesize the best response. If the user asks a concept question, explain like a Teacher but add an Examiner warning about pitfalls.
   `
 };
+
+export const AGENTS_CONFIG: { role: AgentRole; label: string; color: string }[] = [
+  { role: 'COUNCIL', label: 'The Council', color: 'bg-indigo-600' },
+  { role: 'TEACHER', label: 'Teacher', color: 'bg-green-600' },
+  { role: 'EXAMINER', label: 'Examiner', color: 'bg-red-600' },
+  { role: 'COACH', label: 'Coach', color: 'bg-yellow-600' },
+  { role: 'ANALYST', label: 'Analyst', color: 'bg-blue-600' },
+];
+
+export const AGENTS = AGENTS_CONFIG;
 
 export const MOCK_SYLLABUS: SyllabusNode[] = [
   {

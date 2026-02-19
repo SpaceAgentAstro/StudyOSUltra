@@ -42,20 +42,36 @@ let runtimeOllama: { baseUrl?: string; model?: string } = {};
 const safeStorageGet = (key: string): string => {
   try {
     if (typeof window === 'undefined') return "";
-    return window.localStorage.getItem(key) || "";
+    // Priority: Session (secure) -> Local (legacy/persistent)
+    return window.sessionStorage.getItem(key) || window.localStorage.getItem(key) || "";
   } catch {
     return "";
   }
 };
 
-const safeStorageSet = (key: string, value: string) => {
+const safeStorageSet = (key: string, value: string, useSession = false) => {
   try {
     if (typeof window === 'undefined') return;
-    window.localStorage.setItem(key, value);
+    if (useSession) {
+        window.sessionStorage.setItem(key, value);
+    } else {
+        window.localStorage.setItem(key, value);
+    }
   } catch {
     // ignore storage failures
   }
 };
+
+const safeStorageRemove = (key: string, fromSession = false) => {
+    try {
+        if (typeof window === 'undefined') return;
+        if (fromSession) {
+            window.sessionStorage.removeItem(key);
+        } else {
+            window.localStorage.removeItem(key);
+        }
+    } catch {}
+}
 
 const normalizeProvider = (provider: string | null | undefined): ModelProvider => {
   switch ((provider || "").toLowerCase()) {
@@ -189,8 +205,15 @@ export const setRuntimeProvider = (provider: string | null | undefined) => {
 export const setRuntimeApiKey = (key: string | null | undefined, provider: KeyedProvider = 'google') => {
   const trimmed = key?.trim() || "";
   runtimeApiKeys[provider] = trimmed;
-  safeStorageSet(STORAGE_KEYS.providerApiKey[provider], trimmed);
-  if (provider === 'google') safeStorageSet(STORAGE_KEYS.legacyGoogleApiKey, trimmed);
+
+  // Save to Session Storage
+  safeStorageSet(STORAGE_KEYS.providerApiKey[provider], trimmed, true);
+  safeStorageRemove(STORAGE_KEYS.providerApiKey[provider], false); // Clear from local
+
+  if (provider === 'google') {
+      safeStorageSet(STORAGE_KEYS.legacyGoogleApiKey, trimmed, true);
+      safeStorageRemove(STORAGE_KEYS.legacyGoogleApiKey, false); // Clear from local
+  }
 
   if (provider === 'google') {
     cachedClient = null;
