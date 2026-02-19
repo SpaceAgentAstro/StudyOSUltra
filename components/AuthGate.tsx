@@ -21,6 +21,29 @@ const PROVIDERS: Array<{
   { id: 'apple', label: 'Continue with Apple', subtext: 'Use your Apple ID', badge: 'A', accent: 'bg-slate-700' },
 ];
 
+interface ProviderButtonProps {
+  provider: typeof PROVIDERS[number];
+  disabled: boolean;
+  onClick: (id: AuthProviderOption) => void;
+}
+
+const ProviderButton: React.FC<ProviderButtonProps> = ({ provider, disabled, onClick }) => (
+  <button
+    type="button"
+    disabled={disabled}
+    onClick={() => onClick(provider.id)}
+    className="w-full rounded-2xl border border-slate-700 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors px-4 py-4 text-left flex items-center gap-4"
+  >
+    <div className={`w-10 h-10 rounded-xl ${provider.accent} flex items-center justify-center text-white font-bold`}>
+      {provider.badge}
+    </div>
+    <div>
+      <div className="font-semibold text-slate-100">{provider.label}</div>
+      <div className="text-xs text-slate-400">{provider.subtext}</div>
+    </div>
+  </button>
+);
+
 const AuthGate: React.FC<AuthGateProps> = ({
   firebaseConfigured,
   loading,
@@ -40,21 +63,12 @@ const AuthGate: React.FC<AuthGateProps> = ({
 
         <div className="p-8 space-y-4">
           {PROVIDERS.map((provider) => (
-            <button
+            <ProviderButton
               key={provider.id}
-              type="button"
+              provider={provider}
               disabled={!firebaseConfigured || loading}
-              onClick={() => onSignIn(provider.id)}
-              className="w-full rounded-2xl border border-slate-700 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors px-4 py-4 text-left flex items-center gap-4"
-            >
-              <div className={`w-10 h-10 rounded-xl ${provider.accent} flex items-center justify-center text-white font-bold`}>
-                {provider.badge}
-              </div>
-              <div>
-                <div className="font-semibold text-slate-100">{provider.label}</div>
-                <div className="text-xs text-slate-400">{provider.subtext}</div>
-              </div>
-            </button>
+              onClick={onSignIn}
+            />
           ))}
 
           {!firebaseConfigured && (
