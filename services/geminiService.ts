@@ -267,7 +267,7 @@ const parseDataUrl = (dataUrl: string): { mimeType: string; data: string } | nul
   return { mimeType: match[1], data: match[2] };
 };
 
-const extractNestedErrorMessage = (value: unknown): string | null => {
+export const extractNestedErrorMessage = (value: unknown): string | null => {
   if (!value) return null;
 
   if (typeof value === 'string') {
