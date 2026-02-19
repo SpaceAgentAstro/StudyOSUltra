@@ -58,3 +58,42 @@ export const validateFile = (file: File): { isValid: boolean; error?: string } =
 
   return { isValid: true };
 };
+
+/**
+ * Reads a file and returns its content as a Promise.
+ * @param file The file to read
+ * @param readAs The format to read the file as ('text', 'dataURL', 'arrayBuffer')
+ * @returns A Promise that resolves with the file content
+ */
+export const readFile = (
+  file: File,
+  readAs: 'text' | 'dataURL' | 'arrayBuffer' = 'text'
+): Promise<string | ArrayBuffer> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        resolve(e.target.result);
+      } else {
+        reject(new Error('File reading failed: No result found'));
+      }
+    };
+
+    reader.onerror = () => {
+      reject(new Error('File reading error: ' + (reader.error?.message || 'Unknown error')));
+    };
+
+    try {
+      if (readAs === 'dataURL') {
+        reader.readAsDataURL(file);
+      } else if (readAs === 'arrayBuffer') {
+        reader.readAsArrayBuffer(file);
+      } else {
+        reader.readAsText(file);
+      }
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
