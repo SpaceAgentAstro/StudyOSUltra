@@ -1,3 +1,4 @@
+import { useImageUpload } from '../hooks/useImageUpload';
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Message, FileDocument, AgentRole } from '../types';
@@ -67,8 +68,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
   );
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const { isUploading, uploadProgress, imageAttachment, handleImageUpload, clearAttachment } = useImageUpload();
   const [selectedAgent, setSelectedAgent] = useState<AgentRole>('COUNCIL');
   const [useThinking, setUseThinking] = useState(false);
   const [useSearch, setUseSearch] = useState(false);
@@ -83,7 +83,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
   const [isListening, setIsListening] = useState(false);
   const [lastSpokenId, setLastSpokenId] = useState<string | null>(null);
   
-  const [imageAttachment, setImageAttachment] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -195,32 +194,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setIsUploading(true);
-      setUploadProgress(0);
-      
-      // Simulate progress for visual feedback
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => Math.min(prev + 5, 95));
-      }, 50);
-
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        clearInterval(progressInterval);
-        setUploadProgress(100);
-        
-        setTimeout(() => {
-            setImageAttachment(evt.target?.result as string);
-            setIsUploading(false);
-            setUploadProgress(0);
-        }, 500);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const handleListen = () => {
     if (!recognitionRef.current || isListening) return;
     recognitionRef.current.start();
@@ -251,7 +224,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
     
     if (isManualSend) {
         setInput('');
-        setImageAttachment(null);
+        clearAttachment();
     }
     
     setIsLoading(true);
@@ -659,7 +632,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
                  <span className="text-xs font-bold text-slate-700">Image Attached</span>
                  <span className="text-[10px] text-slate-400">Ready to analyze</span>
              </div>
-             <button onClick={() => setImageAttachment(null)} className="ml-2 p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
+             <button onClick={() => clearAttachment()} className="ml-2 p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
                <div className="w-4 h-4 font-bold flex items-center justify-center">×</div>
              </button>
            </div>

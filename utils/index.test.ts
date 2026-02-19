@@ -85,4 +85,29 @@ describe('Utility Functions', () => {
     });
   });
 
+
+  describe('readFile', () => {
+    it('reads a file as text', async () => {
+      const file = new File(['Hello, world!'], 'test.txt', { type: 'text/plain' });
+      const { readFile } = await import('./index');
+      const content = await readFile(file, 'text');
+      expect(content).toBe('Hello, world!');
+    });
+
+    it('reads a file as dataURL', async () => {
+      const file = new File(['Hello'], 'test.txt', { type: 'text/plain' });
+      const { readFile } = await import('./index');
+      const content = await readFile(file, 'dataURL');
+      expect((content as string).startsWith('data:text/plain;base64,')).toBe(true);
+    });
+
+    it('reads a file as arrayBuffer', async () => {
+      const file = new File(['Hello'], 'test.txt', { type: 'text/plain' });
+      const { readFile } = await import('./index');
+      const content = await readFile(file, 'arrayBuffer');
+      expect(content).toBeInstanceOf(ArrayBuffer);
+      expect(new Uint8Array(content as ArrayBuffer).length).toBe(5);
+    });
+  });
+
 });
