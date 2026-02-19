@@ -302,36 +302,51 @@ const extractNestedErrorMessage = (value: unknown): string | null => {
   return null;
 };
 
+const ERROR_PATTERNS = {
+  GEMINI_AUTH: [
+    'api keys are not supported by this api',
+    'oauth2 access token',
+    'credentials_missing',
+    'unauthenticated'
+  ],
+  COMMON_AUTH: [
+    '401',
+    'unauthenticated',
+    'invalid api key'
+  ],
+  INSUFFICIENT_QUOTA: [
+    'credit balance is too low',
+    'insufficient_quota',
+    'quota exceeded',
+    'billing'
+  ]
+} as const;
+
+const ERROR_MESSAGES = {
+  GEMINI_AUTH: 'Gemini authentication failed. This endpoint does not accept API keys and requires OAuth credentials. Update Gemini credentials or switch to OpenAI/Anthropic/Ollama.',
+  COMMON_AUTH: (providerLabel: string) => `${providerLabel} authentication failed. Please verify your API key and provider settings.`,
+  INSUFFICIENT_QUOTA: (providerLabel: string) => `${providerLabel} billing limit reached. Add credits or update billing, then retry.`
+} as const;
+
 const toDisplayError = (provider: Exclude<ModelProvider, 'auto'>, error: unknown): string => {
   const fallback = 'Failed to generate response';
   const message = extractNestedErrorMessage(error) || fallback;
   const normalized = message.toLowerCase();
   const providerLabel = provider === 'google' ? 'Gemini' : provider[0].toUpperCase() + provider.slice(1);
 
-  if (
-    provider === 'google' &&
-    (normalized.includes('api keys are not supported by this api') ||
-      normalized.includes('oauth2 access token') ||
-      normalized.includes('credentials_missing') ||
-      normalized.includes('unauthenticated'))
-  ) {
-    return 'Gemini authentication failed. This endpoint does not accept API keys and requires OAuth credentials. Update Gemini credentials or switch to OpenAI/Anthropic/Ollama.';
+  if (provider === 'google' && ERROR_PATTERNS.GEMINI_AUTH.some(pattern => normalized.includes(pattern))) {
+    return ERROR_MESSAGES.GEMINI_AUTH;
   }
 
-  if (normalized.includes('401') || normalized.includes('unauthenticated') || normalized.includes('invalid api key')) {
-    return `${providerLabel} authentication failed. Please verify your API key and provider settings.`;
+  if (ERROR_PATTERNS.COMMON_AUTH.some(pattern => normalized.includes(pattern))) {
+    return ERROR_MESSAGES.COMMON_AUTH(providerLabel);
   }
 
   if (
     (provider === 'openai' || provider === 'anthropic') &&
-    (
-      normalized.includes('credit balance is too low') ||
-      normalized.includes('insufficient_quota') ||
-      normalized.includes('quota exceeded') ||
-      normalized.includes('billing')
-    )
+    ERROR_PATTERNS.INSUFFICIENT_QUOTA.some(pattern => normalized.includes(pattern))
   ) {
-    return `${providerLabel} billing limit reached. Add credits or update billing, then retry.`;
+    return ERROR_MESSAGES.INSUFFICIENT_QUOTA(providerLabel);
   }
 
   return message;
