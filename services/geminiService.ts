@@ -1,6 +1,7 @@
 
 import { GoogleGenAI } from "@google/genai";
 import { FileDocument, Message, Question, GameMode, AgentRole, DigitalTwin, KnowledgeNode, MetaInsight, CognitiveExercise, VideoPlan } from "../types";
+import { extractJsonText, parseJsonSafely } from "../utils";
 import { SYSTEM_INSTRUCTION_BASE, AGENT_PERSONAS } from "../constants";
 
 export type ModelProvider = 'auto' | 'google' | 'openai' | 'anthropic' | 'ollama';
@@ -335,42 +336,6 @@ const toDisplayError = (provider: Exclude<ModelProvider, 'auto'>, error: unknown
   }
 
   return message;
-};
-
-const extractJsonText = (raw: string): string | null => {
-  if (!raw?.trim()) return null;
-  const trimmed = raw.trim();
-
-  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  if (fenced?.[1]) return fenced[1].trim();
-
-  const arrayStart = trimmed.indexOf('[');
-  const arrayEnd = trimmed.lastIndexOf(']');
-  if (arrayStart !== -1 && arrayEnd > arrayStart) {
-    return trimmed.slice(arrayStart, arrayEnd + 1);
-  }
-
-  const objectStart = trimmed.indexOf('{');
-  const objectEnd = trimmed.lastIndexOf('}');
-  if (objectStart !== -1 && objectEnd > objectStart) {
-    return trimmed.slice(objectStart, objectEnd + 1);
-  }
-
-  return null;
-};
-
-const parseJsonSafely = <T>(raw: string, fallback: T): T => {
-  try {
-    return JSON.parse(raw) as T;
-  } catch {
-    const extracted = extractJsonText(raw);
-    if (!extracted) return fallback;
-    try {
-      return JSON.parse(extracted) as T;
-    } catch {
-      return fallback;
-    }
-  }
 };
 
 const joinAnthropicContent = (content: any): string => {

@@ -58,3 +58,50 @@ export const validateFile = (file: File): { isValid: boolean; error?: string } =
 
   return { isValid: true };
 };
+
+/**
+ * Extracts JSON from a string that might contain other text or be wrapped in markdown code blocks.
+ * @param raw The raw string to extract JSON from
+ * @returns The extracted JSON string or null if no JSON found
+ */
+export const extractJsonText = (raw: string): string | null => {
+  if (!raw?.trim()) return null;
+  const trimmed = raw.trim();
+
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced?.[1]) return fenced[1].trim();
+
+  const arrayStart = trimmed.indexOf('[');
+  const arrayEnd = trimmed.lastIndexOf(']');
+  if (arrayStart !== -1 && arrayEnd > arrayStart) {
+    return trimmed.slice(arrayStart, arrayEnd + 1);
+  }
+
+  const objectStart = trimmed.indexOf('{');
+  const objectEnd = trimmed.lastIndexOf('}');
+  if (objectStart !== -1 && objectEnd > objectStart) {
+    return trimmed.slice(objectStart, objectEnd + 1);
+  }
+
+  return null;
+};
+
+/**
+ * Safely parses a JSON string, attempting to extract JSON if the initial parse fails.
+ * @param raw The raw string to parse
+ * @param fallback The fallback value to return if parsing fails
+ * @returns The parsed object or the fallback value
+ */
+export const parseJsonSafely = <T>(raw: string, fallback: T): T => {
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    const extracted = extractJsonText(raw);
+    if (!extracted) return fallback;
+    try {
+      return JSON.parse(extracted) as T;
+    } catch {
+      return fallback;
+    }
+  }
+};
