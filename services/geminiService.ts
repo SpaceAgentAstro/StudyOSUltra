@@ -1,3 +1,4 @@
+import { config } from "./config";
 
 import { GoogleGenAI } from "@google/genai";
 import { FileDocument, Message, Question, GameMode, AgentRole, DigitalTwin, KnowledgeNode, MetaInsight, CognitiveExercise, VideoPlan } from "../types";
@@ -95,17 +96,17 @@ const ensureRuntimeHydrated = () => {
 
 const getPreferredProvider = (): ModelProvider => {
   ensureRuntimeHydrated();
-  return normalizeProvider(runtimeProvider || process.env.MODEL_PROVIDER || 'auto');
+  return normalizeProvider(runtimeProvider || config.modelProvider || 'auto');
 };
 
 const getEnvApiKey = (provider: KeyedProvider): string => {
   if (provider === 'google') {
-    return process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.JULES_API_KEY || "";
+    return config.geminiApiKey;
   }
   if (provider === 'openai') {
-    return process.env.OPENAI_API_KEY || "";
+    return config.openaiApiKey || "";
   }
-  return process.env.ANTHROPIC_API_KEY || "";
+  return config.anthropicApiKey || "";
 };
 
 const looksLikeGoogleApiKey = (value: string): boolean => /^AIza[A-Za-z0-9_-]{16,}$/.test(value.trim());
@@ -215,20 +216,20 @@ export const setRuntimeOllamaConfig = (config: { baseUrl?: string; model?: strin
 const getOllamaConfig = () => {
   ensureRuntimeHydrated();
   return {
-    baseUrl: (runtimeOllama.baseUrl || process.env.OLLAMA_BASE_URL || "http://localhost:11434").replace(/\/$/, ""),
-    model: runtimeOllama.model || process.env.OLLAMA_MODEL || "qwen2.5:latest",
+    baseUrl: (runtimeOllama.baseUrl || config.ollamaBaseUrl || "http://localhost:11434").replace(/\/$/, ""),
+    model: runtimeOllama.model || config.ollamaModel || "qwen2.5:latest",
   };
 };
 
 const getOpenAIConfig = () => ({
-  baseUrl: (process.env.OPENAI_BASE_URL || OPENAI_BASE_DEFAULT).replace(/\/$/, ""),
-  model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
-  imageModel: process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1'
+  baseUrl: (config.openaiBaseUrl || OPENAI_BASE_DEFAULT).replace(/\/$/, ""),
+  model: config.openaiModel || 'gpt-4.1-mini',
+  imageModel: config.openaiImageModel || 'gpt-image-1'
 });
 
 const getAnthropicConfig = () => ({
-  baseUrl: (process.env.ANTHROPIC_BASE_URL || ANTHROPIC_BASE_DEFAULT).replace(/\/$/, ""),
-  model: process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-latest'
+  baseUrl: (config.anthropicBaseUrl || ANTHROPIC_BASE_DEFAULT).replace(/\/$/, ""),
+  model: config.anthropicModel || 'claude-3-5-sonnet-latest'
 });
 
 const getGoogleModel = (useFlashLite = false) => useFlashLite ? 'gemini-flash-lite-latest' : 'gemini-3-flash-preview';

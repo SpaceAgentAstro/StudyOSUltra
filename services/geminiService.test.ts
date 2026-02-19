@@ -1,3 +1,4 @@
+import { config } from './config';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const { mockGenerateContentStream, mockGenerateContent, mockGoogleGenAI } = vi.hoisted(() => {
@@ -16,6 +17,32 @@ vi.mock('@google/genai', () => ({
   GoogleGenAI: mockGoogleGenAI
 }));
 
+
+vi.mock('./config', () => ({
+  config: {
+    geminiApiKey: '',
+    julesApiKey: '',
+    openaiApiKey: '',
+    anthropicApiKey: '',
+    modelProvider: 'auto',
+    ollamaModel: 'qwen2.5:latest',
+    ollamaBaseUrl: 'http://localhost:11434',
+    openaiBaseUrl: 'https://api.openai.com/v1',
+    openaiModel: 'gpt-4.1-mini',
+    openaiImageModel: 'gpt-image-1',
+    anthropicBaseUrl: 'https://api.anthropic.com/v1',
+    anthropicModel: 'claude-3-5-sonnet-latest',
+    firebase: {
+      apiKey: '',
+      authDomain: '',
+      projectId: '',
+      appId: '',
+    }
+  }
+}));
+
+import { config } from './config';
+
 import {
   streamChatResponse,
   generateExamPaper,
@@ -29,9 +56,9 @@ import {
 describe('geminiService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.API_KEY = 'test-key';
-    delete process.env.GEMINI_API_KEY;
-    delete process.env.JULES_API_KEY;
+    config.geminiApiKey = 'test-key';
+
+
     setRuntimeProvider('auto');
     setRuntimeApiKeyForProvider('google', '');
     setRuntimeApiKeyForProvider('openai', '');
@@ -366,7 +393,7 @@ describe('geminiService', () => {
       }
     });
 
-    it('prefers GEMINI_API_KEY over JULES_API_KEY when both are set', async () => {
+    it('uses configured geminiApiKey', async () => {
       const mockStream = {
         [Symbol.asyncIterator]: async function* () {
           yield { text: 'OK' };
@@ -374,8 +401,8 @@ describe('geminiService', () => {
       };
       mockGenerateContentStream.mockResolvedValueOnce(mockStream);
 
-      process.env.GEMINI_API_KEY = 'gemini-priority-key';
-      process.env.JULES_API_KEY = 'jules-fallback-key';
+      config.geminiApiKey = 'gemini-priority-key';
+
       setRuntimeProvider('google');
 
       await streamChatResponse({
@@ -397,7 +424,7 @@ describe('geminiService', () => {
       };
       mockGenerateContentStream.mockResolvedValueOnce(mockStream);
 
-      process.env.GEMINI_API_KEY = 'AIzaSyD1234567890abcdefTESTKEY';
+      config.geminiApiKey = 'AIzaSyD1234567890abcdefTESTKEY';
       setRuntimeApiKeyForProvider('google', 'non-gemini-runtime-key');
       setRuntimeProvider('google');
 
@@ -421,7 +448,7 @@ describe('geminiService', () => {
       };
       mockGenerateContentStream.mockResolvedValueOnce(mockStream);
 
-      process.env.GEMINI_API_KEY = 'gemini-fallback-key';
+      config.geminiApiKey = 'gemini-fallback-key';
       setRuntimeProvider('openai'); // preferred but unconfigured
       setRuntimeApiKeyForProvider('openai', '');
       setRuntimeApiKeyForProvider('google', '');
@@ -440,7 +467,7 @@ describe('geminiService', () => {
     });
 
     it('reports resolved provider as Google when preferred OpenAI is unconfigured', () => {
-      process.env.GEMINI_API_KEY = 'gemini-status-key';
+      config.geminiApiKey = 'gemini-status-key';
       setRuntimeProvider('openai');
       setRuntimeApiKeyForProvider('openai', '');
       setRuntimeApiKeyForProvider('google', '');

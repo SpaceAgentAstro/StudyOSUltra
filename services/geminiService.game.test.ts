@@ -1,5 +1,16 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+vi.mock('./config', () => ({
+  config: {
+    geminiApiKey: 'test-key',
+    modelProvider: 'auto',
+    firebase: {}
+  }
+}));
+
+import { config } from './config';
+
 import { generateGameQuestions } from './geminiService';
 
 // Mock setup
@@ -28,7 +39,7 @@ vi.mock('@google/genai', () => ({
 describe('generateGameQuestions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.API_KEY = 'test-key';
+    config.geminiApiKey = 'test-key';
   });
 
   it('generates correct prompt for MCQ_ARENA with count 3', async () => {
