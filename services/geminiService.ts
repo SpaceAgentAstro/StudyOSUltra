@@ -267,19 +267,25 @@ const parseDataUrl = (dataUrl: string): { mimeType: string; data: string } | nul
   return { mimeType: match[1], data: match[2] };
 };
 
-const extractNestedErrorMessage = (value: unknown): string | null => {
+export const extractNestedErrorMessage = (value: unknown): string | null => {
   if (!value) return null;
 
   if (typeof value === 'string') {
     const trimmed = value.trim();
     if (!trimmed) return null;
 
-    try {
-      const parsed = JSON.parse(trimmed);
-      return extractNestedErrorMessage(parsed) || trimmed;
-    } catch {
-      return trimmed;
+    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+        (trimmed.startsWith('[') && trimmed.endsWith(']')) ||
+        (trimmed.startsWith('"') && trimmed.endsWith('"'))) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        return extractNestedErrorMessage(parsed) || trimmed;
+      } catch {
+        return trimmed;
+      }
     }
+
+    return trimmed;
   }
 
   if (value instanceof Error) {
