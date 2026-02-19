@@ -4,16 +4,12 @@ import { FileDocument, GameMode, Question, GameSession, TopicMastery } from '../
 import { generateGameQuestions, gradeOpenEndedAnswer } from '../services/geminiService';
 import { Brain, CheckCircle, X, Trophy, Zap, BookOpen } from './Icons';
 import { calculateAccuracy } from '../utils';
+import { MOCK_TOPICS } from '../constants';
 
 interface GameCenterProps {
   files: FileDocument[];
 }
 
-const TOPICS_MOCK: TopicMastery[] = [
-  { topicId: '1', title: 'Cell Biology', level: 'Secure', xp: 450 },
-  { topicId: '2', title: 'Atomic Structure', level: 'Developing', xp: 120 },
-  { topicId: '3', title: 'Energetics', level: 'Novice', xp: 0 },
-];
 
 const GameCenter: React.FC<GameCenterProps> = ({ files }) => {
   const [view, setView] = useState<'DASHBOARD' | 'PLAYING'>('DASHBOARD');
@@ -119,7 +115,7 @@ const GameCenter: React.FC<GameCenterProps> = ({ files }) => {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-           {TOPICS_MOCK.map(topic => (
+           {MOCK_TOPICS.map(topic => (
              <div key={topic.topicId} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden group">
                 <div className="relative z-10">
                   <div className="flex justify-between items-start mb-4">

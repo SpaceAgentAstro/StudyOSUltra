@@ -1,4 +1,4 @@
-import { SyllabusNode } from './types';
+import { SyllabusNode, TopicMastery } from './types';
 
 export const SYSTEM_INSTRUCTION_BASE = `
 You are Study OS, an advanced, hallucination-proof AI tutor. 
@@ -57,4 +57,10 @@ export const MOCK_SYLLABUS: SyllabusNode[] = [
       { id: '2.2', title: 'Bonding', status: 'not-started' },
     ]
   }
+];
+
+export const MOCK_TOPICS: TopicMastery[] = [
+  { topicId: '1', title: 'Cell Biology', level: 'Secure', xp: 450 },
+  { topicId: '2', title: 'Atomic Structure', level: 'Developing', xp: 120 },
+  { topicId: '3', title: 'Energetics', level: 'Novice', xp: 0 },
 ];
