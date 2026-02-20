@@ -57,7 +57,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
             <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mb-6">
               <Brain className="w-6 h-6 text-white" />
             </div>
-            <h2 className="text-3xl font-bold mb-4">Study OS</h2>
+            <h2 className="text-3xl font-bold mb-4">Galactic Maestro</h2>
             <p className="text-indigo-200">The world's most advanced AI study companion. Grounded, accurate, and ready to help you ace your exams.</p>
           </div>
           
@@ -119,7 +119,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           {step === 2 && (
              <div className="flex-1 flex flex-col animate-fadeIn">
                 <h1 className="text-3xl font-bold text-slate-900 mb-2">Upload Your Brain</h1>
-                <p className="text-slate-500 mb-4">Study OS works best when it knows what you know. Upload your notes, textbooks, or syllabus.</p>
+                <p className="text-slate-500 mb-4">Galactic Maestro works best when it knows what you know. Upload your notes, textbooks, or syllabus.</p>
                 
                 <div className="flex-1 overflow-y-auto min-h-[300px] border border-slate-100 rounded-2xl bg-slate-50/50">
                   <FileUploader files={files} setFiles={setFiles} />
@@ -163,7 +163,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
               disabled={step === 1 && !name}
               className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-indigo-500/20"
             >
-              {step === 3 ? "Launch Study OS" : "Next Step"}
+              {step === 3 ? "Launch Galactic Maestro" : "Next Step"}
             </button>
           </div>
 

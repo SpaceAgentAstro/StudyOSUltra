@@ -4,7 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"npm run start:server\" \"vite\"",
+    "start:server": "node server.js",
     "build": "vite build",
     "build:pages": "npm run build && node scripts/publish-github-pages.js",
     "preview": "vite preview",
@@ -13,11 +14,13 @@
     "sync:skills": "node scripts/sync-codex-skills.js"
   },
   "dependencies": {
+    "@csstools/css-calc": "^3.1.1",
     "@google/genai": "^1.38.0",
     "firebase": "^12.9.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "vitest": "^4.0.18"
+    "vitest": "^4.0.18",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
