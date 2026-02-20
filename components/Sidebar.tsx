@@ -80,7 +80,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         ))}
       </nav>
 
-      <div className="p-4 border-t border-slate-800 space-y-3">
+      <div className="p-4 border-t border-slate-800">
         <div className="bg-slate-800/50 rounded-lg p-3">
           <p className="text-xs text-slate-400 hidden md:block mb-2">Study Streak</p>
           <div className="flex items-center gap-2">

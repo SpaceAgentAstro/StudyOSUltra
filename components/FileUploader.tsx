@@ -171,8 +171,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
       </div>
 
       <div 
-        role="button"
-        tabIndex={0}
         onClick={() => fileInputRef.current?.click()}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -233,7 +231,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
                 <input 
                   id="search-files"
                   type="text" 
-                  aria-label="Search files"
                   placeholder="Search files..." 
                   aria-label="Search files"
                   value={searchQuery}

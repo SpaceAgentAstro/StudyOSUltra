@@ -9,8 +9,6 @@ let geminiServicePromise: Promise<typeof import('../services/geminiService')> | 
 
 interface ChatInterfaceProps {
   files: FileDocument[];
-  initialMessages?: Message[];
-  onMessagesChange?: (messages: Message[]) => void;
 }
 
 const defaultWelcomeMessage: Message = {
