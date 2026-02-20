@@ -1,7 +1,14 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FileDocument } from '../types';
 import { UploadCloud, FileText, Trash2, CheckCircle, Search, AlertTriangle } from './Icons';
-import { generateId, validateFile } from '../utils';
+import {
+  extractFilePreview,
+  formatBytes,
+  generateId,
+  MAX_FILE_SIZE_BYTES,
+  MAX_TOTAL_UPLOAD_SIZE_BYTES,
+  validateFile,
+} from '../utils';
 
 interface FileUploaderProps {
   files: FileDocument[];
@@ -10,14 +17,38 @@ interface FileUploaderProps {
 
 const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isMountedRef = useRef(true);
   const [fileProgressMessages, setFileProgressMessages] = useState<Record<string, string>>({});
   const [searchQuery, setSearchQuery] = useState('');
+  const totalUploadBytes = useMemo(
+    () => files.reduce((sum, file) => sum + (file.sizeBytes ?? 0), 0),
+    [files],
+  );
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFiles = event.target.files;
     if (!uploadedFiles) return;
 
-    Array.from(uploadedFiles).forEach((file: File) => {
+    const incomingFiles = Array.from(uploadedFiles);
+    const incomingTotalBytes = incomingFiles.reduce((sum, file) => sum + file.size, 0);
+
+    if (totalUploadBytes + incomingTotalBytes > MAX_TOTAL_UPLOAD_SIZE_BYTES) {
+      alert(
+        `Upload cancelled: total local source storage would exceed ${formatBytes(
+          MAX_TOTAL_UPLOAD_SIZE_BYTES,
+        )}. Remove some files first.`,
+      );
+      event.target.value = '';
+      return;
+    }
+
+    incomingFiles.forEach((file: File) => {
       const validationError = validateFile(file);
       if (validationError) {
         alert(validationError);
@@ -40,51 +71,79 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
         uploadDate: Date.now(),
         status: 'processing',
         progress: 0,
+        sizeBytes: file.size,
+        isContentTruncated: false,
       };
 
       setFiles(prev => [...prev, newFile]);
-      simulateIngestionPipeline(id, file);
+      void simulateIngestionPipeline(id, file);
+    });
+
+    event.target.value = '';
+  };
+
+  const updateFileById = (id: string, changes: Partial<FileDocument>) => {
+    if (!isMountedRef.current) return;
+    setFiles((prev) => prev.map((file) => (file.id === id ? { ...file, ...changes } : file)));
+  };
+
+  const clearMessage = (id: string) => {
+    if (!isMountedRef.current) return;
+    setFileProgressMessages(prev => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
     });
   };
 
   const simulateIngestionPipeline = (id: string, file: File) => {
     const updateMessage = (msg: string) => {
+      if (!isMountedRef.current) return;
       setFileProgressMessages(prev => ({ ...prev, [id]: msg }));
     };
 
-    // Step 1: Uploading
     updateMessage('Uploading...');
+    updateFileById(id, { progress: 15, status: 'processing' });
 
     setTimeout(() => {
-        // Step 2: OCR / Text Extraction
-        updateMessage(file.name.endsWith('.pdf') ? 'Running OCR & Text Extraction...' : 'Reading Content...');
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const text = e.target?.result as string;
-            
-            setTimeout(() => {
-                // Step 3: Chunking
-                updateMessage('Page-aware Chunking & Metadata Extraction...');
-                
-                setTimeout(() => {
-                    // Step 4: Vector Embeddings
-                    updateMessage('Generating Vector Embeddings...');
-                    
-                    setTimeout(() => {
-                        setFiles(prev => prev.map(f => f.id === id ? { ...f, content: text, status: 'ready', progress: 100 } : f));
-                        // Clean up status message
-                        setFileProgressMessages(prev => {
-                          const next = { ...prev };
-                          delete next[id];
-                          return next;
-                        });
-                    }, 800);
-                }, 800);
-            }, 800);
-        };
-        reader.readAsText(file);
+      const lowerName = file.name.toLowerCase();
+      updateMessage(lowerName.endsWith('.pdf') ? 'Running OCR & Text Extraction...' : 'Reading Content...');
+      updateFileById(id, { progress: 45 });
 
+      extractFilePreview(file)
+        .then((preview) => {
+          setTimeout(() => {
+            updateMessage('Page-aware Chunking & Metadata Extraction...');
+            updateFileById(id, { progress: 75 });
+
+            setTimeout(() => {
+              updateMessage('Generating Vector Embeddings...');
+              updateFileById(id, { progress: 90 });
+
+              setTimeout(() => {
+                updateFileById(id, {
+                  content: preview.content,
+                  status: 'ready',
+                  progress: 100,
+                  sizeBytes: file.size,
+                  previewBytes: preview.previewBytes,
+                  isContentTruncated: preview.truncated,
+                  errorMessage: undefined,
+                });
+                clearMessage(id);
+              }, 800);
+            }, 800);
+          }, 800);
+        })
+        .catch((error) => {
+          const message = error instanceof Error ? error.message : 'Unknown processing error';
+          updateFileById(id, {
+            status: 'error',
+            progress: 0,
+            errorMessage: message,
+          });
+          updateMessage('Processing failed');
+        });
     }, 800);
   };
 
@@ -104,8 +163,11 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
   return (
     <div className="p-6 max-w-4xl mx-auto w-full">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-slate-900 mb-2">Sources & Knowledge Base</h2>
-        <p className="text-slate-500">Upload textbooks, notes, and transcripts. Galactic Maestro will ground all answers in these files to prevent hallucinations.</p>
+        <h2 className="text-2xl font-bold text-slate-900 mb-2">Mission Control Sources</h2>
+        <p className="text-slate-500">
+          Upload textbooks, notes, and transcripts. Files up to {formatBytes(MAX_FILE_SIZE_BYTES)} each are accepted,
+          and Study OS indexes safe preview slices to keep the UI fast.
+        </p>
       </div>
 
       <div 
@@ -124,8 +186,11 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
         <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary-100 transition-colors">
           <UploadCloud className="w-8 h-8 text-slate-400 group-hover:text-primary-600" />
         </div>
-        <h3 className="text-lg font-semibold text-slate-900">Click or press enter to upload files</h3>
-        <p className="text-sm text-slate-500 mt-1">Supports PDF, DOCX, TXT, MD</p>
+        <h3 className="text-lg font-semibold text-slate-900">Click or press Enter to upload mission files</h3>
+        <p className="text-sm text-slate-500 mt-1">
+          Supports PDF, DOCX, TXT, MD, CSV, JSON • Max {formatBytes(MAX_FILE_SIZE_BYTES)} per file
+        </p>
+        <p className="text-xs text-slate-400 mt-2">Large files are preview-indexed locally so uploads do not overload the site.</p>
         <input 
           type="file" 
           ref={fileInputRef}
@@ -141,7 +206,10 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
       <div className="mt-8 space-y-4">
         {files.length > 0 && (
            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
-              <h3 className="font-semibold text-slate-700">Active Sources ({files.length})</h3>
+              <div>
+                <h3 className="font-semibold text-slate-700">Active Sources ({files.length})</h3>
+                <p className="text-xs text-slate-500 mt-1">{formatBytes(totalUploadBytes)} stored in local session</p>
+              </div>
               <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <label htmlFor="search-files" className="sr-only">Search files</label>
@@ -180,9 +248,14 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
                 <p className="font-medium text-slate-900 truncate">{file.name}</p>
                 {file.status === 'processing' ? (
                      <p className="text-xs text-indigo-600 font-medium animate-pulse">{fileProgressMessages[file.id] || 'Processing...'}</p>
+                ) : file.status === 'error' ? (
+                    <p className="text-xs text-red-500 truncate">{file.errorMessage || 'Unable to process file'}</p>
                 ) : (
                     <p className="text-xs text-slate-500 truncate">
-                    {new Date(file.uploadDate).toLocaleDateString()} • {file.content.length} chars • Ready for RAG
+                      {new Date(file.uploadDate).toLocaleDateString()} • {formatBytes(file.sizeBytes ?? file.content.length)} •{' '}
+                      {file.isContentTruncated
+                        ? `Preview indexed (${formatBytes(file.previewBytes ?? file.sizeBytes ?? 0)} scanned)`
+                        : `${file.content.length.toLocaleString()} chars indexed`}
                     </p>
                 )}
               </div>

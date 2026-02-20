@@ -7,6 +7,9 @@ export interface FileDocument {
   status: 'processing' | 'ready' | 'error';
   progress?: number;
   errorMessage?: string;
+  sizeBytes?: number;
+  previewBytes?: number;
+  isContentTruncated?: boolean;
 }
 
 export type AgentRole = 'TEACHER' | 'EXAMINER' | 'COACH' | 'ANALYST' | 'COUNCIL';
