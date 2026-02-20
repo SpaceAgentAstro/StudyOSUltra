@@ -157,4 +157,48 @@ describe('geminiService', () => {
     expect(score.breakdown.quizPerformance).toBe(100);
     expect(score.breakdown.multimodalCoverage).toBeGreaterThan(50);
   });
+
+  describe('gradeOpenEndedAnswer', () => {
+    it('should return safe default when API returns malformed JSON', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockGenerateContent.mockResolvedValueOnce({
+        text: "This is not JSON"
+      });
+
+      const result = await gradeOpenEndedAnswer(
+        "What is a cell?",
+        "Unit of life",
+        ["unit", "life"],
+        []
+      );
+
+      expect(result).toEqual({
+        score: 0,
+        maxScore: 5,
+        feedback: "Unable to grade at this time due to a service error."
+      });
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    it('should return safe default when API throws an error', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockGenerateContent.mockRejectedValueOnce(new Error("API Failure"));
+
+      const result = await gradeOpenEndedAnswer(
+        "What is a cell?",
+        "Unit of life",
+        ["unit", "life"],
+        []
+      );
+
+      expect(result).toEqual({
+        score: 0,
+        maxScore: 5,
+        feedback: "Unable to grade at this time due to a service error."
+      });
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+  });
 });
