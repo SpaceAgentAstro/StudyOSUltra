@@ -24,37 +24,112 @@ export const calculateAccuracy = (score: number, total: number): number => {
 
 /**
  * Generates a random alphanumeric ID.
+ * Uses crypto.randomUUID if available for better security.
  * @returns A random string ID
  */
 export const generateId = (): string => {
-  return crypto.randomUUID();
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return Math.random().toString(36).substring(2, 11);
+};
+
+export const MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024; // 500MB
+export const MAX_TOTAL_UPLOAD_SIZE_BYTES = 2 * 1024 * 1024 * 1024; // 2GB safety cap
+const MAX_PREVIEW_READ_BYTES = 2 * 1024 * 1024; // Keep browser memory stable
+const MAX_PREVIEW_CHARS = 120_000;
+const ALLOWED_EXTENSIONS = ['.txt', '.md', '.csv', '.json', '.pdf', '.docx'];
+const TEXT_EXTENSIONS = ['.txt', '.md', '.csv', '.json'];
+
+const BINARY_PREVIEW_NOTICE =
+  'Binary document uploaded. Browser indexing uses a small preview slice for stability.';
+
+const sanitizePreview = (value: string) =>
+  value
+    .replace(/\u0000/g, ' ')
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const textQualityScore = (value: string) => {
+  if (!value.length) return 0;
+  const alphaNumericMatches = value.match(/[a-z0-9]/gi);
+  const alphaNumericCount = alphaNumericMatches ? alphaNumericMatches.length : 0;
+  return alphaNumericCount / value.length;
 };
 
 /**
- * Validates file size and type.
- * @param file The file to validate
- * @returns Object with validity status and error message if invalid
+ * Formats bytes into human-readable unit.
  */
-export const validateFile = (file: File): { isValid: boolean; error?: string } => {
-  const MAX_SIZE = 500 * 1024 * 1024; // 500MB
-  const ALLOWED_EXTENSIONS = ['.txt', '.md', '.csv', '.json', '.pdf', '.docx'];
+export const formatBytes = (bytes: number): string => {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let value = bytes;
+  let unitIndex = 0;
 
-  const dotIndex = file.name.lastIndexOf('.');
-  const extension = dotIndex !== -1 ? file.name.slice(dotIndex).toLowerCase() : '';
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
 
-  if (!ALLOWED_EXTENSIONS.includes(extension)) {
+  const precision = value >= 100 || unitIndex === 0 ? 0 : value >= 10 ? 1 : 2;
+  return `${value.toFixed(precision)} ${units[unitIndex]}`;
+};
+
+export interface FilePreviewResult {
+  content: string;
+  truncated: boolean;
+  previewBytes: number;
+}
+
+/**
+ * Extracts a bounded text preview from a file so large uploads stay responsive.
+ */
+export const extractFilePreview = async (file: File): Promise<FilePreviewResult> => {
+  const previewBytes = Math.min(file.size, MAX_PREVIEW_READ_BYTES);
+  const previewBlob = file.slice(0, previewBytes);
+  const previewText = await previewBlob.text();
+  const sanitized = sanitizePreview(previewText);
+  const lowerName = file.name.toLowerCase();
+  const isTextFile = TEXT_EXTENSIONS.some((ext) => lowerName.endsWith(ext));
+  const qualityScore = textQualityScore(sanitized);
+  const looksLikeReadableText = qualityScore >= 0.4;
+
+  if (!isTextFile && !looksLikeReadableText) {
     return {
-      isValid: false,
-      error: `Invalid file type: ${extension || 'no extension'}. Supported types: ${ALLOWED_EXTENSIONS.join(', ')}`
+      content: `${BINARY_PREVIEW_NOTICE} File: ${file.name}`,
+      truncated: true,
+      previewBytes,
     };
   }
 
-  if (file.size > MAX_SIZE) {
-    return {
-      isValid: false,
-      error: `File "${file.name}" exceeds the 500MB size limit.`
-    };
+  const boundedContent = sanitized.slice(0, MAX_PREVIEW_CHARS);
+  const truncated = sanitized.length > MAX_PREVIEW_CHARS || file.size > previewBytes;
+
+  return {
+    content: boundedContent || `${BINARY_PREVIEW_NOTICE} File: ${file.name}`,
+    truncated,
+    previewBytes,
+  };
+};
+
+/**
+ * Validates a file for upload.
+ * Checks for file size (max 500MB) and allowed extensions.
+ * @param file File object with name and size
+ * @returns Error message string or null if valid
+ */
+export const validateFile = (file: { name: string; size: number }): string | null => {
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    return `File size exceeds ${formatBytes(MAX_FILE_SIZE_BYTES)} per-file limit`;
   }
 
-  return { isValid: true };
+  const lowerName = file.name.toLowerCase();
+  const hasValidExtension = ALLOWED_EXTENSIONS.some(ext => lowerName.endsWith(ext));
+
+  if (!hasValidExtension) {
+    return `File type not supported. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`;
+  }
+
+  return null;
 };

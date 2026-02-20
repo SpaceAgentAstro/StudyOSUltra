@@ -7,6 +7,10 @@ export interface FileDocument {
   uploadDate: number;
   status: 'processing' | 'ready' | 'error';
   progress?: number;
+  errorMessage?: string;
+  sizeBytes?: number;
+  previewBytes?: number;
+  isContentTruncated?: boolean;
 }
 
 export interface Message {
