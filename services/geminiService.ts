@@ -42,16 +42,20 @@ let runtimeOllama: { baseUrl?: string; model?: string } = {};
 const safeStorageGet = (key: string): string => {
   try {
     if (typeof window === 'undefined') return "";
-    return window.localStorage.getItem(key) || "";
+    return window.sessionStorage.getItem(key) || window.localStorage.getItem(key) || "";
   } catch {
     return "";
   }
 };
 
-const safeStorageSet = (key: string, value: string) => {
+const safeStorageSet = (key: string, value: string, useSession = false) => {
   try {
     if (typeof window === 'undefined') return;
-    window.localStorage.setItem(key, value);
+    const storage = useSession ? window.sessionStorage : window.localStorage;
+    storage.setItem(key, value);
+    if (useSession) {
+      window.localStorage.removeItem(key);
+    }
   } catch {
     // ignore storage failures
   }
@@ -189,8 +193,8 @@ export const setRuntimeProvider = (provider: string | null | undefined) => {
 export const setRuntimeApiKey = (key: string | null | undefined, provider: KeyedProvider = 'google') => {
   const trimmed = key?.trim() || "";
   runtimeApiKeys[provider] = trimmed;
-  safeStorageSet(STORAGE_KEYS.providerApiKey[provider], trimmed);
-  if (provider === 'google') safeStorageSet(STORAGE_KEYS.legacyGoogleApiKey, trimmed);
+  safeStorageSet(STORAGE_KEYS.providerApiKey[provider], trimmed, true);
+  if (provider === 'google') safeStorageSet(STORAGE_KEYS.legacyGoogleApiKey, trimmed, true);
 
   if (provider === 'google') {
     cachedClient = null;
@@ -267,7 +271,7 @@ const parseDataUrl = (dataUrl: string): { mimeType: string; data: string } | nul
   return { mimeType: match[1], data: match[2] };
 };
 
-const extractNestedErrorMessage = (value: unknown): string | null => {
+export const extractNestedErrorMessage = (value: unknown): string | null => {
   if (!value) return null;
 
   if (typeof value === 'string') {
