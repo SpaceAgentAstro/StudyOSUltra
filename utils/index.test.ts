@@ -1,6 +1,6 @@
 
 import { describe, it, expect } from 'vitest';
-import { formatTime, calculateAccuracy, generateId } from './index';
+import { formatTime, calculateAccuracy, generateId, validateFile } from './index';
 
 describe('Utility Functions', () => {
   
