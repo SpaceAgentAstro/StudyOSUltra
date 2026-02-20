@@ -267,6 +267,14 @@ describe('Utility Functions', () => {
       const result = parseJsonSafely('no json here', { fallback: true });
       expect(result).toEqual({ fallback: true });
     });
+
+    it('returns error for mismatched MIME type', () => {
+      // Simulate an XSS attempt via PDF extension but HTML content type
+      const file = { name: 'test.pdf', size: 1024, type: 'text/html' } as File;
+      const result = validateFile(file);
+      expect(result.isValid).toBe(false);
+      expect(result.error).toContain('MIME type mismatch');
+    });
   });
 
 });
