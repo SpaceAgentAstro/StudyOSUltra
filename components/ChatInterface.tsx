@@ -216,7 +216,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
   const handleSendRef = useRef(handleSend);
   useEffect(() => {
     handleSendRef.current = handleSend;
-  });
+  }, [handleSend]);
 
   const stableHandleExplainCode = useCallback((code: string) => {
     handleSendRef.current(`Could you explain this code in detail as a teacher?\n\n${code}`, 'TEACHER');

@@ -194,7 +194,7 @@ const KnowledgeNodeSchema = z.object({
 });
 
 const MetaInsightSchema = z.object({
-  type: z.enum(["BIAS_DETECTED", "STRATEGY_SUGGESTION", "STRENGTH"]),
+  type: z.enum(['BIAS_DETECTED', 'STRATEGY_SUGGESTION', 'STRENGTH']),
   title: z.string(),
   description: z.string(),
   timestamp: z.number(),
@@ -203,22 +203,9 @@ const MetaInsightSchema = z.object({
 const CognitiveExerciseSchema = z.object({
   id: z.string(),
   title: z.string(),
-  skill: z.enum(["LOGIC", "FIRST_PRINCIPLES", "ARGUMENTATION", "LATERAL_THINKING"]),
+  skill: z.enum(['LOGIC', 'FIRST_PRINCIPLES', 'ARGUMENTATION', 'LATERAL_THINKING']),
   description: z.string(),
-  difficulty: z.enum(["Novice", "Adept", "Master"]),
-});
-
-const QuestionSchema = z.object({
-  id: z.string(),
-  type: z.enum(["MCQ", "OPEN"]),
-  text: z.string(),
-  options: z.array(z.string()).optional(),
-  correctOptionIndex: z.number().optional(),
-  markScheme: z.array(z.string()).optional(),
-  explanation: z.string(),
-  sourceCitation: z.string(),
-  difficulty: z.enum(["easy", "medium", "hard"]),
-  marks: z.number().optional(),
+  difficulty: z.enum(['Novice', 'Adept', 'Master']),
 });
 
 const GradeResponseSchema = z.object({

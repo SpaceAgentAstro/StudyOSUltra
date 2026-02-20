@@ -208,21 +208,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
         />
       </div>
 
-      {uploadError && (
-        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="flex items-center gap-3">
-             <AlertTriangle className="w-5 h-5 text-red-500" />
-             <p className="text-sm font-medium text-red-700">{uploadError}</p>
-          </div>
-          <button
-            onClick={() => setUploadError(null)}
-            className="p-1 hover:bg-red-100 rounded-lg transition-colors"
-          >
-            <X className="w-4 h-4 text-red-400" />
-          </button>
-        </div>
-      )}
-
       <div className="mt-8 space-y-4">
         {files.length > 0 && (
            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
@@ -290,7 +275,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
                 onClick={() => removeFile(file.id)}
                 aria-label={`Remove file ${file.name}`}
                 className="p-2 text-slate-400 hover:text-red-500 transition-colors"
-                aria-label={`Remove ${file.name}`}
               >
                 <Trash2 className="w-5 h-5" />
               </button>
