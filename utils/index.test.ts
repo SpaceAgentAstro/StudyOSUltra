@@ -120,4 +120,53 @@ describe('Utility Functions', () => {
     });
   });
 
+
+  describe('readFile', () => {
+    it('reads file as text by default', async () => {
+      const file = new File(['hello world'], 'test.txt', { type: 'text/plain' });
+      const content = await readFile(file);
+      expect(content).toBe('hello world');
+    });
+
+    it('reads file as dataURL', async () => {
+      const file = new File(['hello'], 'test.txt', { type: 'text/plain' });
+      const content = await readFile(file, 'dataURL');
+      expect((content as string).startsWith('data:text/plain;base64,')).toBe(true);
+    });
+
+    it('reads file as arrayBuffer', async () => {
+      const file = new File(['hello'], 'test.txt', { type: 'text/plain' });
+      const content = await readFile(file, 'arrayBuffer');
+      expect(content).toBeInstanceOf(ArrayBuffer);
+      const decoder = new TextDecoder();
+      expect(decoder.decode(content as ArrayBuffer)).toBe('hello');
+    });
+
+    it('handles read errors', async () => {
+      // Mocking FileReader to simulate error
+      const originalFileReader = global.FileReader;
+      global.FileReader = class MockFileReader {
+        readAsText() {
+          setTimeout(() => {
+            if (this.onerror) {
+                // @ts-ignore
+                this.error = { message: 'Mock error' };
+                // @ts-ignore
+                this.onerror(new Event('error'));
+            }
+          }, 0);
+        }
+        onload = null;
+        onerror = null;
+        result = null;
+        error = null;
+      } as any;
+
+      const file = new File([''], 'test.txt');
+      await expect(readFile(file)).rejects.toThrow('File reading error: Mock error');
+
+      global.FileReader = originalFileReader;
+    });
+  });
+
 });
