@@ -38,10 +38,11 @@ describe('Utility Functions', () => {
   });
 
   describe('generateId', () => {
-    it('generates a string of correct length', () => {
+    it('generates a valid UUID', () => {
       const id = generateId();
       expect(typeof id).toBe('string');
-      expect(id.length).toBeGreaterThan(0);
+      expect(id.length).toBe(36);
+      expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
     });
 
     it('generates unique ids', () => {
