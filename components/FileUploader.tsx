@@ -96,6 +96,10 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
     });
   };
 
+  const updatePipelineStep = (id: string, step: string) => {
+    setPipelineSteps(prev => ({ ...prev, [id]: step }));
+  };
+
   const simulateIngestionPipeline = (id: string, file: File) => {
     const updateMessage = (msg: string) => {
       if (!isMountedRef.current) return;
