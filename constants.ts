@@ -75,3 +75,9 @@ export const AGENTS: {role: AgentRole, label: string, color: string}[] = [
   { role: 'COACH', label: 'Coach', color: 'bg-amber-500' },
   { role: 'ANALYST', label: 'Analyst', color: 'bg-blue-600' },
 ];
+
+export const MOCK_TOPICS: TopicMastery[] = [
+  { topicId: '1', title: 'Cell Biology', level: 'Secure', xp: 450 },
+  { topicId: '2', title: 'Atomic Structure', level: 'Developing', xp: 120 },
+  { topicId: '3', title: 'Energetics', level: 'Novice', xp: 0 },
+];
