@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar';
 import ChatInterface from './components/ChatInterface';
 import FileUploader from './components/FileUploader';
 import Onboarding from './components/Onboarding';
+import Dashboard from './components/Dashboard';
 import AuthGate from './components/AuthGate';
 import { CheckCircle } from './components/Icons';
 import { MOCK_SYLLABUS } from './constants';
