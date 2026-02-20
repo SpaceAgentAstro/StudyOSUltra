@@ -1,4 +1,3 @@
-
 import { describe, it, expect } from 'vitest';
 import { formatTime, calculateAccuracy, generateId, validateFile } from './index';
 
