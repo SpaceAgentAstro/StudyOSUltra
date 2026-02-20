@@ -290,6 +290,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
                 onClick={() => removeFile(file.id)}
                 aria-label={`Remove file ${file.name}`}
                 className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                aria-label={`Remove ${file.name}`}
               >
                 <Trash2 className="w-5 h-5" />
               </button>
