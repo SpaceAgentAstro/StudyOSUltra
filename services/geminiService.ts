@@ -39,19 +39,27 @@ let runtimeApiKeys: Record<KeyedProvider, string> = {
 };
 let runtimeOllama: { baseUrl?: string; model?: string } = {};
 
-const safeStorageGet = (key: string): string => {
+const safeStorageGet = (key: string, useSession = false): string => {
   try {
     if (typeof window === 'undefined') return "";
+    if (useSession) {
+      return window.sessionStorage.getItem(key) || window.localStorage.getItem(key) || "";
+    }
     return window.localStorage.getItem(key) || "";
   } catch {
     return "";
   }
 };
 
-const safeStorageSet = (key: string, value: string) => {
+const safeStorageSet = (key: string, value: string, useSession = false) => {
   try {
     if (typeof window === 'undefined') return;
-    window.localStorage.setItem(key, value);
+    if (useSession) {
+      window.sessionStorage.setItem(key, value);
+      window.localStorage.removeItem(key);
+    } else {
+      window.localStorage.setItem(key, value);
+    }
   } catch {
     // ignore storage failures
   }
@@ -79,9 +87,10 @@ const ensureRuntimeHydrated = () => {
     runtimeProvider = normalizeProvider(storedProvider);
   }
 
-  const storedGoogle = safeStorageGet(STORAGE_KEYS.providerApiKey.google) || safeStorageGet(STORAGE_KEYS.legacyGoogleApiKey);
-  const storedOpenAI = safeStorageGet(STORAGE_KEYS.providerApiKey.openai);
-  const storedAnthropic = safeStorageGet(STORAGE_KEYS.providerApiKey.anthropic);
+  // API keys are now checked in sessionStorage first (with fallback to localStorage)
+  const storedGoogle = safeStorageGet(STORAGE_KEYS.providerApiKey.google, true) || safeStorageGet(STORAGE_KEYS.legacyGoogleApiKey, true);
+  const storedOpenAI = safeStorageGet(STORAGE_KEYS.providerApiKey.openai, true);
+  const storedAnthropic = safeStorageGet(STORAGE_KEYS.providerApiKey.anthropic, true);
 
   if (storedGoogle) runtimeApiKeys.google = storedGoogle;
   if (storedOpenAI) runtimeApiKeys.openai = storedOpenAI;
@@ -189,8 +198,9 @@ export const setRuntimeProvider = (provider: string | null | undefined) => {
 export const setRuntimeApiKey = (key: string | null | undefined, provider: KeyedProvider = 'google') => {
   const trimmed = key?.trim() || "";
   runtimeApiKeys[provider] = trimmed;
-  safeStorageSet(STORAGE_KEYS.providerApiKey[provider], trimmed);
-  if (provider === 'google') safeStorageSet(STORAGE_KEYS.legacyGoogleApiKey, trimmed);
+  // Use session storage for API keys
+  safeStorageSet(STORAGE_KEYS.providerApiKey[provider], trimmed, true);
+  if (provider === 'google') safeStorageSet(STORAGE_KEYS.legacyGoogleApiKey, trimmed, true);
 
   if (provider === 'google') {
     cachedClient = null;
