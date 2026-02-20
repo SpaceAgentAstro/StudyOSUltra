@@ -82,7 +82,9 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       <div className="p-4 border-t border-slate-800">
         <div className="bg-slate-800/50 rounded-lg p-3">
-          <p className="text-xs text-slate-400 hidden md:block mb-2">Study Streak</p>
+          <p className="text-xs text-slate-400 hidden md:block mb-2">
+            Study Streak
+          </p>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
             <span className="text-sm font-bold hidden md:block">Day 1</span>
@@ -92,12 +94,14 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="bg-slate-800/60 rounded-lg p-3">
           {authUser ? (
             <>
-              <p className="text-xs text-slate-400 hidden md:block">Signed in</p>
+              <p className="text-xs text-slate-400 hidden md:block">
+                Signed in
+              </p>
               <p className="text-sm font-semibold text-slate-100 hidden md:block truncate">
                 {authUser.displayName || authUser.email || 'Galactic Maestro User'}
               </p>
               <p className="text-xs text-slate-500 hidden md:block truncate">
-                {authUser.email || authUser.providerId || 'Connected account'}
+                {authUser.email || authUser.providerId || "Connected account"}
               </p>
               {onSignOut && (
                 <button
