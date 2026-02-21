@@ -11,7 +11,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-app.use(cors());
+// Restrict CORS to local development environment
+app.use(cors({ origin: 'http://localhost:3000' }));
 // Keep API payloads bounded to protect server memory while client-side file uploads stay local.
 app.use(express.json({ limit: '30mb' }));
 app.use(express.urlencoded({ extended: true, limit: '30mb' }));
@@ -51,7 +52,7 @@ app.post('/api/generate', async (req, res) => {
     res.json(responseData);
   } catch (error) {
     console.error("Error in /api/generate:", error);
-    res.status(500).json({ error: error.message || "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
@@ -91,13 +92,13 @@ app.post('/api/stream', async (req, res) => {
   } catch (error) {
     console.error("Error in /api/stream:", error);
     if (!res.headersSent) {
-      res.status(500).json({ error: error.message || "Internal Server Error" });
+      res.status(500).json({ error: "Internal Server Error" });
     } else {
       res.end();
     }
   }
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '127.0.0.1', () => {
   console.log(`Server running on port ${PORT}`);
 });
