@@ -38,6 +38,14 @@ const runtimeState: {
   ollama: {},
 };
 
+// Hydrate from storage if available
+if (typeof sessionStorage !== 'undefined') {
+  const stored = sessionStorage.getItem('study_os_api_key_google') || localStorage.getItem('study_os_api_key_google');
+  if (stored) {
+    runtimeState.apiKey = stored;
+  }
+}
+
 const QuestionSchema = z.object({
   id: z.string(),
   type: z.enum(['MCQ', 'OPEN']),
@@ -182,37 +190,6 @@ interface GenerateResponse {
 }
 
 // --- Zod Schemas for Validation ---
-
-const KnowledgeNodeSchema = z.object({
-  id: z.string(),
-  label: z.string(),
-  category: z.string(),
-  mastery: z.number(),
-  connections: z.array(z.string()),
-  x: z.number().optional(),
-  y: z.number().optional(),
-});
-
-const MetaInsightSchema = z.object({
-  type: z.enum(['BIAS_DETECTED', 'STRATEGY_SUGGESTION', 'STRENGTH']),
-  title: z.string(),
-  description: z.string(),
-  timestamp: z.number(),
-});
-
-const CognitiveExerciseSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  skill: z.enum(['LOGIC', 'FIRST_PRINCIPLES', 'ARGUMENTATION', 'LATERAL_THINKING']),
-  description: z.string(),
-  difficulty: z.enum(['Novice', 'Adept', 'Master']),
-});
-
-const GradeResponseSchema = z.object({
-  score: z.number(),
-  maxScore: z.number(),
-  feedback: z.string(),
-});
 
 interface SendMessageParams {
   history: Message[];
@@ -498,6 +475,28 @@ export const setRuntimeProvider = (provider?: string | null) => {
 
 export const setRuntimeApiKey = (apiKey?: string) => {
   runtimeState.apiKey = apiKey || '';
+  if (typeof sessionStorage !== 'undefined') {
+    if (apiKey) {
+      sessionStorage.setItem('study_os_api_key_google', apiKey);
+    } else {
+      sessionStorage.removeItem('study_os_api_key_google');
+    }
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('study_os_api_key_google');
+    }
+  }
+};
+
+export const getProviderRuntimeStatus = () => {
+  const hasEnvKey = !!(process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.JULES_API_KEY);
+  const hasRuntimeKey = !!runtimeState.apiKey;
+
+  return {
+    provider: runtimeState.provider,
+    keySource: {
+      google: hasRuntimeKey ? 'runtime' : (hasEnvKey ? 'env' : 'missing'),
+    },
+  };
 };
 
 export const setRuntimeOllamaConfig = (config: OllamaRuntimeConfig = {}) => {
@@ -966,4 +965,38 @@ export const buildPodcastTranscript = (segments: PodcastSegment[]) => {
 
 export const buildFlashcardPromptBundle = (cards: Flashcard[]) => {
   return cards.map((card) => `Q: ${card.front}\nA: ${card.back}`).join('\n\n');
+};
+
+export const extractNestedErrorMessage = (error: any): string | null => {
+  if (error === null || error === undefined) return null;
+
+  if (typeof error === 'string') {
+    const trimmed = error.trim();
+    if (!trimmed) return null;
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (typeof parsed === 'object' && parsed !== null) {
+        return extractNestedErrorMessage(parsed) || trimmed;
+      }
+      return String(parsed);
+    } catch {
+      return trimmed;
+    }
+  }
+
+  if (error instanceof Error) {
+    return extractNestedErrorMessage(error.message) || error.message;
+  }
+
+  if (typeof error === 'object') {
+    if (error.message) {
+      return extractNestedErrorMessage(error.message) || error.message;
+    }
+    if (error.error) {
+      return extractNestedErrorMessage(error.error);
+    }
+  }
+
+  return null;
 };
