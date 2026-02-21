@@ -39,10 +39,10 @@ describe('authService', () => {
   describe('ensureAuth', () => {
     it('returns null if config is missing', async () => {
       // Clear env vars
-      process.env.FIREBASE_API_KEY = '';
-      process.env.FIREBASE_AUTH_DOMAIN = '';
-      process.env.FIREBASE_PROJECT_ID = '';
-      process.env.FIREBASE_APP_ID = '';
+      process.env.VITE_FIREBASE_API_KEY = '';
+      process.env.VITE_FIREBASE_AUTH_DOMAIN = '';
+      process.env.VITE_FIREBASE_PROJECT_ID = '';
+      process.env.VITE_FIREBASE_APP_ID = '';
 
       // Re-import module to pick up env changes
       const { ensureAuth } = await import('./authService');
@@ -54,10 +54,10 @@ describe('authService', () => {
 
     it('initializes new app and auth when config is present and no app exists', async () => {
       // Set env vars
-      process.env.FIREBASE_API_KEY = 'test-key';
-      process.env.FIREBASE_AUTH_DOMAIN = 'test-domain';
-      process.env.FIREBASE_PROJECT_ID = 'test-project';
-      process.env.FIREBASE_APP_ID = 'test-app-id';
+      process.env.VITE_FIREBASE_API_KEY = 'test-key';
+      process.env.VITE_FIREBASE_AUTH_DOMAIN = 'test-domain';
+      process.env.VITE_FIREBASE_PROJECT_ID = 'test-project';
+      process.env.VITE_FIREBASE_APP_ID = 'test-app-id';
 
       // Mock behavior
       getAppsMock.mockReturnValue([]);
@@ -85,10 +85,10 @@ describe('authService', () => {
 
     it('reuses existing app if available', async () => {
       // Set env vars
-      process.env.FIREBASE_API_KEY = 'test-key';
-      process.env.FIREBASE_AUTH_DOMAIN = 'test-domain';
-      process.env.FIREBASE_PROJECT_ID = 'test-project';
-      process.env.FIREBASE_APP_ID = 'test-app-id';
+      process.env.VITE_FIREBASE_API_KEY = 'test-key';
+      process.env.VITE_FIREBASE_AUTH_DOMAIN = 'test-domain';
+      process.env.VITE_FIREBASE_PROJECT_ID = 'test-project';
+      process.env.VITE_FIREBASE_APP_ID = 'test-app-id';
 
       // Mock behavior
       const mockApp = { name: '[DEFAULT]' } as FirebaseApp;
@@ -110,10 +110,10 @@ describe('authService', () => {
 
     it('returns cached auth instance on subsequent calls (singleton)', async () => {
       // Set env vars
-      process.env.FIREBASE_API_KEY = 'test-key';
-      process.env.FIREBASE_AUTH_DOMAIN = 'test-domain';
-      process.env.FIREBASE_PROJECT_ID = 'test-project';
-      process.env.FIREBASE_APP_ID = 'test-app-id';
+      process.env.VITE_FIREBASE_API_KEY = 'test-key';
+      process.env.VITE_FIREBASE_AUTH_DOMAIN = 'test-domain';
+      process.env.VITE_FIREBASE_PROJECT_ID = 'test-project';
+      process.env.VITE_FIREBASE_APP_ID = 'test-app-id';
 
       // Mock behavior
       getAppsMock.mockReturnValue([]);
