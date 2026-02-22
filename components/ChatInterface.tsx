@@ -212,80 +212,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
     handleSendRef.current(`Please explain this code as a teacher and include key pitfalls:\n\n${code}`, agent);
   }, []);
 
-  // Keep handleSend stable for ChatMessage callbacks
-  const handleSendRef = useRef(handleSend);
-  useEffect(() => {
-    handleSendRef.current = handleSend;
-  }, [handleSend]);
-
-  const stableHandleExplainCode = useCallback((code: string) => {
-    handleSendRef.current(`Could you explain this code in detail as a teacher?\n\n${code}`, 'TEACHER');
-  }, []);
-
-  const handleSendRef = useRef(handleSend);
-  useEffect(() => {
-    handleSendRef.current = handleSend;
-  });
-
-  const handleExplainCode = useCallback((code: string) => {
-      handleSendRef.current(`Could you explain this code in detail as a teacher?\n\n${code}`, 'TEACHER');
-  }, []);
-
-  const handleSendRef = useRef(handleSend);
-  useEffect(() => {
-    handleSendRef.current = handleSend;
-  });
-
-  const handleExplainCode = useCallback((code: string) => {
-    handleSendRef.current?.(`Could you explain this code in detail as a teacher?\n\n${code}`, 'TEACHER');
-  }, []);
-
-  useEffect(() => {
-    handleSendRef.current = handleSend;
-  });
-
-  const handleExplain = React.useCallback((code: string) => {
-      if (handleSendRef.current) {
-          handleSendRef.current(`Could you explain this code in detail as a teacher?\n\n${code}`, 'TEACHER');
-      }
-  }, []);
-
-  const handleSendRef = useRef(handleSend);
-  useEffect(() => {
-    handleSendRef.current = handleSend;
-  });
-
-  const handleExplainCode = useCallback((code: string) => {
-      handleSendRef.current(`Could you explain this code in detail as a teacher?\n\n${code}`, 'TEACHER');
-  }, []);
-
-  // Keep ref in sync
-  useEffect(() => {
-      handleSendRef.current = handleSend;
-  });
-
-  const handleExplain = useCallback((text: string, agent: AgentRole) => {
-      handleSendRef.current(text, agent);
-  }, []);
-
-  const handleSendRef = useRef(handleSend);
-  useEffect(() => {
-    handleSendRef.current = handleSend;
-  });
-
-  const handleExplain = useCallback((text: string, agent: AgentRole) => {
-    handleSendRef.current(text, agent);
-  }, []);
-
-  const handleSendRef = useRef(handleSend);
-  useEffect(() => {
-    handleSendRef.current = handleSend;
-  });
-
-  const onExplain = useCallback((text: string, agent: AgentRole) => {
-      handleSendRef.current(text, agent);
-  }, []);
-
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="p-3 border-b border-slate-100 bg-white z-10 flex flex-col gap-3">
@@ -293,7 +219,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
           {AGENTS.map((agent) => (
             <button
               key={agent.role}
+              type="button"
               onClick={() => setSelectedAgent(agent.role)}
+              aria-pressed={selectedAgent === agent.role}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
                 selectedAgent === agent.role
                   ? `${agent.color} text-white shadow-md`
@@ -313,6 +241,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
         <div className="flex justify-between items-center">
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={() => {
                 setUseThinking((previous) => {
                   const next = !previous;
@@ -325,20 +254,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
               }`}
               title="Thinking Mode"
               aria-label="Toggle Thinking Mode"
+              aria-pressed={useThinking}
             >
               <Brain className="w-4 h-4" />
             </button>
             <button
+              type="button"
               onClick={() => setUseSearch((previous) => !previous)}
               className={`p-1.5 rounded-lg border transition-colors ${
                 useSearch ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-slate-200 text-slate-400'
               }`}
               title="Google Search"
               aria-label="Toggle Google Search"
+              aria-pressed={useSearch}
             >
               <Globe className="w-4 h-4" />
             </button>
             <button
+              type="button"
               onClick={() => {
                 setUseFlashLite((previous) => {
                   const next = !previous;
@@ -351,6 +284,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
               }`}
               title="Flash Lite (Fast)"
               aria-label="Toggle Flash Lite"
+              aria-pressed={useFlashLite}
             >
               <Zap className="w-4 h-4" />
             </button>
