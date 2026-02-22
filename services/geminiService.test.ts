@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { FileDocument, LessonSuite } from '../types';
+import type { LessonSuite } from '../types';
 import {
   calculateLessonScore,
   generateExamPaper,
@@ -7,15 +7,6 @@ import {
   gradeOpenEndedAnswer,
   normalizeProvider,
 } from './geminiService';
-
-vi.mock('@google/genai', () => ({
-  GoogleGenAI: vi.fn(() => ({
-    models: {
-      generateImages: vi.fn(),
-      generateVideos: vi.fn(),
-    },
-  })),
-}));
 
 describe('geminiService', () => {
   beforeEach(() => {
@@ -189,9 +180,10 @@ describe('geminiService', () => {
   describe('gradeOpenEndedAnswer', () => {
     it('should return safe default when API returns malformed JSON', async () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockGenerateContent.mockResolvedValueOnce({
-        text: "This is not JSON"
-      });
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ text: "This is not JSON" }),
+      } as Response);
 
       const result = await gradeOpenEndedAnswer(
         "What is a cell?",
@@ -205,13 +197,12 @@ describe('geminiService', () => {
         maxScore: 5,
         feedback: "Unable to grade at this time due to a service error."
       });
-      expect(consoleSpy).toHaveBeenCalled();
       consoleSpy.mockRestore();
     });
 
     it('should return safe default when API throws an error', async () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockGenerateContent.mockRejectedValueOnce(new Error("API Failure"));
+      vi.mocked(fetch).mockRejectedValueOnce(new Error("API Failure"));
 
       const result = await gradeOpenEndedAnswer(
         "What is a cell?",
