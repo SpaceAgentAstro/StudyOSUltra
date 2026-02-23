@@ -1,6 +1,6 @@
 /// <reference types="vitest" />
 import path from 'path';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
@@ -21,29 +21,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     plugins: [react()],
-    define: isTest
-      ? {}
-      : {
-          'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
-          'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
-          'process.env.JULES_API_KEY': JSON.stringify(env.JULES_API_KEY || ''),
-          'process.env.OPENAI_API_KEY': JSON.stringify(env.OPENAI_API_KEY || ''),
-          'process.env.OPENAI_BASE_URL': JSON.stringify(env.OPENAI_BASE_URL || 'https://api.openai.com/v1'),
-          'process.env.OPENAI_MODEL': JSON.stringify(env.OPENAI_MODEL || 'gpt-4.1-mini'),
-          'process.env.OPENAI_IMAGE_MODEL': JSON.stringify(env.OPENAI_IMAGE_MODEL || 'gpt-image-1'),
-          'process.env.ANTHROPIC_API_KEY': JSON.stringify(env.ANTHROPIC_API_KEY || ''),
-          'process.env.ANTHROPIC_BASE_URL': JSON.stringify(env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com/v1'),
-          'process.env.ANTHROPIC_MODEL': JSON.stringify(env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-latest'),
-          'process.env.MODEL_PROVIDER': JSON.stringify(env.MODEL_PROVIDER || 'auto'),
-          'process.env.OLLAMA_MODEL': JSON.stringify(env.OLLAMA_MODEL || 'qwen2.5:latest'),
-          'process.env.OLLAMA_BASE_URL': JSON.stringify(env.OLLAMA_BASE_URL || 'http://localhost:11434'),
-          'process.env.FIREBASE_API_KEY': JSON.stringify(env.FIREBASE_API_KEY || ''),
-          'process.env.FIREBASE_AUTH_DOMAIN': JSON.stringify(env.FIREBASE_AUTH_DOMAIN || ''),
-          'process.env.FIREBASE_PROJECT_ID': JSON.stringify(env.FIREBASE_PROJECT_ID || ''),
-          'process.env.FIREBASE_APP_ID': JSON.stringify(env.FIREBASE_APP_ID || ''),
-          'process.env.FIREBASE_STORAGE_BUCKET': JSON.stringify(env.FIREBASE_STORAGE_BUCKET || ''),
-          'process.env.FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(env.FIREBASE_MESSAGING_SENDER_ID || ''),
-        },
+    define: isTest ? {} : {},
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
