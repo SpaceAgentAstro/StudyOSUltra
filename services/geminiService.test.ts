@@ -1,21 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { FileDocument, LessonSuite } from '../types';
+import type { LessonSuite, VideoPlan } from '../types';
 import {
   calculateLessonScore,
   generateExamPaper,
   generateMetaAnalysis,
   gradeOpenEndedAnswer,
   normalizeProvider,
+  generateImage,
+  generateVideoClip
 } from './geminiService';
-
-vi.mock('@google/genai', () => ({
-  GoogleGenAI: vi.fn(() => ({
-    models: {
-      generateImages: vi.fn(),
-      generateVideos: vi.fn(),
-    },
-  })),
-}));
 
 describe('geminiService', () => {
   beforeEach(() => {
@@ -158,7 +151,6 @@ describe('geminiService', () => {
     expect(score.breakdown.multimodalCoverage).toBeGreaterThan(50);
   });
 
-
   describe('normalizeProvider', () => {
     it('returns valid providers as-is', () => {
       expect(normalizeProvider('google')).toBe('google');
@@ -189,9 +181,10 @@ describe('geminiService', () => {
   describe('gradeOpenEndedAnswer', () => {
     it('should return safe default when API returns malformed JSON', async () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockGenerateContent.mockResolvedValueOnce({
-        text: "This is not JSON"
-      });
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ text: "This is not JSON" })
+      } as Response);
 
       const result = await gradeOpenEndedAnswer(
         "What is a cell?",
@@ -205,13 +198,13 @@ describe('geminiService', () => {
         maxScore: 5,
         feedback: "Unable to grade at this time due to a service error."
       });
-      expect(consoleSpy).toHaveBeenCalled();
+      expect(consoleSpy).not.toHaveBeenCalled();
       consoleSpy.mockRestore();
     });
 
     it('should return safe default when API throws an error', async () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockGenerateContent.mockRejectedValueOnce(new Error("API Failure"));
+      vi.mocked(fetch).mockRejectedValueOnce(new Error("API Failure"));
 
       const result = await gradeOpenEndedAnswer(
         "What is a cell?",
@@ -228,5 +221,52 @@ describe('geminiService', () => {
       expect(consoleSpy).toHaveBeenCalled();
       consoleSpy.mockRestore();
     });
+  });
+
+  describe('media generation', () => {
+      it('generateImage calls server endpoint', async () => {
+          vi.mocked(fetch).mockResolvedValueOnce({
+              ok: true,
+              json: async () => ({ image: 'data:image/jpeg;base64,test' })
+          } as Response);
+
+          const result = await generateImage('test prompt');
+          expect(result).toBe('data:image/jpeg;base64,test');
+          expect(fetch).toHaveBeenCalledWith('/api/generate-image', expect.objectContaining({
+              method: 'POST',
+              body: JSON.stringify({ prompt: 'test prompt' })
+          }));
+      });
+
+      it('generateImage returns fallback on error', async () => {
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.mocked(fetch).mockResolvedValueOnce({
+            ok: false,
+        } as Response);
+
+        const result = await generateImage('test prompt');
+        expect(result).toContain('data:image/svg+xml;base64');
+        consoleSpy.mockRestore();
+      });
+
+      it('generateVideoClip calls server endpoint', async () => {
+        vi.mocked(fetch).mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({ videoUrl: 'http://video.url' })
+        } as Response);
+
+        const plan: VideoPlan = {
+            title: 'Test',
+            durationSeconds: 10,
+            shots: [{ id: '1', title: 's1', visual: 'v1', voiceover: 'vo1', durationSeconds: 5 }],
+            callToAction: 'cta'
+        };
+
+        const result = await generateVideoClip(plan);
+        expect(result).toBe('http://video.url');
+        expect(fetch).toHaveBeenCalledWith('/api/generate-video', expect.objectContaining({
+            method: 'POST'
+        }));
+      });
   });
 });

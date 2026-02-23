@@ -68,15 +68,7 @@ export const MOCK_SYLLABUS: SyllabusNode[] = [
   },
 ];
 
-export const AGENTS: {role: AgentRole, label: string, color: string}[] = [
-  { role: 'COUNCIL', label: 'The Council (Auto)', color: 'bg-indigo-600' },
-  { role: 'TEACHER', label: 'Teacher', color: 'bg-emerald-600' },
-  { role: 'EXAMINER', label: 'Examiner', color: 'bg-red-600' },
-  { role: 'COACH', label: 'Coach', color: 'bg-amber-500' },
-  { role: 'ANALYST', label: 'Analyst', color: 'bg-blue-600' },
-];
-
-export const MOCK_TOPICS: TopicMastery[] = [
+export const MOCK_TOPICS: any[] = [
   { topicId: '1', title: 'Cell Biology', level: 'Secure', xp: 450 },
   { topicId: '2', title: 'Atomic Structure', level: 'Developing', xp: 120 },
   { topicId: '3', title: 'Energetics', level: 'Novice', xp: 0 },

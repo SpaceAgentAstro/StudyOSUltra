@@ -98,6 +98,73 @@ app.post('/api/stream', async (req, res) => {
   }
 });
 
+app.post('/api/generate-image', async (req, res) => {
+  if (!aiClient) {
+    return res.status(500).json({ error: "Server Error: API Key not configured." });
+  }
+
+  try {
+    const { prompt } = req.body;
+    const imageApi = aiClient.models.generateImages;
+
+    if (typeof imageApi !== 'function') {
+      return res.status(500).json({ error: "Image generation not supported by server SDK." });
+    }
+
+    const response = await imageApi({
+      model: 'imagen-3.0-generate-002',
+      prompt,
+      config: {
+        numberOfImages: 1,
+        outputMimeType: 'image/jpeg',
+      },
+    });
+
+    const bytes = response?.generatedImages?.[0]?.image?.imageBytes;
+
+    if (bytes) {
+      res.json({ image: `data:image/jpeg;base64,${bytes}` });
+    } else {
+      res.status(500).json({ error: "No image generated." });
+    }
+  } catch (error) {
+    console.error("Error in /api/generate-image:", error);
+    res.status(500).json({ error: error.message || "Internal Server Error" });
+  }
+});
+
+app.post('/api/generate-video', async (req, res) => {
+  if (!aiClient) {
+    return res.status(500).json({ error: "Server Error: API Key not configured." });
+  }
+
+  try {
+    const { prompt, config } = req.body;
+    const videoApi = aiClient.models.generateVideos;
+
+    if (typeof videoApi !== 'function') {
+      return res.status(500).json({ error: "Video generation not supported by server SDK." });
+    }
+
+    const response = await videoApi({
+      model: 'veo-2.0-generate-001',
+      prompt,
+      config,
+    });
+
+    const videoUrl = response?.generatedVideos?.[0]?.video?.uri;
+
+    if (videoUrl) {
+      res.json({ videoUrl });
+    } else {
+      res.status(500).json({ error: "No video generated." });
+    }
+  } catch (error) {
+    console.error("Error in /api/generate-video:", error);
+    res.status(500).json({ error: error.message || "Internal Server Error" });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
