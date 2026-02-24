@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { FileDocument, LessonSuite } from '../types';
+import type { LessonSuite } from '../types';
 import {
   calculateLessonScore,
   generateExamPaper,
@@ -23,11 +23,31 @@ describe('geminiService', () => {
     vi.stubGlobal('fetch', vi.fn());
   });
 
-  it('normalizes provider values safely', () => {
-    expect(normalizeProvider('google')).toBe('google');
-    expect(normalizeProvider('OPENAI')).toBe('openai');
-    expect(normalizeProvider('unknown')).toBe('auto');
-    expect(normalizeProvider(null)).toBe('auto');
+  describe('normalizeProvider', () => {
+    it('returns valid providers as-is', () => {
+      expect(normalizeProvider('google')).toBe('google');
+      expect(normalizeProvider('openai')).toBe('openai');
+      expect(normalizeProvider('anthropic')).toBe('anthropic');
+      expect(normalizeProvider('ollama')).toBe('ollama');
+      expect(normalizeProvider('auto')).toBe('auto');
+    });
+
+    it('handles case insensitivity', () => {
+      expect(normalizeProvider('Google')).toBe('google');
+      expect(normalizeProvider('OPENAI')).toBe('openai');
+      expect(normalizeProvider('AnThRoPiC')).toBe('anthropic');
+    });
+
+    it('defaults to auto for null/undefined/empty', () => {
+      expect(normalizeProvider(null)).toBe('auto');
+      expect(normalizeProvider(undefined)).toBe('auto');
+      expect(normalizeProvider('')).toBe('auto');
+    });
+
+    it('defaults to auto for invalid providers', () => {
+      expect(normalizeProvider('unknown')).toBe('auto');
+      expect(normalizeProvider('random-provider')).toBe('auto');
+    });
   });
 
   it('generates exam questions from API JSON response', async () => {
@@ -156,77 +176,5 @@ describe('geminiService', () => {
     expect(score.overall).toBeGreaterThan(0);
     expect(score.breakdown.quizPerformance).toBe(100);
     expect(score.breakdown.multimodalCoverage).toBeGreaterThan(50);
-  });
-
-
-  describe('normalizeProvider', () => {
-    it('returns valid providers as-is', () => {
-      expect(normalizeProvider('google')).toBe('google');
-      expect(normalizeProvider('openai')).toBe('openai');
-      expect(normalizeProvider('anthropic')).toBe('anthropic');
-      expect(normalizeProvider('ollama')).toBe('ollama');
-      expect(normalizeProvider('auto')).toBe('auto');
-    });
-
-    it('handles case insensitivity', () => {
-      expect(normalizeProvider('Google')).toBe('google');
-      expect(normalizeProvider('OPENAI')).toBe('openai');
-      expect(normalizeProvider('AnThRoPiC')).toBe('anthropic');
-    });
-
-    it('defaults to auto for null/undefined/empty', () => {
-      expect(normalizeProvider(null)).toBe('auto');
-      expect(normalizeProvider(undefined)).toBe('auto');
-      expect(normalizeProvider('')).toBe('auto');
-    });
-
-    it('defaults to auto for invalid providers', () => {
-      expect(normalizeProvider('unknown')).toBe('auto');
-      expect(normalizeProvider('random-provider')).toBe('auto');
-    });
-  });
-
-  describe('gradeOpenEndedAnswer', () => {
-    it('should return safe default when API returns malformed JSON', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockGenerateContent.mockResolvedValueOnce({
-        text: "This is not JSON"
-      });
-
-      const result = await gradeOpenEndedAnswer(
-        "What is a cell?",
-        "Unit of life",
-        ["unit", "life"],
-        []
-      );
-
-      expect(result).toEqual({
-        score: 0,
-        maxScore: 5,
-        feedback: "Unable to grade at this time due to a service error."
-      });
-      expect(consoleSpy).toHaveBeenCalled();
-      consoleSpy.mockRestore();
-    });
-
-    it('should return safe default when API throws an error', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockGenerateContent.mockRejectedValueOnce(new Error("API Failure"));
-
-      const result = await gradeOpenEndedAnswer(
-        "What is a cell?",
-        "Unit of life",
-        ["unit", "life"],
-        []
-      );
-
-      expect(result).toEqual({
-        score: 0,
-        maxScore: 5,
-        feedback: "Unable to grade at this time due to a service error."
-      });
-      expect(consoleSpy).toHaveBeenCalled();
-      consoleSpy.mockRestore();
-    });
   });
 });

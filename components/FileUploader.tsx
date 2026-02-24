@@ -35,7 +35,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
     const uploadedFiles = event.target.files;
     if (!uploadedFiles) return;
 
-    const incomingFiles = Array.from(uploadedFiles);
+    const incomingFiles: File[] = Array.from(uploadedFiles);
     const incomingTotalBytes = incomingFiles.reduce((sum, file) => sum + file.size, 0);
 
     if (totalUploadBytes + incomingTotalBytes > MAX_TOTAL_UPLOAD_SIZE_BYTES) {
@@ -94,10 +94,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
       delete next[id];
       return next;
     });
-  };
-
-  const updatePipelineStep = (id: string, step: string) => {
-    setPipelineSteps(prev => ({ ...prev, [id]: step }));
   };
 
   const simulateIngestionPipeline = (id: string, file: File) => {
@@ -204,7 +200,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
           accept=".txt,.md,.csv,.json,.pdf,.docx" 
           onChange={handleFileUpload}
           title="File input"
-           aria-label="Upload files"
         />
       </div>
 
