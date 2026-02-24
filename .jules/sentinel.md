@@ -1,4 +1,4 @@
-## 2024-05-22 - Unsafe AI Response Handling
-**Vulnerability:** The `gradeOpenEndedAnswer` function directly called the AI service and parsed the result without error handling.
-**Learning:** External AI services (LLMs) are unreliable. They can fail (network) or hallucinate (return invalid JSON).
-**Prevention:** All AI service calls must be wrapped in `try-catch`. JSON parsing must be safe (e.g., using `zod` or `try-catch`). Always return a safe fallback object to the UI.
+## 2025-02-14 - API Key Leak in Production Builds
+**Vulnerability:** Sensitive API keys (`GEMINI_API_KEY`, etc.) were being unconditionally injected into the client bundle via `vite.config.ts`, regardless of the build mode. This meant running `pnpm build` with local environment variables set would bake those secrets into the public `dist/` artifacts.
+**Learning:** Build tools like Vite replace `process.env.KEY` with the literal value at build time. Configuration must explicitly prevent this for sensitive keys in production mode to support secure deployments (e.g., GitHub Pages) where keys should not be exposed.
+**Prevention:** Modified `vite.config.ts` to check `mode === 'development'` before injecting API keys. In production builds, these values are now replaced with empty strings, forcing the application to rely on runtime configuration (if available) or secure backend proxies, rather than leaking the builder's secrets.
