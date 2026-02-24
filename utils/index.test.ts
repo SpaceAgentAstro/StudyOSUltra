@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatTime, calculateAccuracy, generateId, validateFile } from './index';
+import { formatTime, calculateAccuracy, generateId, validateFile, readFile, extractJsonText, parseJsonSafely } from './index';
 
 describe('Utility Functions', () => {
   
@@ -217,95 +217,4 @@ describe('Utility Functions', () => {
       expect(parseJsonSafely(input, { fallback: true })).toEqual({ fallback: true });
     });
   });
-
-  describe('extractJsonText', () => {
-    it('returns null for empty or whitespace string', () => {
-      expect(extractJsonText('')).toBeNull();
-      expect(extractJsonText('   ')).toBeNull();
-    });
-
-    it('extracts JSON from markdown code block', () => {
-      const input = 'Here is some json:\n```json\n{"key": "value"}\n```';
-      expect(extractJsonText(input)).toBe('{"key": "value"}');
-    });
-
-    it('extracts JSON from code block without language', () => {
-      const input = '```\n{"key": "value"}\n```';
-      expect(extractJsonText(input)).toBe('{"key": "value"}');
-    });
-
-    it('extracts JSON array from text', () => {
-      const input = 'Some text [1, 2, 3] end text';
-      expect(extractJsonText(input)).toBe('[1, 2, 3]');
-    });
-
-    it('extracts JSON object from text', () => {
-      const input = 'Some text {"a": 1} end text';
-      expect(extractJsonText(input)).toBe('{"a": 1}');
-    });
-  });
-
-  describe('parseJsonSafely', () => {
-    it('parses valid JSON string directly', () => {
-      const result = parseJsonSafely('{"a": 1}', {});
-      expect(result).toEqual({ a: 1 });
-    });
-
-    it('extracts and parses JSON from text', () => {
-      const input = 'Text ```{"a": 1}```';
-      const result = parseJsonSafely(input, {});
-      expect(result).toEqual({ a: 1 });
-    });
-
-    it('returns fallback if parsing fails', () => {
-      const result = parseJsonSafely('invalid json', { fallback: true });
-      expect(result).toEqual({ fallback: true });
-    });
-
-    it('returns fallback if extraction fails', () => {
-      const result = parseJsonSafely('no json here', { fallback: true });
-      expect(result).toEqual({ fallback: true });
-    });
-
-    it('returns error for mismatched MIME type', () => {
-      // Simulate an XSS attempt via PDF extension but HTML content type
-      const file = { name: 'test.pdf', size: 1024, type: 'text/html' } as File;
-      const result = validateFile(file);
-      expect(result.isValid).toBe(false);
-      expect(result.error).toContain('MIME type mismatch');
-    });
-
-    it('returns error for empty file', () => {
-      const file = { name: 'empty.txt', size: 0, type: 'text/plain' } as File;
-      const result = validateFile(file);
-      expect(result.isValid).toBe(false);
-      expect(result.error).toContain('is empty');
-    });
-
-    it('returns error for PDF with invalid mime type', () => {
-      const file = { name: 'fake.pdf', size: 1024, type: 'text/plain' } as File;
-      const result = validateFile(file);
-      expect(result.isValid).toBe(false);
-      expect(result.error).toContain('Invalid file content for PDF');
-    });
-
-    it('returns error for DOCX with invalid mime type', () => {
-      const file = { name: 'fake.docx', size: 1024, type: 'application/pdf' } as File;
-      const result = validateFile(file);
-      expect(result.isValid).toBe(false);
-      expect(result.error).toContain('Invalid file content for DOCX');
-    });
-
-    it('allows valid MIME types', () => {
-      const pdf = { name: 'test.pdf', size: 1024, type: 'application/pdf' } as File;
-      expect(validateFile(pdf)).toEqual({ isValid: true });
-
-      const docx = { name: 'test.docx', size: 1024, type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' } as File;
-      expect(validateFile(docx)).toEqual({ isValid: true });
-
-      const json = { name: 'test.json', size: 1024, type: 'application/json' } as File;
-      expect(validateFile(json)).toEqual({ isValid: true });
-    });
-  });
-
 });

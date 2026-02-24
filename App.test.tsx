@@ -36,6 +36,15 @@ vi.mock('./components/KnowledgeUniverse', () => ({
   default: () => <div data-testid="knowledge-universe">Knowledge Universe View</div>
 }));
 
+// Mock authService to avoid firebase dependencies
+vi.mock('./services/authService', () => ({
+  isFirebaseAuthConfigured: vi.fn(() => false),
+  subscribeToAuth: vi.fn(() => () => {}),
+  signInWithProvider: vi.fn(),
+  signOutCurrentUser: vi.fn(),
+  toAuthErrorMessage: vi.fn((err: any) => err.message)
+}));
+
 describe('App Performance Optimization', () => {
   beforeEach(() => {
     Element.prototype.scrollIntoView = vi.fn();
