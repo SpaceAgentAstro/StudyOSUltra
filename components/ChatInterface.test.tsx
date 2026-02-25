@@ -2,10 +2,11 @@
 // @vitest-environment jsdom
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
 import { afterEach } from 'vitest';
 import ChatInterface from './ChatInterface';
 import { FileDocument } from '../types';
+import { streamChatResponse } from '../services/geminiService';
 
 afterEach(() => {
   cleanup();
@@ -37,5 +38,35 @@ describe('ChatInterface', () => {
     const input = screen.getByPlaceholderText(/Ask/i);
     fireEvent.change(input, { target: { value: 'Hello World' } });
     expect((input as HTMLInputElement).value).toBe('Hello World');
+  });
+
+  it('triggers explain action when explain button is clicked', async () => {
+    const messageWithCode = {
+      id: '1',
+      role: 'model' as const,
+      agent: 'COUNCIL' as const,
+      text: 'Here is some code:\n```javascript\nconsole.log("test");\n```',
+      timestamp: Date.now(),
+    };
+
+    const streamChatResponseMock = vi.mocked(streamChatResponse);
+    streamChatResponseMock.mockClear();
+
+    render(<ChatInterface files={mockFiles} initialMessages={[messageWithCode]} />);
+
+    // Find the Explain button
+    const explainButton = screen.getByTitle('Ask Teacher to explain');
+    expect(explainButton).toBeDefined();
+
+    fireEvent.click(explainButton);
+
+    // Verify streamChatResponse was called with the explanation prompt
+    await waitFor(() => {
+        expect(streamChatResponseMock).toHaveBeenCalled();
+    });
+
+    const callArgs = streamChatResponseMock.mock.calls[0][0];
+    expect(callArgs.newMessage).toContain('Please explain this code as a teacher');
+    expect(callArgs.newMessage).toContain('console.log("test");');
   });
 });
