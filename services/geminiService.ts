@@ -183,37 +183,6 @@ interface GenerateResponse {
 
 // --- Zod Schemas for Validation ---
 
-const KnowledgeNodeSchema = z.object({
-  id: z.string(),
-  label: z.string(),
-  category: z.string(),
-  mastery: z.number(),
-  connections: z.array(z.string()),
-  x: z.number().optional(),
-  y: z.number().optional(),
-});
-
-const MetaInsightSchema = z.object({
-  type: z.enum(['BIAS_DETECTED', 'STRATEGY_SUGGESTION', 'STRENGTH']),
-  title: z.string(),
-  description: z.string(),
-  timestamp: z.number(),
-});
-
-const CognitiveExerciseSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  skill: z.enum(['LOGIC', 'FIRST_PRINCIPLES', 'ARGUMENTATION', 'LATERAL_THINKING']),
-  description: z.string(),
-  difficulty: z.enum(['Novice', 'Adept', 'Master']),
-});
-
-const GradeResponseSchema = z.object({
-  score: z.number(),
-  maxScore: z.number(),
-  feedback: z.string(),
-});
-
 interface SendMessageParams {
   history: Message[];
   newMessage: string;
@@ -966,4 +935,47 @@ export const buildPodcastTranscript = (segments: PodcastSegment[]) => {
 
 export const buildFlashcardPromptBundle = (cards: Flashcard[]) => {
   return cards.map((card) => `Q: ${card.front}\nA: ${card.back}`).join('\n\n');
+};
+
+export const extractNestedErrorMessage = (input: any): string | null => {
+  if (input === null || input === undefined) return null;
+
+  if (typeof input === 'string') {
+    const trimmed = input.trim();
+    if (!trimmed) return null;
+
+    // Check if it might be a JSON string (object, array, or quoted string)
+    if (
+      (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+      (trimmed.startsWith('[') && trimmed.endsWith(']')) ||
+      (trimmed.startsWith('"') && trimmed.endsWith('"'))
+    ) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        const nested = extractNestedErrorMessage(parsed);
+        return nested ?? trimmed;
+      } catch {
+        // Not valid JSON, return as is
+        return trimmed;
+      }
+    }
+    return trimmed;
+  }
+
+  if (input instanceof Error) {
+    return extractNestedErrorMessage(input.message);
+  }
+
+  if (typeof input === 'object') {
+    // Prioritize 'message' then 'error'
+    if ('message' in input) {
+      return extractNestedErrorMessage(input.message);
+    }
+    if ('error' in input) {
+      return extractNestedErrorMessage(input.error);
+    }
+    return null;
+  }
+
+  return null;
 };
