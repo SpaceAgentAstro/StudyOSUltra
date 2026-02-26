@@ -1,4 +1,3 @@
-import { GoogleGenAI } from '@google/genai';
 import { z } from 'zod';
 import {
   AgentRole,
@@ -19,9 +18,6 @@ import {
   VideoPlan,
 } from '../types';
 import { AGENT_PERSONAS, SYSTEM_INSTRUCTION_BASE } from '../constants';
-
-const API_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.JULES_API_KEY || '';
-const aiClient = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
 
 type OllamaRuntimeConfig = {
   model?: string;
@@ -181,38 +177,6 @@ interface GenerateResponse {
   candidates?: any[];
 }
 
-// --- Zod Schemas for Validation ---
-
-const KnowledgeNodeSchema = z.object({
-  id: z.string(),
-  label: z.string(),
-  category: z.string(),
-  mastery: z.number(),
-  connections: z.array(z.string()),
-  x: z.number().optional(),
-  y: z.number().optional(),
-});
-
-const MetaInsightSchema = z.object({
-  type: z.enum(['BIAS_DETECTED', 'STRATEGY_SUGGESTION', 'STRENGTH']),
-  title: z.string(),
-  description: z.string(),
-  timestamp: z.number(),
-});
-
-const CognitiveExerciseSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  skill: z.enum(['LOGIC', 'FIRST_PRINCIPLES', 'ARGUMENTATION', 'LATERAL_THINKING']),
-  description: z.string(),
-  difficulty: z.enum(['Novice', 'Adept', 'Master']),
-});
-
-const GradeResponseSchema = z.object({
-  score: z.number(),
-  maxScore: z.number(),
-  feedback: z.string(),
-});
 
 interface SendMessageParams {
   history: Message[];
@@ -825,29 +789,24 @@ export const generateVideoPlan = async (prompt: string): Promise<VideoPlan> => {
 };
 
 export const generateVideoClip = async (plan: VideoPlan): Promise<string | null> => {
-  if (!aiClient) return null;
-
   try {
     const fullPrompt = `${plan.title}\n${plan.shots
       .map((shot) => `${shot.title}: ${shot.visual}. Voiceover: ${shot.voiceover}`)
       .join('\n')}`;
 
-    const videoApi = (aiClient.models as any)?.generateVideos;
-    if (typeof videoApi !== 'function') {
-      return null;
-    }
-
-    const response = await videoApi({
-      model: 'veo-2.0-generate-001',
-      prompt: fullPrompt,
-      config: {
-        durationSeconds: Math.min(Math.max(plan.durationSeconds, 4), 20),
-        aspectRatio: '16:9',
-      },
+    const response = await fetch('/api/generate-video', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: fullPrompt,
+        durationSeconds: plan.durationSeconds,
+      }),
     });
 
-    const directUrl = response?.generatedVideos?.[0]?.video?.uri || response?.video?.uri;
-    return directUrl || null;
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    return data.videoUri || null;
   } catch (error) {
     console.error('Video generation unavailable:', error);
     return null;
@@ -857,35 +816,17 @@ export const generateVideoClip = async (plan: VideoPlan): Promise<string | null>
 export const generateImage = async (prompt: string): Promise<string> => {
   const cleanPrompt = sanitizeText(prompt);
 
-  if (!aiClient) {
-    return fallbackImageDataUrl(cleanPrompt);
-  }
-
   try {
-    const imageApi = (aiClient.models as any)?.generateImages;
-    if (typeof imageApi !== 'function') {
-      return fallbackImageDataUrl(cleanPrompt);
-    }
-
-    const response = await imageApi({
-      model: 'imagen-3.0-generate-002',
-      prompt: cleanPrompt,
-      config: {
-        numberOfImages: 1,
-        outputMimeType: 'image/jpeg',
-      },
+    const response = await fetch('/api/generate-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: cleanPrompt }),
     });
 
-    const bytes =
-      response?.generatedImages?.[0]?.image?.imageBytes ||
-      response?.images?.[0]?.b64Json ||
-      response?.data?.[0]?.b64_json;
+    if (!response.ok) return fallbackImageDataUrl(cleanPrompt);
 
-    if (!bytes) {
-      return fallbackImageDataUrl(cleanPrompt);
-    }
-
-    return `data:image/jpeg;base64,${bytes}`;
+    const data = await response.json();
+    return data.image || fallbackImageDataUrl(cleanPrompt);
   } catch (error) {
     console.error('Image generation unavailable:', error);
     return fallbackImageDataUrl(cleanPrompt);
@@ -966,4 +907,74 @@ export const buildPodcastTranscript = (segments: PodcastSegment[]) => {
 
 export const buildFlashcardPromptBundle = (cards: Flashcard[]) => {
   return cards.map((card) => `Q: ${card.front}\nA: ${card.back}`).join('\n\n');
+};
+
+export const getProviderRuntimeStatus = () => {
+  const preferred = runtimeState.provider;
+  let resolved = preferred;
+
+  // Simple resolution logic matching what seems to be expected
+  const hasGoogle = !!runtimeState.apiKey;
+  // We don't have access to other keys here anymore as we removed process.env usage
+  // So we report what we know.
+
+  if (resolved === 'auto') {
+    resolved = hasGoogle ? 'google' : 'auto';
+  }
+
+  return {
+    preferred,
+    resolved,
+    configured: {
+      google: hasGoogle,
+      openai: false,
+      anthropic: false,
+      ollama: !!(runtimeState.ollama.baseUrl && runtimeState.ollama.model)
+    },
+    keySource: {
+      google: runtimeState.apiKey ? 'runtime' : 'none',
+      openai: 'none',
+      anthropic: 'none'
+    },
+    ollama: runtimeState.ollama
+  };
+};
+
+export const extractNestedErrorMessage = (error: any): string | null => {
+  if (error === null || error === undefined) return null;
+
+  if (typeof error === 'string') {
+    const trimmed = error.trim();
+    if (!trimmed) return null;
+
+    // Try parsing as JSON
+    try {
+      const parsed = JSON.parse(trimmed);
+      // If parsed is same as input (e.g. number string "123" -> 123), recurse
+      if (parsed !== error) {
+         const extracted = extractNestedErrorMessage(parsed);
+         return extracted ?? trimmed;
+      }
+    } catch {
+      // Not JSON, return as is (unquoted if it was just a string?)
+      // JSON.parse('"foo"') returns "foo".
+      // JSON.parse('foo') throws.
+      // So if it throws, it's a plain string.
+      return trimmed;
+    }
+  }
+
+  if (typeof error === 'number' || typeof error === 'boolean') {
+    return String(error);
+  }
+
+  if (error instanceof Error) return extractNestedErrorMessage(error.message);
+
+  if (typeof error === 'object') {
+    if (error.message) return extractNestedErrorMessage(error.message);
+    if (error.error) return extractNestedErrorMessage(error.error);
+    return null;
+  }
+
+  return String(error);
 };
