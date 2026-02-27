@@ -181,39 +181,6 @@ interface GenerateResponse {
   candidates?: any[];
 }
 
-// --- Zod Schemas for Validation ---
-
-const KnowledgeNodeSchema = z.object({
-  id: z.string(),
-  label: z.string(),
-  category: z.string(),
-  mastery: z.number(),
-  connections: z.array(z.string()),
-  x: z.number().optional(),
-  y: z.number().optional(),
-});
-
-const MetaInsightSchema = z.object({
-  type: z.enum(['BIAS_DETECTED', 'STRATEGY_SUGGESTION', 'STRENGTH']),
-  title: z.string(),
-  description: z.string(),
-  timestamp: z.number(),
-});
-
-const CognitiveExerciseSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  skill: z.enum(['LOGIC', 'FIRST_PRINCIPLES', 'ARGUMENTATION', 'LATERAL_THINKING']),
-  description: z.string(),
-  difficulty: z.enum(['Novice', 'Adept', 'Master']),
-});
-
-const GradeResponseSchema = z.object({
-  score: z.number(),
-  maxScore: z.number(),
-  feedback: z.string(),
-});
-
 interface SendMessageParams {
   history: Message[];
   newMessage: string;
