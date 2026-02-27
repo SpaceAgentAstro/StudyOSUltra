@@ -5,7 +5,7 @@ vi.mock('@google/genai', () => ({
   GoogleGenAI: vi.fn()
 }));
 
-import { extractNestedErrorMessage } from './geminiService';
+import { extractNestedErrorMessage } from './extractNestedErrorMessage';
 
 describe('extractNestedErrorMessage', () => {
   describe('Basic Types', () => {

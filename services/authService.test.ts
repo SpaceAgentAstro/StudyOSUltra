@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { FirebaseApp } from 'firebase/app';
 import type { Auth } from 'firebase/auth';
 
@@ -24,27 +24,29 @@ vi.mock('firebase/auth', () => ({
 }));
 
 describe('authService', () => {
-  const originalEnv = process.env;
+  // We need to manage the configuration state.
+  // The module under test (authService) likely reads `config` immediately on import.
+  // So mocking process.env inside a test might be too late if the module is already loaded.
+  // We should mock the `config` module itself.
 
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    process.env = { ...originalEnv };
-  });
-
-  afterEach(() => {
-    process.env = originalEnv;
   });
 
   describe('ensureAuth', () => {
     it('returns null if config is missing', async () => {
-      // Clear env vars
-      process.env.FIREBASE_API_KEY = '';
-      process.env.FIREBASE_AUTH_DOMAIN = '';
-      process.env.FIREBASE_PROJECT_ID = '';
-      process.env.FIREBASE_APP_ID = '';
+      vi.doMock('./config', () => ({
+        config: {
+          firebase: {
+            apiKey: '',
+            authDomain: '',
+            projectId: '',
+            appId: '',
+          },
+        },
+      }));
 
-      // Re-import module to pick up env changes
       const { ensureAuth } = await import('./authService');
 
       const result = ensureAuth();
@@ -53,11 +55,16 @@ describe('authService', () => {
     });
 
     it('initializes new app and auth when config is present and no app exists', async () => {
-      // Set env vars
-      process.env.FIREBASE_API_KEY = 'test-key';
-      process.env.FIREBASE_AUTH_DOMAIN = 'test-domain';
-      process.env.FIREBASE_PROJECT_ID = 'test-project';
-      process.env.FIREBASE_APP_ID = 'test-app-id';
+      vi.doMock('./config', () => ({
+        config: {
+          firebase: {
+            apiKey: 'test-key',
+            authDomain: 'test-domain',
+            projectId: 'test-project',
+            appId: 'test-app-id',
+          },
+        },
+      }));
 
       // Mock behavior
       getAppsMock.mockReturnValue([]);
@@ -84,11 +91,16 @@ describe('authService', () => {
     });
 
     it('reuses existing app if available', async () => {
-      // Set env vars
-      process.env.FIREBASE_API_KEY = 'test-key';
-      process.env.FIREBASE_AUTH_DOMAIN = 'test-domain';
-      process.env.FIREBASE_PROJECT_ID = 'test-project';
-      process.env.FIREBASE_APP_ID = 'test-app-id';
+      vi.doMock('./config', () => ({
+        config: {
+          firebase: {
+            apiKey: 'test-key',
+            authDomain: 'test-domain',
+            projectId: 'test-project',
+            appId: 'test-app-id',
+          },
+        },
+      }));
 
       // Mock behavior
       const mockApp = { name: '[DEFAULT]' } as FirebaseApp;
@@ -109,11 +121,16 @@ describe('authService', () => {
     });
 
     it('returns cached auth instance on subsequent calls (singleton)', async () => {
-      // Set env vars
-      process.env.FIREBASE_API_KEY = 'test-key';
-      process.env.FIREBASE_AUTH_DOMAIN = 'test-domain';
-      process.env.FIREBASE_PROJECT_ID = 'test-project';
-      process.env.FIREBASE_APP_ID = 'test-app-id';
+      vi.doMock('./config', () => ({
+        config: {
+          firebase: {
+            apiKey: 'test-key',
+            authDomain: 'test-domain',
+            projectId: 'test-project',
+            appId: 'test-app-id',
+          },
+        },
+      }));
 
       // Mock behavior
       getAppsMock.mockReturnValue([]);
