@@ -160,9 +160,16 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
     });
   };
 
-  const filteredFiles = files.filter(file => 
-    file.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // ⚡ Bolt Optimization: Memoize filtered files list
+  // What: Wraps the text-matching filter operation in useMemo and hoists the toLowerCase call.
+  // Why: Prevents O(N) string comparison operations on every keystroke when typing in unrelated inputs or during streaming re-renders. Hoisting makes the query processing O(1).
+  // Impact: Reduces CPU time during re-renders, especially when a user has a large number of indexed sources.
+  const filteredFiles = useMemo(() => {
+    const lowerQuery = searchQuery.toLowerCase();
+    return files.filter(file =>
+      file.name.toLowerCase().includes(lowerQuery)
+    );
+  }, [files, searchQuery]);
 
   return (
     <div className="p-6 max-w-4xl mx-auto w-full">
