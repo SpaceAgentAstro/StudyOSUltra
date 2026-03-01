@@ -181,6 +181,7 @@ interface GenerateResponse {
   candidates?: any[];
 }
 
+
 // --- Zod Schemas for Validation ---
 
 const KnowledgeNodeSchema = z.object({
@@ -618,7 +619,7 @@ export const streamChatResponse = async ({
     }
 
     console.error('Gemini stream error:', error);
-    onChunk(`\n[System Error: ${error?.message || 'Failed to generate response'}]`);
+    onChunk(`\n[System Error: Failed to generate response]`);
   }
 };
 
