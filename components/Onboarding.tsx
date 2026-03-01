@@ -93,18 +93,26 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
               
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">What should we call you?</label>
+                  <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-2">
+                    What should we call you? <span className="text-red-500" aria-hidden="true">*</span>
+                  </label>
                   <input 
+                    id="name"
                     type="text" 
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Alex"
+                    required
+                    aria-required="true"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">What is your main study goal?</label>
+                  <label htmlFor="goal" className="block text-sm font-medium text-slate-700 mb-2">
+                    What is your main study goal?
+                  </label>
                   <input 
+                    id="goal"
                     type="text" 
                     value={goal}
                     onChange={(e) => setGoal(e.target.value)}
