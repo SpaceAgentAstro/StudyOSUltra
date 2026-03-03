@@ -25,7 +25,25 @@ if (!API_KEY) {
 
 const aiClient = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
 
-app.post('/api/generate', async (req, res) => {
+// Security: Enforce authentication for API access
+const authenticate = (req, res, next) => {
+  const internalSecret = req.headers['x-internal-secret'];
+  const userApiKey = req.headers['x-api-key'];
+
+  // Require either an internal secret (from Vite proxy) or an explicit API key
+  const expectedSecret = process.env.JULES_API_KEY;
+  const isInternalValid = expectedSecret && internalSecret === expectedSecret;
+  const hasUserApiKey = Boolean(userApiKey);
+
+  // Require either an internal secret (from Vite proxy) or an explicit user API key header.
+  if (isInternalValid || hasUserApiKey) {
+    return next();
+  }
+
+  return res.status(401).json({ error: "Unauthorized: Missing or invalid authentication." });
+};
+
+app.post('/api/generate', authenticate, async (req, res) => {
   if (!aiClient) {
     return res.status(500).json({ error: "Server Error: API Key not configured." });
   }
@@ -55,7 +73,7 @@ app.post('/api/generate', async (req, res) => {
   }
 });
 
-app.post('/api/stream', async (req, res) => {
+app.post('/api/stream', authenticate, async (req, res) => {
   if (!aiClient) {
     return res.status(500).json({ error: "Server Error: API Key not configured." });
   }
