@@ -17,7 +17,7 @@ describe('AuthGate', () => {
 
   it('renders correctly', () => {
     render(<AuthGate {...defaultProps} />);
-    expect(screen.getByText('Study OS')).toBeInTheDocument();
+    expect(screen.getByText('Galactic Maestro')).toBeInTheDocument();
     expect(screen.getByText('Continue with Google')).toBeInTheDocument();
     expect(screen.getByText('Continue with Microsoft')).toBeInTheDocument();
     expect(screen.getByText('Continue with Apple')).toBeInTheDocument();
