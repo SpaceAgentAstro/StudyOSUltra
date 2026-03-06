@@ -212,6 +212,7 @@ const ExamSimulator: React.FC<ExamSimulatorProps> = ({ files }) => {
               </div>
 
               <button 
+                aria-label="Return to Dashboard from disqualified screen"
                 onClick={() => setView('SETUP')}
                 className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors"
               >
@@ -250,6 +251,7 @@ const ExamSimulator: React.FC<ExamSimulatorProps> = ({ files }) => {
                   )}
               </div>
                <button 
+                aria-label="Return to Simulator from results screen"
                 onClick={() => setView('SETUP')}
                 className="px-6 py-2 bg-slate-900 text-white font-bold rounded-lg"
               >
