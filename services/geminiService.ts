@@ -181,39 +181,6 @@ interface GenerateResponse {
   candidates?: any[];
 }
 
-// --- Zod Schemas for Validation ---
-
-const KnowledgeNodeSchema = z.object({
-  id: z.string(),
-  label: z.string(),
-  category: z.string(),
-  mastery: z.number(),
-  connections: z.array(z.string()),
-  x: z.number().optional(),
-  y: z.number().optional(),
-});
-
-const MetaInsightSchema = z.object({
-  type: z.enum(['BIAS_DETECTED', 'STRATEGY_SUGGESTION', 'STRENGTH']),
-  title: z.string(),
-  description: z.string(),
-  timestamp: z.number(),
-});
-
-const CognitiveExerciseSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  skill: z.enum(['LOGIC', 'FIRST_PRINCIPLES', 'ARGUMENTATION', 'LATERAL_THINKING']),
-  description: z.string(),
-  difficulty: z.enum(['Novice', 'Adept', 'Master']),
-});
-
-const GradeResponseSchema = z.object({
-  score: z.number(),
-  maxScore: z.number(),
-  feedback: z.string(),
-});
-
 interface SendMessageParams {
   history: Message[];
   newMessage: string;
@@ -283,7 +250,10 @@ const parseJsonText = <T>(text: string | undefined, schema: z.ZodSchema<T>): T |
 const callApi = async (path: string, payload: GeneratePayload): Promise<GenerateResponse> => {
   const response = await fetch(path, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-internal-secret': process.env.JULES_API_KEY || '',
+    },
     body: JSON.stringify(payload),
   });
 
@@ -569,7 +539,10 @@ export const streamChatResponse = async ({
   try {
     const response = await fetch('/api/stream', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-internal-secret': process.env.JULES_API_KEY || '',
+      },
       body: JSON.stringify(payload),
       signal,
     });
