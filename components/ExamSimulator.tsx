@@ -9,6 +9,16 @@ interface ExamSimulatorProps {
   files: FileDocument[];
 }
 
+// ⚡ Bolt Performance Optimization:
+// What: Hoisted SUSPICIOUS_PHRASES array outside the component to the module level.
+// Why: The array was previously defined inside handleAnswerChange, causing it to be re-created on every keystroke in the textareas or radio button clicks.
+// Impact: Reduces memory allocation and garbage collection overhead during frequent, high-volume render events (like typing). This makes the keystroke handler effectively O(1) in terms of memory allocation per stroke, previously it was allocating an array of strings every single time.
+const SUSPICIOUS_PHRASES = [
+    'hey google', 'chatgpt', 'help me',
+    'what is the answer', 'ignore previous instructions',
+    'as an ai', 'system prompt'
+];
+
 const ExamSimulator: React.FC<ExamSimulatorProps> = ({ files }) => {
   const [view, setView] = useState<'SETUP' | 'EXAM' | 'RESULTS' | 'DISQUALIFIED'>('SETUP');
   const [currentExam, setCurrentExam] = useState<ExamPaper | null>(null);
@@ -134,13 +144,7 @@ const ExamSimulator: React.FC<ExamSimulatorProps> = ({ files }) => {
 
   const handleAnswerChange = (qId: string, val: string) => {
     // Invigilator: Content Monitoring (Prompt Injection / Cheating)
-    const suspiciousPhrases = [
-        'hey google', 'chatgpt', 'help me', 
-        'what is the answer', 'ignore previous instructions', 
-        'as an ai', 'system prompt'
-    ];
-    
-    if (suspiciousPhrases.some(phrase => val.toLowerCase().includes(phrase))) {
+    if (SUSPICIOUS_PHRASES.some(phrase => val.toLowerCase().includes(phrase))) {
         if (!warningMessage) { 
              issueWarning("Unauthorized linguistic pattern detected (Possible Agent Injection).");
         }
