@@ -1,8 +1,8 @@
 /** @vitest-environment jsdom */
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
-import App from './App';
+import App from '../App';
 import React from 'react';
 import { vi, describe, beforeEach, test, expect } from 'vitest';
 
@@ -32,14 +32,29 @@ Object.defineProperty(window, 'localStorage', {
 });
 
 // Mock lazy components
-vi.mock('./components/KnowledgeUniverse', () => ({
+vi.mock('../components/KnowledgeUniverse', () => ({
   default: () => <div data-testid="knowledge-universe">Knowledge Universe View</div>
 }));
 
-describe.skip('App Performance Optimization', () => {
+// Mock services/authService to bypass AuthGate
+vi.mock('../services/authService', () => ({
+  isFirebaseAuthConfigured: () => false,
+  subscribeToAuth: vi.fn(),
+  signInWithProvider: vi.fn(),
+  signOutCurrentUser: vi.fn(),
+  toAuthErrorMessage: (err: any) => err.message,
+}));
+
+// Mock geminiService to prevent real calls
+vi.mock('../services/geminiService', () => ({
+  streamChatResponse: vi.fn(),
+}));
+
+describe.skip('App Duplicate Rendering Check', () => {
   beforeEach(() => {
     Element.prototype.scrollIntoView = vi.fn();
     window.localStorage.clear();
+    // Simulate logged-in user to go straight to main app
     window.localStorage.setItem('study_os_profile', JSON.stringify({
       name: 'Test User',
       subjects: [],
@@ -57,39 +72,17 @@ describe.skip('App Performance Optimization', () => {
     }));
   });
 
-  test('ChatInterface remains mounted but hidden on view change (Optimization)', async () => {
+  test('ChatInterface should be rendered exactly once', async () => {
     render(<App />);
 
-    // Check if ChatInterface is present
-    const chatText = /Welcome to your Study Universe/i;
-    const chatElement = await screen.findByText(chatText);
-    expect(chatElement).toBeInTheDocument();
-    expect(chatElement).toBeVisible();
+    // Wait for the welcome message
+    const welcomeText = "Welcome to your Study Universe. I am The Council. I can teach, quiz, analyze, and ground answers in your uploaded sources.";
 
-    // Navigate to Knowledge Universe
-    const universeButtons = screen.getAllByText('Universe');
-    const universeButton = universeButtons[0];
+    // We expect ONLY ONE instance of this text.
+    // getAllByText returns an array of all matching elements.
+    const messageElements = await screen.findAllByText(welcomeText);
 
-    fireEvent.click(universeButton);
-
-    // Wait for the view to change.
-    await waitFor(() => {
-        expect(screen.getByTestId('knowledge-universe')).toBeInTheDocument();
-    });
-
-    // Assert that ChatInterface is STILL present in the DOM
-    expect(screen.getByText(chatText)).toBeInTheDocument();
-
-    // Assert it is not visible (hidden via display: none on parent)
-    expect(screen.getByText(chatText)).not.toBeVisible();
-
-    // Navigate back to Chat
-    const chatButtons = screen.getAllByText('Council Chat');
-    fireEvent.click(chatButtons[0]);
-
-    // Assert it becomes visible again
-    await waitFor(() => {
-        expect(screen.getByText(chatText)).toBeVisible();
-    });
+    // If there are duplicates, length will be > 1
+    expect(messageElements).toHaveLength(1);
   });
 });
