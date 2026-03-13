@@ -294,6 +294,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
             <button
               key={agent.role}
               onClick={() => setSelectedAgent(agent.role)}
+              aria-pressed={selectedAgent === agent.role}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
                 selectedAgent === agent.role
                   ? `${agent.color} text-white shadow-md`
@@ -325,6 +326,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
               }`}
               title="Thinking Mode"
               aria-label="Toggle Thinking Mode"
+              aria-pressed={useThinking}
             >
               <Brain className="w-4 h-4" />
             </button>
@@ -335,6 +337,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
               }`}
               title="Google Search"
               aria-label="Toggle Google Search"
+              aria-pressed={useSearch}
             >
               <Globe className="w-4 h-4" />
             </button>
@@ -351,6 +354,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
               }`}
               title="Flash Lite (Fast)"
               aria-label="Toggle Flash Lite"
+              aria-pressed={useFlashLite}
             >
               <Zap className="w-4 h-4" />
             </button>
