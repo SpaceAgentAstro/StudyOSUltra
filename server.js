@@ -17,7 +17,7 @@ app.use(express.json({ limit: '30mb' }));
 app.use(express.urlencoded({ extended: true, limit: '30mb' }));
 
 const PORT = 3001;
-const API_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY;
+const API_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.JULES_API_KEY;
 
 if (!API_KEY) {
   console.warn("WARNING: GEMINI_API_KEY is not set in environment variables.");
@@ -25,7 +25,15 @@ if (!API_KEY) {
 
 const aiClient = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
 
-app.post('/api/generate', async (req, res) => {
+const authenticate = (req, res, next) => {
+  const apiKey = req.headers['x-api-key'] || req.headers['x-internal-secret'];
+  if (!apiKey || apiKey !== process.env.JULES_API_KEY) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  next();
+};
+
+app.post('/api/generate', authenticate, async (req, res) => {
   if (!aiClient) {
     return res.status(500).json({ error: "Server Error: API Key not configured." });
   }
@@ -55,7 +63,7 @@ app.post('/api/generate', async (req, res) => {
   }
 });
 
-app.post('/api/stream', async (req, res) => {
+app.post('/api/stream', authenticate, async (req, res) => {
   if (!aiClient) {
     return res.status(500).json({ error: "Server Error: API Key not configured." });
   }
