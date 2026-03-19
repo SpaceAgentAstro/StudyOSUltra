@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import { rateLimit } from 'express-rate-limit';
 import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -24,6 +25,17 @@ if (!API_KEY) {
 }
 
 const aiClient = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
+
+// 🛡️ Sentinel: Add rate limiting to prevent DoS and brute-force attacks on AI endpoints
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  message: { error: "Too many requests from this IP, please try again after 15 minutes" },
+});
+
+app.use('/api/', apiLimiter);
 
 app.post('/api/generate', async (req, res) => {
   if (!aiClient) {
