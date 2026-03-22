@@ -17,7 +17,7 @@ app.use(express.json({ limit: '30mb' }));
 app.use(express.urlencoded({ extended: true, limit: '30mb' }));
 
 const PORT = 3001;
-const API_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY;
+const API_KEY = process.env.GEMINI_API_KEY || process.env.JULES_API_KEY || process.env.API_KEY;
 
 if (!API_KEY) {
   console.warn("WARNING: GEMINI_API_KEY is not set in environment variables.");
