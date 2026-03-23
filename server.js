@@ -51,7 +51,8 @@ app.post('/api/generate', async (req, res) => {
     res.json(responseData);
   } catch (error) {
     console.error("Error in /api/generate:", error);
-    res.status(500).json({ error: error.message || "Internal Server Error" });
+    // Sentinel Security: Prevent Information Exposure by returning a generic error
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
@@ -91,7 +92,8 @@ app.post('/api/stream', async (req, res) => {
   } catch (error) {
     console.error("Error in /api/stream:", error);
     if (!res.headersSent) {
-      res.status(500).json({ error: error.message || "Internal Server Error" });
+      // Sentinel Security: Prevent Information Exposure by returning a generic error
+      res.status(500).json({ error: "Internal Server Error" });
     } else {
       res.end();
     }
