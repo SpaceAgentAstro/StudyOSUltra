@@ -618,7 +618,8 @@ export const streamChatResponse = async ({
     }
 
     console.error('Gemini stream error:', error);
-    onChunk(`\n[System Error: ${error?.message || 'Failed to generate response'}]`);
+    // Sentinel Security: Prevent Information Exposure by returning a generic error
+    onChunk(`\n[System Error: Failed to generate response]`);
   }
 };
 
