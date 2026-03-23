@@ -456,6 +456,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
               onClick={() => handleSend()}
               disabled={(!input.trim() && !imageAttachment) || isUploading}
               className="px-4 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-500/30 transition-all active:scale-95"
+              title={
+                isUploading
+                  ? "Waiting for image upload to finish"
+                  : (!input.trim() && !imageAttachment)
+                    ? "Enter a message or attach an image to send"
+                    : "Send message"
+              }
               aria-label="Send message"
             >
               <Send className="w-5 h-5" />
