@@ -11,6 +11,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.set('trust proxy', 1); // Trust first proxy for accurate client IP rate limiting
 app.use(cors());
 // Keep API payloads bounded to protect server memory while client-side file uploads stay local.
 app.use(express.json({ limit: '30mb' }));
@@ -24,6 +25,38 @@ if (!API_KEY) {
 }
 
 const aiClient = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
+
+// Simple in-memory rate limiter to prevent API token exhaustion
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 50;
+
+// Periodically clean up old IPs to prevent memory leaks
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, record] of rateLimitMap.entries()) {
+    if (now - record.timestamp > RATE_LIMIT_WINDOW_MS) {
+      rateLimitMap.delete(ip);
+    }
+  }
+}, RATE_LIMIT_WINDOW_MS);
+
+app.use('/api', (req, res, next) => {
+  const ip = req.ip || req.connection.remoteAddress || 'unknown';
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+
+  if (!record || now - record.timestamp > RATE_LIMIT_WINDOW_MS) {
+    rateLimitMap.set(ip, { count: 1, timestamp: now });
+    next();
+  } else if (record.count < MAX_REQUESTS_PER_WINDOW) {
+    record.count++;
+    next();
+  } else {
+    console.warn(`Rate limit exceeded for IP: ${ip}`);
+    res.status(429).json({ error: "Too many requests. Please try again later." });
+  }
+});
 
 app.post('/api/generate', async (req, res) => {
   if (!aiClient) {
