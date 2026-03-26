@@ -197,14 +197,14 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
         <p className="text-xs text-slate-400 mt-2">Large files are preview-indexed locally so uploads do not overload the site.</p>
         <input 
           type="file" 
-          aria-label="Upload files"
+
           ref={fileInputRef}
           className="hidden" 
           multiple
           accept=".txt,.md,.csv,.json,.pdf,.docx" 
           onChange={handleFileUpload}
           title="File input"
-           aria-label="Upload files"
+
         />
       </div>
 

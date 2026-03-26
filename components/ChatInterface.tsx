@@ -208,83 +208,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ files, initialMessages = 
     handleSendRef.current = handleSend;
   }, [handleSend]);
 
-  const handleExplain = useCallback((code: string, agent: AgentRole) => {
-    handleSendRef.current(`Please explain this code as a teacher and include key pitfalls:\n\n${code}`, agent);
+  const handleExplain = useCallback((text: string, agent: AgentRole = 'TEACHER') => {
+    handleSendRef.current(`Could you explain this code in detail as a teacher?\n\n${text}`, agent);
   }, []);
 
-  // Keep handleSend stable for ChatMessage callbacks
-  const handleSendRef = useRef(handleSend);
-  useEffect(() => {
-    handleSendRef.current = handleSend;
-  }, [handleSend]);
-
-  const stableHandleExplainCode = useCallback((code: string) => {
-    handleSendRef.current(`Could you explain this code in detail as a teacher?\n\n${code}`, 'TEACHER');
-  }, []);
-
-  const handleSendRef = useRef(handleSend);
-  useEffect(() => {
-    handleSendRef.current = handleSend;
-  });
-
-  const handleExplainCode = useCallback((code: string) => {
-      handleSendRef.current(`Could you explain this code in detail as a teacher?\n\n${code}`, 'TEACHER');
-  }, []);
-
-  const handleSendRef = useRef(handleSend);
-  useEffect(() => {
-    handleSendRef.current = handleSend;
-  });
-
-  const handleExplainCode = useCallback((code: string) => {
-    handleSendRef.current?.(`Could you explain this code in detail as a teacher?\n\n${code}`, 'TEACHER');
-  }, []);
-
-  useEffect(() => {
-    handleSendRef.current = handleSend;
-  });
-
-  const handleExplain = React.useCallback((code: string) => {
-      if (handleSendRef.current) {
-          handleSendRef.current(`Could you explain this code in detail as a teacher?\n\n${code}`, 'TEACHER');
-      }
-  }, []);
-
-  const handleSendRef = useRef(handleSend);
-  useEffect(() => {
-    handleSendRef.current = handleSend;
-  });
-
-  const handleExplainCode = useCallback((code: string) => {
-      handleSendRef.current(`Could you explain this code in detail as a teacher?\n\n${code}`, 'TEACHER');
-  }, []);
-
-  // Keep ref in sync
-  useEffect(() => {
-      handleSendRef.current = handleSend;
-  });
-
-  const handleExplain = useCallback((text: string, agent: AgentRole) => {
-      handleSendRef.current(text, agent);
-  }, []);
-
-  const handleSendRef = useRef(handleSend);
-  useEffect(() => {
-    handleSendRef.current = handleSend;
-  });
-
-  const handleExplain = useCallback((text: string, agent: AgentRole) => {
-    handleSendRef.current(text, agent);
-  }, []);
-
-  const handleSendRef = useRef(handleSend);
-  useEffect(() => {
-    handleSendRef.current = handleSend;
-  });
-
-  const onExplain = useCallback((text: string, agent: AgentRole) => {
-      handleSendRef.current(text, agent);
-  }, []);
+  const onExplain = handleExplain;
+  const handleExplainCode = handleExplain;
+  const stableHandleExplainCode = handleExplain;
 
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
