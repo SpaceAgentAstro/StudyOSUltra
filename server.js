@@ -11,10 +11,48 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.set('trust proxy', 1);
 app.use(cors());
 // Keep API payloads bounded to protect server memory while client-side file uploads stay local.
 app.use(express.json({ limit: '30mb' }));
 app.use(express.urlencoded({ extended: true, limit: '30mb' }));
+
+// In-memory rate limiter to prevent DoS/token exhaustion
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 60; // 60 requests per minute
+
+// Cleanup interval to prevent memory leaks from inactive IPs
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, data] of rateLimitMap.entries()) {
+    if (now - data.startTime > RATE_LIMIT_WINDOW_MS) {
+      rateLimitMap.delete(ip);
+    }
+  }
+}, RATE_LIMIT_WINDOW_MS).unref();
+
+app.use('/api', (req, res, next) => {
+  const ip = req.ip || req.connection.remoteAddress;
+  const now = Date.now();
+  const requestData = rateLimitMap.get(ip) || { count: 0, startTime: now };
+
+  if (now - requestData.startTime > RATE_LIMIT_WINDOW_MS) {
+    requestData.count = 1;
+    requestData.startTime = now;
+  } else {
+    requestData.count++;
+  }
+
+  rateLimitMap.set(ip, requestData);
+
+  if (requestData.count > MAX_REQUESTS_PER_WINDOW) {
+    console.warn(`[Rate Limiter] Blocked IP: ${ip} (Exceeded ${MAX_REQUESTS_PER_WINDOW} reqs/${RATE_LIMIT_WINDOW_MS}ms)`);
+    return res.status(429).json({ error: 'Too many requests, please try again later.' });
+  }
+
+  next();
+});
 
 const PORT = 3001;
 const API_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY;
