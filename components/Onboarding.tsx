@@ -93,8 +93,9 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
               
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">What should we call you?</label>
+                  <label htmlFor="student-name" className="block text-sm font-medium text-slate-700 mb-2">What should we call you?</label>
                   <input 
+                    id="student-name"
                     type="text" 
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -103,8 +104,9 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">What is your main study goal?</label>
+                  <label htmlFor="student-goal" className="block text-sm font-medium text-slate-700 mb-2">What is your main study goal?</label>
                   <input 
+                    id="student-goal"
                     type="text" 
                     value={goal}
                     onChange={(e) => setGoal(e.target.value)}
