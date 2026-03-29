@@ -16,6 +16,9 @@
   "dependencies": {
     "@csstools/css-calc": "^3.1.1",
     "@google/genai": "^1.38.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
     "firebase": "^12.9.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
