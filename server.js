@@ -11,10 +11,50 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.set('trust proxy', 1); // Trust first proxy for accurate IP tracking
 app.use(cors());
 // Keep API payloads bounded to protect server memory while client-side file uploads stay local.
 app.use(express.json({ limit: '30mb' }));
 app.use(express.urlencoded({ extended: true, limit: '30mb' }));
+
+// 🛡️ Security Enhancement: Rate Limiter Middleware
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 30;
+const rateLimitMap = new Map();
+
+// Periodic cleanup to prevent Memory Leaks (DoS vulnerability)
+const cleanupInterval = setInterval(() => {
+  const now = Date.now();
+  for (const [ip, data] of rateLimitMap.entries()) {
+    if (now - data.startTime > RATE_LIMIT_WINDOW_MS) {
+      rateLimitMap.delete(ip);
+    }
+  }
+}, RATE_LIMIT_WINDOW_MS);
+cleanupInterval.unref();
+
+const rateLimiter = (req, res, next) => {
+  const ip = req.ip || req.connection.remoteAddress || 'unknown';
+  const now = Date.now();
+
+  if (!rateLimitMap.has(ip)) {
+    rateLimitMap.set(ip, { count: 1, startTime: now });
+    return next();
+  }
+
+  const data = rateLimitMap.get(ip);
+  if (now - data.startTime > RATE_LIMIT_WINDOW_MS) {
+    rateLimitMap.set(ip, { count: 1, startTime: now });
+    return next();
+  }
+
+  data.count += 1;
+  if (data.count > MAX_REQUESTS_PER_WINDOW) {
+    return res.status(429).json({ error: "Too Many Requests. Please try again later." });
+  }
+
+  next();
+};
 
 const PORT = 3001;
 const API_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY;
@@ -25,7 +65,7 @@ if (!API_KEY) {
 
 const aiClient = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
 
-app.post('/api/generate', async (req, res) => {
+app.post('/api/generate', rateLimiter, async (req, res) => {
   if (!aiClient) {
     return res.status(500).json({ error: "Server Error: API Key not configured." });
   }
@@ -55,7 +95,7 @@ app.post('/api/generate', async (req, res) => {
   }
 });
 
-app.post('/api/stream', async (req, res) => {
+app.post('/api/stream', rateLimiter, async (req, res) => {
   if (!aiClient) {
     return res.status(500).json({ error: "Server Error: API Key not configured." });
   }
