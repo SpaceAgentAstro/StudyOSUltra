@@ -11,10 +11,49 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.set('trust proxy', 1);
 app.use(cors());
 // Keep API payloads bounded to protect server memory while client-side file uploads stay local.
 app.use(express.json({ limit: '30mb' }));
 app.use(express.urlencoded({ extended: true, limit: '30mb' }));
+
+// 🛡️ Security: Rate limiting to prevent abuse
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 50;
+
+// Cleanup interval to prevent memory leak
+const cleanupInterval = setInterval(() => {
+  const now = Date.now();
+  for (const [ip, data] of rateLimitMap.entries()) {
+    if (now - data.startTime > RATE_LIMIT_WINDOW_MS) {
+      rateLimitMap.delete(ip);
+    }
+  }
+}, RATE_LIMIT_WINDOW_MS);
+cleanupInterval.unref(); // Don't block Node process exit
+
+const rateLimiter = (req, res, next) => {
+  const ip = req.ip;
+  const now = Date.now();
+  const requestData = rateLimitMap.get(ip) || { count: 0, startTime: now };
+
+  if (now - requestData.startTime > RATE_LIMIT_WINDOW_MS) {
+    requestData.count = 1;
+    requestData.startTime = now;
+  } else {
+    requestData.count++;
+  }
+
+  rateLimitMap.set(ip, requestData);
+
+  if (requestData.count > MAX_REQUESTS_PER_WINDOW) {
+    return res.status(429).json({ error: "Too many requests, please try again later." });
+  }
+  next();
+};
+
+app.use('/api', rateLimiter);
 
 const PORT = 3001;
 const API_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY;
@@ -51,7 +90,7 @@ app.post('/api/generate', async (req, res) => {
     res.json(responseData);
   } catch (error) {
     console.error("Error in /api/generate:", error);
-    res.status(500).json({ error: error.message || "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error" }); // 🛡️ Security: Do not leak error details
   }
 });
 
@@ -91,7 +130,7 @@ app.post('/api/stream', async (req, res) => {
   } catch (error) {
     console.error("Error in /api/stream:", error);
     if (!res.headersSent) {
-      res.status(500).json({ error: error.message || "Internal Server Error" });
+      res.status(500).json({ error: "Internal Server Error" }); // 🛡️ Security: Do not leak error details
     } else {
       res.end();
     }
