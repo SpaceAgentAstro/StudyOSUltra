@@ -73,7 +73,7 @@ const KnowledgeUniverse: React.FC<KnowledgeUniverseProps> = ({ files }) => {
             <button 
                 onClick={handleGenerate} 
                 disabled={isGenerating}
-                className="px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/50 rounded-lg text-sm font-bold text-indigo-300 transition-colors flex items-center gap-2"
+                className="px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/50 rounded-lg text-sm font-bold text-indigo-300 transition-colors flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
             >
                 {isGenerating ? <Loader className="w-4 h-4 animate-spin" /> : <Compass className="w-4 h-4" />}
                 {isGenerating ? "Scanning..." : "Re-Scan Sources"}
@@ -119,7 +119,13 @@ const KnowledgeUniverse: React.FC<KnowledgeUniverseProps> = ({ files }) => {
           <div className="absolute right-6 top-6 w-80 bg-slate-900/90 backdrop-blur-xl border border-slate-700 rounded-2xl p-6 shadow-2xl animate-slideLeft">
               <div className="flex justify-between items-start mb-4">
                   <h2 className="text-xl font-bold">{selectedNode.label}</h2>
-                  <button onClick={() => setSelectedNode(null)} className="text-slate-400 hover:text-white"><Compass className="w-5 h-5 rotate-45" /></button>
+                  <button
+                      onClick={() => setSelectedNode(null)}
+                      className="text-slate-400 hover:text-white focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none rounded"
+                      aria-label="Close detail panel"
+                  >
+                      <Compass className="w-5 h-5 rotate-45" />
+                  </button>
               </div>
               <div className="space-y-4">
                   <div>
@@ -135,7 +141,7 @@ const KnowledgeUniverse: React.FC<KnowledgeUniverseProps> = ({ files }) => {
                   </div>
                   
                   <div className="pt-4 border-t border-slate-800">
-                      <button className="w-full py-2 bg-white text-slate-900 rounded-lg font-bold hover:bg-slate-200 transition-colors">
+                      <button className="w-full py-2 bg-white text-slate-900 rounded-lg font-bold hover:bg-slate-200 transition-colors focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900">
                           Inspect Concept
                       </button>
                   </div>
