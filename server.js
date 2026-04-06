@@ -12,9 +12,49 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors());
+
+app.set('trust proxy', 1);
+
 // Keep API payloads bounded to protect server memory while client-side file uploads stay local.
 app.use(express.json({ limit: '30mb' }));
 app.use(express.urlencoded({ extended: true, limit: '30mb' }));
+
+const rateLimitMap = new Map();
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, data] of rateLimitMap.entries()) {
+    if (now > data.resetTime) {
+      rateLimitMap.delete(ip);
+    }
+  }
+}, 60000).unref();
+
+const apiRateLimiter = (req, res, next) => {
+  const ip = req.ip || req.connection.remoteAddress;
+  const now = Date.now();
+  const windowMs = 60000;
+  const limit = 50;
+
+  if (!rateLimitMap.has(ip)) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs });
+    return next();
+  }
+
+  const data = rateLimitMap.get(ip);
+  if (now > data.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs });
+    return next();
+  }
+
+  data.count++;
+  if (data.count > limit) {
+    return res.status(429).json({ error: "Too Many Requests" });
+  }
+
+  next();
+};
+
+app.use('/api/', apiRateLimiter);
 
 const PORT = 3001;
 const API_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY;
@@ -51,7 +91,7 @@ app.post('/api/generate', async (req, res) => {
     res.json(responseData);
   } catch (error) {
     console.error("Error in /api/generate:", error);
-    res.status(500).json({ error: error.message || "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
@@ -91,7 +131,7 @@ app.post('/api/stream', async (req, res) => {
   } catch (error) {
     console.error("Error in /api/stream:", error);
     if (!res.headersSent) {
-      res.status(500).json({ error: error.message || "Internal Server Error" });
+      res.status(500).json({ error: "Internal Server Error" });
     } else {
       res.end();
     }
