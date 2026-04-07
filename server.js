@@ -25,9 +25,40 @@ if (!API_KEY) {
 
 const aiClient = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
 
-app.post('/api/generate', async (req, res) => {
+// In-memory rate limiting to prevent token exhaustion DoS
+const rateLimitMap = new Map();
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, data] of rateLimitMap.entries()) {
+    if (now - data.timestamp > 60000) {
+      rateLimitMap.delete(ip);
+    }
+  }
+}, 60000).unref();
+
+const checkRateLimit = (req, res, next) => {
+  const ip = req.ip || req.connection.remoteAddress;
+  const now = Date.now();
+  const userData = rateLimitMap.get(ip) || { count: 0, timestamp: now };
+
+  if (now - userData.timestamp > 60000) {
+    userData.count = 1;
+    userData.timestamp = now;
+  } else {
+    userData.count++;
+  }
+
+  rateLimitMap.set(ip, userData);
+
+  if (userData.count > 50) { // Limit to 50 requests per minute
+    return res.status(429).json({ error: "Too many requests. Please try again later." });
+  }
+  next();
+};
+
+app.post('/api/generate', checkRateLimit, async (req, res) => {
   if (!aiClient) {
-    return res.status(500).json({ error: "Server Error: API Key not configured." });
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 
   try {
@@ -51,13 +82,13 @@ app.post('/api/generate', async (req, res) => {
     res.json(responseData);
   } catch (error) {
     console.error("Error in /api/generate:", error);
-    res.status(500).json({ error: error.message || "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-app.post('/api/stream', async (req, res) => {
+app.post('/api/stream', checkRateLimit, async (req, res) => {
   if (!aiClient) {
-    return res.status(500).json({ error: "Server Error: API Key not configured." });
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 
   try {
@@ -91,7 +122,7 @@ app.post('/api/stream', async (req, res) => {
   } catch (error) {
     console.error("Error in /api/stream:", error);
     if (!res.headersSent) {
-      res.status(500).json({ error: error.message || "Internal Server Error" });
+      res.status(500).json({ error: "Internal Server Error" });
     } else {
       res.end();
     }
