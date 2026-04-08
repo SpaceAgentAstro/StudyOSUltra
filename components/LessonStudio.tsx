@@ -115,12 +115,17 @@ const LessonStudio: React.FC<LessonStudioProps> = ({ files }) => {
         </div>
 
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3">
-          <input
-            value={topic}
-            onChange={(event) => setTopic(event.target.value)}
-            placeholder="Enter lesson topic"
-            className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
-          />
+          <div className="relative w-full">
+            <label htmlFor="lesson-topic" className="sr-only">Enter lesson topic</label>
+            <input
+              id="lesson-topic"
+              value={topic}
+              onChange={(event) => setTopic(event.target.value)}
+              placeholder="Enter lesson topic"
+              disabled={isGenerating}
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+          </div>
           <button
             onClick={handleGenerateLesson}
             disabled={isGenerating || !topic.trim()}
