@@ -5,3 +5,7 @@
 ## 2024-05-22 - [Stable Callbacks for Memoization]
 **Learning:** When passing callbacks (like `handleSend`) to `React.memo` components, if the callback depends on changing state, `useCallback` alone is insufficient as it will change on every render.
 **Action:** Use a `useRef` to store the latest callback and expose a stable `useCallback` wrapper that invokes `ref.current`.
+
+## 2024-05-23 - [Optimize SVG Edge Calculations]
+**Learning:** In components rendering large network graphs (like `KnowledgeUniverse.tsx`), mapping over edges inside a loop and using `Array.prototype.find()` to locate target nodes creates an $O(N^2)$ bottleneck. When these edges trigger re-renders, it significantly degrades performance.
+**Action:** Always pre-compute a `Map` of nodes for $O(1)$ lookups and wrap the edge calculation logic in `useMemo` when rendering relational graphs.
