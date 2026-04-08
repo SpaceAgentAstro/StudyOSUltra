@@ -25,6 +25,48 @@ if (!API_KEY) {
 
 const aiClient = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
 
+// Rate limiting map: Map<IP, { count: number, resetTime: number }>
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 50; // Max requests per IP per window
+
+// Cleanup expired entries every minute to prevent memory leaks (DoS protection)
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, data] of rateLimitMap.entries()) {
+    if (now > data.resetTime) {
+      rateLimitMap.delete(ip);
+    }
+  }
+}, RATE_LIMIT_WINDOW_MS).unref(); // .unref() allows Node to exit cleanly
+
+// Rate limiting middleware
+const rateLimiter = (req, res, next) => {
+  const ip = req.ip || req.connection?.remoteAddress || 'unknown';
+  const now = Date.now();
+
+  if (!rateLimitMap.has(ip)) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return next();
+  }
+
+  const data = rateLimitMap.get(ip);
+  if (now > data.resetTime) {
+    data.count = 1;
+    data.resetTime = now + RATE_LIMIT_WINDOW_MS;
+    return next();
+  }
+
+  data.count++;
+  if (data.count > MAX_REQUESTS_PER_WINDOW) {
+    return res.status(429).json({ error: "Too many requests, please try again later." });
+  }
+
+  next();
+};
+
+app.use('/api', rateLimiter);
+
 app.post('/api/generate', async (req, res) => {
   if (!aiClient) {
     return res.status(500).json({ error: "Server Error: API Key not configured." });
@@ -51,7 +93,8 @@ app.post('/api/generate', async (req, res) => {
     res.json(responseData);
   } catch (error) {
     console.error("Error in /api/generate:", error);
-    res.status(500).json({ error: error.message || "Internal Server Error" });
+    // Sentinel: Fail securely - don't expose error details to the client
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
@@ -91,7 +134,8 @@ app.post('/api/stream', async (req, res) => {
   } catch (error) {
     console.error("Error in /api/stream:", error);
     if (!res.headersSent) {
-      res.status(500).json({ error: error.message || "Internal Server Error" });
+      // Sentinel: Fail securely - don't expose error details to the client
+      res.status(500).json({ error: "Internal Server Error" });
     } else {
       res.end();
     }
