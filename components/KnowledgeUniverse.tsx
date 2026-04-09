@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FileDocument, KnowledgeNode } from '../types';
 import { generateKnowledgeGraph } from '../services/geminiService';
 import { Network, Loader, Compass } from './Icons';
@@ -35,17 +35,20 @@ const KnowledgeUniverse: React.FC<KnowledgeUniverseProps> = ({ files }) => {
     setIsGenerating(false);
   };
 
-  const drawConnections = () => {
-    const lines = [];
+  const connectionLines = useMemo(() => {
+    const lines: React.JSX.Element[] = [];
+    // Initialize a Map for O(1) lookups instead of O(N) Array.find() inside loop
+    const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
     nodes.forEach(node => {
         node.connections.forEach(targetId => {
-            const target = nodes.find(n => n.id === targetId);
-            if (target && node.x && node.y && target.x && target.y) {
+            const target = nodeMap.get(targetId);
+            if (target && 'x' in node && 'y' in node && 'x' in target && 'y' in target) {
                 lines.push(
                     <line 
                         key={`${node.id}-${targetId}`}
-                        x1={node.x} y1={node.y}
-                        x2={target.x} y2={target.y}
+                        x1={node.x as number} y1={node.y as number}
+                        x2={target.x as number} y2={target.y as number}
                         stroke="#e2e8f0"
                         strokeWidth="1"
                         className="opacity-50"
@@ -55,7 +58,7 @@ const KnowledgeUniverse: React.FC<KnowledgeUniverseProps> = ({ files }) => {
         });
     });
     return lines;
-  };
+  }, [nodes]);
 
   return (
     <div className="h-full flex flex-col bg-slate-950 text-white overflow-hidden relative">
@@ -97,7 +100,7 @@ const KnowledgeUniverse: React.FC<KnowledgeUniverseProps> = ({ files }) => {
              </pattern>
              <rect width="100%" height="100%" fill="url(#grid)" />
 
-             {drawConnections()}
+             {connectionLines}
 
              {nodes.map(node => (
                  <g key={node.id} 
