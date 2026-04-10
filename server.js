@@ -25,7 +25,44 @@ if (!API_KEY) {
 
 const aiClient = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
 
-app.post('/api/generate', async (req, res) => {
+// In-memory Rate Limiting (Protects against token exhaustion)
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 20;
+
+// Cleanup interval to prevent OOM
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, data] of rateLimitMap.entries()) {
+    if (now - data.startTime > RATE_LIMIT_WINDOW_MS) {
+      rateLimitMap.delete(ip);
+    }
+  }
+}, RATE_LIMIT_WINDOW_MS).unref();
+
+const rateLimiter = (req, res, next) => {
+  // Use remoteAddress directly rather than trusting proxy arbitrarily
+  const ip = req.socket.remoteAddress || req.ip || 'unknown';
+  const now = Date.now();
+
+  const userRecord = rateLimitMap.get(ip) || { count: 0, startTime: now };
+
+  if (now - userRecord.startTime > RATE_LIMIT_WINDOW_MS) {
+    userRecord.count = 1;
+    userRecord.startTime = now;
+  } else {
+    userRecord.count++;
+  }
+
+  rateLimitMap.set(ip, userRecord);
+
+  if (userRecord.count > MAX_REQUESTS_PER_WINDOW) {
+    return res.status(429).json({ error: "Too Many Requests. Please try again later." });
+  }
+  next();
+};
+
+app.post('/api/generate', rateLimiter, async (req, res) => {
   if (!aiClient) {
     return res.status(500).json({ error: "Server Error: API Key not configured." });
   }
@@ -51,11 +88,12 @@ app.post('/api/generate', async (req, res) => {
     res.json(responseData);
   } catch (error) {
     console.error("Error in /api/generate:", error);
-    res.status(500).json({ error: error.message || "Internal Server Error" });
+    // Generic error to prevent information leakage
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-app.post('/api/stream', async (req, res) => {
+app.post('/api/stream', rateLimiter, async (req, res) => {
   if (!aiClient) {
     return res.status(500).json({ error: "Server Error: API Key not configured." });
   }
@@ -91,7 +129,8 @@ app.post('/api/stream', async (req, res) => {
   } catch (error) {
     console.error("Error in /api/stream:", error);
     if (!res.headersSent) {
-      res.status(500).json({ error: error.message || "Internal Server Error" });
+      // Generic error to prevent information leakage
+      res.status(500).json({ error: "Internal Server Error" });
     } else {
       res.end();
     }
