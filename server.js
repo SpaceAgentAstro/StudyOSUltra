@@ -25,6 +25,31 @@ if (!API_KEY) {
 
 const aiClient = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
 
+// Rate limiting
+const rateLimitMap = new Map();
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, data] of rateLimitMap.entries()) {
+    if (now > data.resetTime) {
+      rateLimitMap.delete(ip);
+    }
+  }
+}, 60000).unref();
+
+app.use('/api', (req, res, next) => {
+  const ip = req.socket.remoteAddress;
+  if (!ip) return next();
+  const now = Date.now();
+  const limit = 100;
+  const windowMs = 60000;
+  let data = rateLimitMap.get(ip) || { count: 0, resetTime: now + windowMs };
+  if (now > data.resetTime) data = { count: 0, resetTime: now + windowMs };
+  if (data.count >= limit) return res.status(429).json({ error: "Too Many Requests" });
+  data.count++;
+  rateLimitMap.set(ip, data);
+  next();
+});
+
 app.post('/api/generate', async (req, res) => {
   if (!aiClient) {
     return res.status(500).json({ error: "Server Error: API Key not configured." });
@@ -51,7 +76,7 @@ app.post('/api/generate', async (req, res) => {
     res.json(responseData);
   } catch (error) {
     console.error("Error in /api/generate:", error);
-    res.status(500).json({ error: error.message || "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
@@ -91,7 +116,7 @@ app.post('/api/stream', async (req, res) => {
   } catch (error) {
     console.error("Error in /api/stream:", error);
     if (!res.headersSent) {
-      res.status(500).json({ error: error.message || "Internal Server Error" });
+      res.status(500).json({ error: "Internal Server Error" });
     } else {
       res.end();
     }
