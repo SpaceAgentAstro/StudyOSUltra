@@ -16,6 +16,22 @@ app.use(cors());
 app.use(express.json({ limit: '30mb' }));
 app.use(express.urlencoded({ extended: true, limit: '30mb' }));
 
+// In-memory rate limiter to protect against token exhaustion and DoS attacks
+const rateLimitMap = new Map();
+setInterval(() => rateLimitMap.clear(), 60000).unref();
+
+const rateLimiter = (req, res, next) => {
+  const ip = req.socket.remoteAddress || 'unknown';
+  const count = rateLimitMap.get(ip) || 0;
+  if (count >= 50) {
+    return res.status(429).json({ error: "Too many requests" });
+  }
+  rateLimitMap.set(ip, count + 1);
+  next();
+};
+
+app.use('/api/', rateLimiter);
+
 const PORT = 3001;
 const API_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY;
 
