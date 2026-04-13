@@ -2,3 +2,8 @@
 **Vulnerability:** The `gradeOpenEndedAnswer` function directly called the AI service and parsed the result without error handling.
 **Learning:** External AI services (LLMs) are unreliable. They can fail (network) or hallucinate (return invalid JSON).
 **Prevention:** All AI service calls must be wrapped in `try-catch`. JSON parsing must be safe (e.g., using `zod` or `try-catch`). Always return a safe fallback object to the UI.
+
+## 2024-05-22 - Missing Rate Limiting on API Endpoints
+**Vulnerability:** The backend API endpoints (`/api/generate` and `/api/stream`) lacked rate limiting, exposing the server to token exhaustion and DoS attacks.
+**Learning:** Publicly accessible or easily accessible endpoints communicating with third-party LLM APIs must be rate-limited.
+**Prevention:** Implement an in-memory rate limiter using middleware to track request counts by IP address. Clear the tracking map periodically, using `.unref()` on the interval to allow clean Node process exit.
