@@ -25,7 +25,37 @@ if (!API_KEY) {
 
 const aiClient = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
 
-app.post('/api/generate', async (req, res) => {
+// Basic in-memory rate limiting to prevent token exhaustion
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 50;
+
+const rateLimiter = (req, res, next) => {
+  const ip = req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+
+  if (!rateLimitMap.has(ip)) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return next();
+  }
+
+  const limitData = rateLimitMap.get(ip);
+  if (now > limitData.resetTime) {
+    limitData.count = 1;
+    limitData.resetTime = now + RATE_LIMIT_WINDOW_MS;
+    return next();
+  }
+
+  limitData.count++;
+  if (limitData.count > MAX_REQUESTS_PER_WINDOW) {
+    console.warn(`Rate limit exceeded for IP: ${ip}`);
+    return res.status(429).json({ error: "Too many requests. Please try again later." });
+  }
+
+  next();
+};
+
+app.post('/api/generate', rateLimiter, async (req, res) => {
   if (!aiClient) {
     return res.status(500).json({ error: "Server Error: API Key not configured." });
   }
@@ -51,11 +81,11 @@ app.post('/api/generate', async (req, res) => {
     res.json(responseData);
   } catch (error) {
     console.error("Error in /api/generate:", error);
-    res.status(500).json({ error: error.message || "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-app.post('/api/stream', async (req, res) => {
+app.post('/api/stream', rateLimiter, async (req, res) => {
   if (!aiClient) {
     return res.status(500).json({ error: "Server Error: API Key not configured." });
   }
@@ -91,7 +121,7 @@ app.post('/api/stream', async (req, res) => {
   } catch (error) {
     console.error("Error in /api/stream:", error);
     if (!res.headersSent) {
-      res.status(500).json({ error: error.message || "Internal Server Error" });
+      res.status(500).json({ error: "Internal Server Error" });
     } else {
       res.end();
     }
