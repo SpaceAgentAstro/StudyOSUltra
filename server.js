@@ -4,6 +4,7 @@ import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { rateLimit } from 'express-rate-limit';
 
 dotenv.config();
 
@@ -24,6 +25,18 @@ if (!API_KEY) {
 }
 
 const aiClient = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
+
+// In-memory rate limiter to protect against token exhaustion
+const rateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 50, // limit each IP to 50 requests per windowMs
+  keyGenerator: (req) => {
+    return req.socket.remoteAddress || 'unknown';
+  },
+  message: { error: "Too many requests, please try again later." }
+});
+
+app.use('/api', rateLimiter);
 
 app.post('/api/generate', async (req, res) => {
   if (!aiClient) {
