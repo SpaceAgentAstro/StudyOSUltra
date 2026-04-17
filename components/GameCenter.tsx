@@ -441,8 +441,17 @@ const GameCenter: React.FC<GameCenterProps> = ({ files }) => {
         ? holidayLeaderboard
         : weeklyLeaderboard;
 
-  const activeRealPlayers = activeLeaderboard.filter((entry) => !entry.isBot).length;
-  const activeBotPlayers = activeLeaderboard.filter((entry) => entry.isBot).length;
+  // ⚡ Bolt: Consolidate multiple O(N) array passes into a single pass using useMemo.
+  // Reduces iteration overhead and avoids redundant array allocations during re-renders.
+  const { activeRealPlayers, activeBotPlayers } = useMemo(() => {
+    let real = 0;
+    let bot = 0;
+    for (const entry of activeLeaderboard) {
+      if (entry.isBot) bot++;
+      else real++;
+    }
+    return { activeRealPlayers: real, activeBotPlayers: bot };
+  }, [activeLeaderboard]);
 
   const userWeeklyLeagueRank = playerId ? findUserLeagueRank(weeklyLeaderboard, playerId) : null;
   const userWeeklyEntry = weeklyLeaderboard.find((entry) => entry.id === playerId) || null;
