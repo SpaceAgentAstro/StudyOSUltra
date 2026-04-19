@@ -441,8 +441,21 @@ const GameCenter: React.FC<GameCenterProps> = ({ files }) => {
         ? holidayLeaderboard
         : weeklyLeaderboard;
 
-  const activeRealPlayers = activeLeaderboard.filter((entry) => !entry.isBot).length;
-  const activeBotPlayers = activeLeaderboard.filter((entry) => entry.isBot).length;
+  // ⚡ Bolt Optimization: Consolidate loop
+  // Iterating once and counting both bots and real players avoids two separate .filter() passes
+  // This reduces array allocation overhead and time complexity for large leaderboards.
+  const { activeRealPlayers, activeBotPlayers } = useMemo(() => {
+    let real = 0;
+    let bot = 0;
+    for (const entry of activeLeaderboard) {
+      if (entry.isBot) {
+        bot++;
+      } else {
+        real++;
+      }
+    }
+    return { activeRealPlayers: real, activeBotPlayers: bot };
+  }, [activeLeaderboard]);
 
   const userWeeklyLeagueRank = playerId ? findUserLeagueRank(weeklyLeaderboard, playerId) : null;
   const userWeeklyEntry = weeklyLeaderboard.find((entry) => entry.id === playerId) || null;
