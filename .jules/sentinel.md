@@ -1,4 +1,4 @@
-## 2024-05-22 - Unsafe AI Response Handling
-**Vulnerability:** The `gradeOpenEndedAnswer` function directly called the AI service and parsed the result without error handling.
-**Learning:** External AI services (LLMs) are unreliable. They can fail (network) or hallucinate (return invalid JSON).
-**Prevention:** All AI service calls must be wrapped in `try-catch`. JSON parsing must be safe (e.g., using `zod` or `try-catch`). Always return a safe fallback object to the UI.
+## 2025-04-22 - Fix overly permissive CORS and error leakage in server.js
+**Vulnerability:** The server was configured with `app.use(cors())`, allowing any origin, and `/api/generate` and `/api/stream` leaked internal `error.message` strings directly to the client in 500 error responses.
+**Learning:** Default `cors()` allows all origins in Express. Throwing original error messages to the client leaks sensitive internal information or API key statuses which might be visible to unauthorized users.
+**Prevention:** Always restrict CORS using `origin` function matching allowed environments (like localhost and explicit `ALLOWED_ORIGINS` from env). Always return generic error messages (e.g., "Internal Server Error") for 500 responses.
