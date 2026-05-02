@@ -11,13 +11,30 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-app.use(cors());
+
+const allowedOriginsStr = process.env.ALLOWED_ORIGINS || '';
+const allowedOriginsList = allowedOriginsStr.split(',').map(o => o.trim()).filter(Boolean);
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    if (origin.startsWith('http://localhost:') || allowedOriginsList.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // Fail securely without exposing stack traces
+    return callback(null, false);
+  }
+}));
+
 // Keep API payloads bounded to protect server memory while client-side file uploads stay local.
 app.use(express.json({ limit: '30mb' }));
 app.use(express.urlencoded({ extended: true, limit: '30mb' }));
 
 const PORT = 3001;
-const API_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY;
+const API_KEY = process.env.JULES_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY;
 
 if (!API_KEY) {
   console.warn("WARNING: GEMINI_API_KEY is not set in environment variables.");
@@ -51,7 +68,7 @@ app.post('/api/generate', async (req, res) => {
     res.json(responseData);
   } catch (error) {
     console.error("Error in /api/generate:", error);
-    res.status(500).json({ error: error.message || "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error" }); // Prevent information leakage
   }
 });
 
@@ -91,7 +108,7 @@ app.post('/api/stream', async (req, res) => {
   } catch (error) {
     console.error("Error in /api/stream:", error);
     if (!res.headersSent) {
-      res.status(500).json({ error: error.message || "Internal Server Error" });
+      res.status(500).json({ error: "Internal Server Error" }); // Prevent information leakage
     } else {
       res.end();
     }
