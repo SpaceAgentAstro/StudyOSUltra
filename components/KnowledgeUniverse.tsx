@@ -119,7 +119,7 @@ const KnowledgeUniverse: React.FC<KnowledgeUniverseProps> = ({ files }) => {
           <div className="absolute right-6 top-6 w-80 bg-slate-900/90 backdrop-blur-xl border border-slate-700 rounded-2xl p-6 shadow-2xl animate-slideLeft">
               <div className="flex justify-between items-start mb-4">
                   <h2 className="text-xl font-bold">{selectedNode.label}</h2>
-                  <button onClick={() => setSelectedNode(null)} className="text-slate-400 hover:text-white"><Compass className="w-5 h-5 rotate-45" /></button>
+                  <button onClick={() => setSelectedNode(null)} className="text-slate-400 hover:text-white focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-none rounded" aria-label="Close details"><Compass className="w-5 h-5 rotate-45" /></button>
               </div>
               <div className="space-y-4">
                   <div>
