@@ -54,7 +54,7 @@ const CognitiveLab: React.FC = () => {
             <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-xl max-w-3xl mx-auto">
                 <div className="flex justify-between items-center mb-6">
                     <span className="text-teal-600 font-bold tracking-wider text-xs uppercase">{activeExercise.skill}</span>
-                    <button onClick={() => setActiveExercise(null)} className="text-slate-400 hover:text-slate-600">Close</button>
+                    <button onClick={() => setActiveExercise(null)} className="text-slate-400 hover:text-slate-600 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500" aria-label="Close exercise">Close</button>
                 </div>
                 <h2 className="text-3xl font-bold text-slate-900 mb-4">{activeExercise.title}</h2>
                 <div className="prose prose-slate max-w-none mb-8">
