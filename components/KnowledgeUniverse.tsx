@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FileDocument, KnowledgeNode } from '../types';
 import { generateKnowledgeGraph } from '../services/geminiService';
 import { Network, Loader, Compass } from './Icons';
@@ -35,11 +35,19 @@ const KnowledgeUniverse: React.FC<KnowledgeUniverseProps> = ({ files }) => {
     setIsGenerating(false);
   };
 
-  const drawConnections = () => {
-    const lines = [];
+  // Performance optimization: O(1) map for node lookups instead of O(N) array find
+  const nodeMap = useMemo(() => {
+    const map = new Map<string, KnowledgeNode>();
+    nodes.forEach(n => map.set(n.id, n));
+    return map;
+  }, [nodes]);
+
+  // Performance optimization: Memoize the connections array to prevent recalculating on every render
+  const drawnConnections = useMemo(() => {
+    const lines: JSX.Element[] = [];
     nodes.forEach(node => {
         node.connections.forEach(targetId => {
-            const target = nodes.find(n => n.id === targetId);
+            const target = nodeMap.get(targetId);
             if (target && node.x && node.y && target.x && target.y) {
                 lines.push(
                     <line 
@@ -55,7 +63,7 @@ const KnowledgeUniverse: React.FC<KnowledgeUniverseProps> = ({ files }) => {
         });
     });
     return lines;
-  };
+  }, [nodes, nodeMap]);
 
   return (
     <div className="h-full flex flex-col bg-slate-950 text-white overflow-hidden relative">
@@ -97,7 +105,7 @@ const KnowledgeUniverse: React.FC<KnowledgeUniverseProps> = ({ files }) => {
              </pattern>
              <rect width="100%" height="100%" fill="url(#grid)" />
 
-             {drawConnections()}
+             {drawnConnections}
 
              {nodes.map(node => (
                  <g key={node.id} 
