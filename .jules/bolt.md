@@ -5,3 +5,6 @@
 ## 2024-05-22 - [Stable Callbacks for Memoization]
 **Learning:** When passing callbacks (like `handleSend`) to `React.memo` components, if the callback depends on changing state, `useCallback` alone is insufficient as it will change on every render.
 **Action:** Use a `useRef` to store the latest callback and expose a stable `useCallback` wrapper that invokes `ref.current`.
+## 2026-05-11 - [O(N^2) Derivation Loop Bottleneck]
+**Learning:** Nested Array.find() inside a map/forEach in a render loop causes O(N^2) complexity, leading to severe slowdowns with large lists.
+**Action:** Initialize an O(1) Map outside the loop and wrap the derivation in useMemo to reduce time complexity to O(N).
