@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FileDocument, KnowledgeNode } from '../types';
 import { generateKnowledgeGraph } from '../services/geminiService';
 import { Network, Loader, Compass } from './Icons';
@@ -35,11 +35,14 @@ const KnowledgeUniverse: React.FC<KnowledgeUniverseProps> = ({ files }) => {
     setIsGenerating(false);
   };
 
-  const drawConnections = () => {
-    const lines = [];
+  const drawConnections = useMemo(() => {
+    const lines: React.ReactElement[] = [];
+    // Bolt: O(1) Map lookup instead of O(N) Array.find inside loop
+    const nodeMap = new Map<string, KnowledgeNode>(nodes.map(n => [n.id, n]));
+
     nodes.forEach(node => {
         node.connections.forEach(targetId => {
-            const target = nodes.find(n => n.id === targetId);
+            const target = nodeMap.get(targetId);
             if (target && node.x && node.y && target.x && target.y) {
                 lines.push(
                     <line 
@@ -55,7 +58,7 @@ const KnowledgeUniverse: React.FC<KnowledgeUniverseProps> = ({ files }) => {
         });
     });
     return lines;
-  };
+  }, [nodes]);
 
   return (
     <div className="h-full flex flex-col bg-slate-950 text-white overflow-hidden relative">
@@ -97,7 +100,7 @@ const KnowledgeUniverse: React.FC<KnowledgeUniverseProps> = ({ files }) => {
              </pattern>
              <rect width="100%" height="100%" fill="url(#grid)" />
 
-             {drawConnections()}
+             {drawConnections}
 
              {nodes.map(node => (
                  <g key={node.id} 
