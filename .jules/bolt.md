@@ -5,3 +5,7 @@
 ## 2024-05-22 - [Stable Callbacks for Memoization]
 **Learning:** When passing callbacks (like `handleSend`) to `React.memo` components, if the callback depends on changing state, `useCallback` alone is insufficient as it will change on every render.
 **Action:** Use a `useRef` to store the latest callback and expose a stable `useCallback` wrapper that invokes `ref.current`.
+
+## 2026-05-20 - [O(N^2) Graph Rendering Anti-Pattern]
+**Learning:** Nested `Array.prototype.find()` lookups inside render loops for graph visualizations (mapping edge connections) creates a severe O(N^2) bottleneck.
+**Action:** Replace inner-loop node lookups with an O(1) `Map` and wrap the derivation in `useMemo` to reduce complexity to O(N).
