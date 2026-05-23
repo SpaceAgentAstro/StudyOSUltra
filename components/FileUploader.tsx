@@ -160,9 +160,10 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
     });
   };
 
-  const filteredFiles = files.filter(file => 
+  // Optimization: Memoize the search filter to prevent redundant O(N) re-filtering when unrelated state variables change (e.g., UI interactions), though it will still re-evaluate when the file progress updates the array reference.
+  const filteredFiles = useMemo(() => files.filter(file =>
     file.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ), [files, searchQuery]);
 
   return (
     <div className="p-6 max-w-4xl mx-auto w-full">
