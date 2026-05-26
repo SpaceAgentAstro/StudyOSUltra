@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { AppView, AuthIdentity } from '../types';
 import {
   Activity,
@@ -33,7 +33,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onSignOut,
   onSwitchToSignIn,
 }) => {
-  const menuItems = [
+  const menuItems = useMemo(() => [
     { id: AppView.DASHBOARD, label: 'Dashboard', icon: Brain },
     { id: AppView.LESSON_STUDIO, label: 'Lesson Studio', icon: Zap },
     { id: AppView.CHAT, label: 'Council Chat', icon: MessageSquare },
@@ -45,7 +45,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: AppView.EXAM_SIMULATOR, label: 'Exam Simulator', icon: FileText },
     { id: AppView.FILES, label: 'Sources', icon: UploadCloud },
     { id: AppView.SYLLABUS, label: 'Syllabus', icon: BookOpen },
-  ];
+  ], []);
 
   return (
     <div className="w-20 md:w-72 bg-slate-900 text-white flex flex-col h-screen border-r border-slate-800">
