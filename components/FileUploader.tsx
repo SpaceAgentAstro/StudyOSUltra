@@ -176,6 +176,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({ files, setFiles }) => {
 
       <div 
         onClick={() => fileInputRef.current?.click()}
+        role="button"
+        tabIndex={0}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
