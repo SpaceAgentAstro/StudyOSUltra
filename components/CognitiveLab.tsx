@@ -32,7 +32,7 @@ const CognitiveLab: React.FC = () => {
         {!activeExercise ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {exercises.map((ex, idx) => (
-                    <div key={idx} className="bg-white p-6 rounded-2xl border border-slate-200 hover:border-teal-400 hover:shadow-lg transition-all cursor-pointer group" onClick={() => setActiveExercise(ex)}>
+                    <button key={idx} className="bg-white p-6 rounded-2xl border border-slate-200 hover:border-teal-400 hover:shadow-lg transition-all cursor-pointer group text-left w-full focus:outline-none focus-visible:ring-4 focus-visible:ring-teal-500" onClick={() => setActiveExercise(ex)}>
                         <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center mb-4 group-hover:bg-teal-600 transition-colors">
                             <Brain className="w-6 h-6 text-teal-600 group-hover:text-white" />
                         </div>
@@ -42,7 +42,7 @@ const CognitiveLab: React.FC = () => {
                             <span>{ex.skill.replace('_', ' ')}</span>
                             <span>{ex.difficulty}</span>
                         </div>
-                    </div>
+                    </button>
                 ))}
                 {exercises.length === 0 && (
                     <div className="col-span-3 text-center py-20">
