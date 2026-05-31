@@ -37,9 +37,12 @@ const KnowledgeUniverse: React.FC<KnowledgeUniverseProps> = ({ files }) => {
 
   const drawConnections = () => {
     const lines = [];
+    // ⚡ Bolt: O(N) optimization. Pre-compute a lookup Map to avoid O(N^2) lookups inside nested loops.
+    const nodeMap = new Map<string, KnowledgeNode>(nodes.map(n => [n.id, n]));
+
     nodes.forEach(node => {
         node.connections.forEach(targetId => {
-            const target = nodes.find(n => n.id === targetId);
+            const target = nodeMap.get(targetId);
             if (target && node.x && node.y && target.x && target.y) {
                 lines.push(
                     <line 
