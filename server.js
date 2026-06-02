@@ -17,7 +17,7 @@ app.use(express.json({ limit: '30mb' }));
 app.use(express.urlencoded({ extended: true, limit: '30mb' }));
 
 const PORT = 3001;
-const API_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY;
+const API_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.JULES_API_KEY;
 
 if (!API_KEY) {
   console.warn("WARNING: GEMINI_API_KEY is not set in environment variables.");
@@ -51,7 +51,8 @@ app.post('/api/generate', async (req, res) => {
     res.json(responseData);
   } catch (error) {
     console.error("Error in /api/generate:", error);
-    res.status(500).json({ error: error.message || "Internal Server Error" });
+    // Security: Avoid exposing internal error messages
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
@@ -91,7 +92,8 @@ app.post('/api/stream', async (req, res) => {
   } catch (error) {
     console.error("Error in /api/stream:", error);
     if (!res.headersSent) {
-      res.status(500).json({ error: error.message || "Internal Server Error" });
+      // Security: Avoid exposing internal error messages
+    res.status(500).json({ error: "Internal Server Error" });
     } else {
       res.end();
     }
