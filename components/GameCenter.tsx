@@ -419,19 +419,25 @@ const GameCenter: React.FC<GameCenterProps> = ({ files }) => {
     persistPlayers(mergedPlayers);
   }, [holidayMeta.key, seasonMeta.key, weekKey]);
 
-  const weeklyLeaderboard = useMemo(
-    () => buildLeaderboard('WEEKLY', weekKey, players.map((player) => normalizePlayerForBuckets(player, weekKey, seasonMeta.key, holidayMeta.key))),
+  // ⚡ Bolt: Extract O(N) redundant iterations into a single cached array
+  const normalizedPlayersForLeaderboards = useMemo(
+    () => players.map((player) => normalizePlayerForBuckets(player, weekKey, seasonMeta.key, holidayMeta.key)),
     [holidayMeta.key, players, seasonMeta.key, weekKey],
+  );
+
+  const weeklyLeaderboard = useMemo(
+    () => buildLeaderboard('WEEKLY', weekKey, normalizedPlayersForLeaderboards),
+    [normalizedPlayersForLeaderboards, weekKey],
   );
 
   const seasonalLeaderboard = useMemo(
-    () => buildLeaderboard('SEASONAL', seasonMeta.key, players.map((player) => normalizePlayerForBuckets(player, weekKey, seasonMeta.key, holidayMeta.key))),
-    [holidayMeta.key, players, seasonMeta.key, weekKey],
+    () => buildLeaderboard('SEASONAL', seasonMeta.key, normalizedPlayersForLeaderboards),
+    [normalizedPlayersForLeaderboards, seasonMeta.key],
   );
 
   const holidayLeaderboard = useMemo(
-    () => buildLeaderboard('HOLIDAY', holidayMeta.key, players.map((player) => normalizePlayerForBuckets(player, weekKey, seasonMeta.key, holidayMeta.key))),
-    [holidayMeta.key, players, seasonMeta.key, weekKey],
+    () => buildLeaderboard('HOLIDAY', holidayMeta.key, normalizedPlayersForLeaderboards),
+    [normalizedPlayersForLeaderboards, holidayMeta.key],
   );
 
   const activeLeaderboard =
