@@ -1,0 +1,899 @@
+
+  VITE v6.4.1  ready in 224 ms
+
+  ➜  Local:   http://localhost:3000/
+  ➜  Network: http://192.168.0.2:3000/
+Error:   Failed to scan for dependencies from entries:
+  /app/index.html
+/app/docs/index.html
+
+  [31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mThe symbol "handleSendRef" has already been declared[0m
+
+    components/ChatInterface.tsx:216:8:
+[37m      216 │   const [32mhandleSendRef[37m = useRef(handleSend);
+          ╵         [32m~~~~~~~~~~~~~[0m
+
+  The symbol "handleSendRef" was originally declared here:
+
+    components/ChatInterface.tsx:87:8:
+[37m      87 │   const [32mhandleSendRef[37m = useRef<(overrideInput?: string, overrideAg...
+         ╵         [32m~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mThe symbol "handleSendRef" has already been declared[0m
+
+    components/ChatInterface.tsx:225:8:
+[37m      225 │   const [32mhandleSendRef[37m = useRef(handleSend);
+          ╵         [32m~~~~~~~~~~~~~[0m
+
+  The symbol "handleSendRef" was originally declared here:
+
+    components/ChatInterface.tsx:87:8:
+[37m      87 │   const [32mhandleSendRef[37m = useRef<(overrideInput?: string, overrideAg...
+         ╵         [32m~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mThe symbol "handleSendRef" has already been declared[0m
+
+    components/ChatInterface.tsx:234:8:
+[37m      234 │   const [32mhandleSendRef[37m = useRef(handleSend);
+          ╵         [32m~~~~~~~~~~~~~[0m
+
+  The symbol "handleSendRef" was originally declared here:
+
+    components/ChatInterface.tsx:87:8:
+[37m      87 │   const [32mhandleSendRef[37m = useRef<(overrideInput?: string, overrideAg...
+         ╵         [32m~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mThe symbol "handleExplainCode" has already been declared[0m
+
+    components/ChatInterface.tsx:239:8:
+[37m      239 │   const [32mhandleExplainCode[37m = useCallback((code: string) => {
+          ╵         [32m~~~~~~~~~~~~~~~~~[0m
+
+  The symbol "handleExplainCode" was originally declared here:
+
+    components/ChatInterface.tsx:230:8:
+[37m      230 │   const [32mhandleExplainCode[37m = useCallback((code: string) => {
+          ╵         [32m~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mThe symbol "handleExplain" has already been declared[0m
+
+    components/ChatInterface.tsx:247:8:
+[37m      247 │   const [32mhandleExplain[37m = React.useCallback((code: string) => {
+          ╵         [32m~~~~~~~~~~~~~[0m
+
+  The symbol "handleExplain" was originally declared here:
+
+    components/ChatInterface.tsx:211:8:
+[37m      211 │   const [32mhandleExplain[37m = useCallback((code: string, agent: AgentRo...
+          ╵         [32m~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mThe symbol "handleSendRef" has already been declared[0m
+
+    components/ChatInterface.tsx:253:8:
+[37m      253 │   const [32mhandleSendRef[37m = useRef(handleSend);
+          ╵         [32m~~~~~~~~~~~~~[0m
+
+  The symbol "handleSendRef" was originally declared here:
+
+    components/ChatInterface.tsx:87:8:
+[37m      87 │   const [32mhandleSendRef[37m = useRef<(overrideInput?: string, overrideAg...
+         ╵         [32m~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mThe symbol "handleExplainCode" has already been declared[0m
+
+    components/ChatInterface.tsx:258:8:
+[37m      258 │   const [32mhandleExplainCode[37m = useCallback((code: string) => {
+          ╵         [32m~~~~~~~~~~~~~~~~~[0m
+
+  The symbol "handleExplainCode" was originally declared here:
+
+    components/ChatInterface.tsx:230:8:
+[37m      230 │   const [32mhandleExplainCode[37m = useCallback((code: string) => {
+          ╵         [32m~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mThe symbol "handleExplain" has already been declared[0m
+
+    components/ChatInterface.tsx:267:8:
+[37m      267 │   const [32mhandleExplain[37m = useCallback((text: string, agent: AgentRo...
+          ╵         [32m~~~~~~~~~~~~~[0m
+
+  The symbol "handleExplain" was originally declared here:
+
+    components/ChatInterface.tsx:211:8:
+[37m      211 │   const [32mhandleExplain[37m = useCallback((code: string, agent: AgentRo...
+          ╵         [32m~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mThe symbol "handleSendRef" has already been declared[0m
+
+    components/ChatInterface.tsx:271:8:
+[37m      271 │   const [32mhandleSendRef[37m = useRef(handleSend);
+          ╵         [32m~~~~~~~~~~~~~[0m
+
+  The symbol "handleSendRef" was originally declared here:
+
+    components/ChatInterface.tsx:87:8:
+[37m      87 │   const [32mhandleSendRef[37m = useRef<(overrideInput?: string, overrideAg...
+         ╵         [32m~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mThe symbol "handleExplain" has already been declared[0m
+
+    components/ChatInterface.tsx:276:8:
+[37m      276 │   const [32mhandleExplain[37m = useCallback((text: string, agent: AgentRo...
+          ╵         [32m~~~~~~~~~~~~~[0m
+
+  The symbol "handleExplain" was originally declared here:
+
+    components/ChatInterface.tsx:211:8:
+[37m      211 │   const [32mhandleExplain[37m = useCallback((code: string, agent: AgentRo...
+          ╵         [32m~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mThe symbol "handleSendRef" has already been declared[0m
+
+    components/ChatInterface.tsx:280:8:
+[37m      280 │   const [32mhandleSendRef[37m = useRef(handleSend);
+          ╵         [32m~~~~~~~~~~~~~[0m
+
+  The symbol "handleSendRef" was originally declared here:
+
+    components/ChatInterface.tsx:87:8:
+[37m      87 │   const [32mhandleSendRef[37m = useRef<(overrideInput?: string, overrideAg...
+         ╵         [32m~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mMultiple exports with the same name "AGENTS"[0m
+
+    constants.ts:71:13:
+[37m      71 │ export const [32mAGENTS[37m: {role: AgentRole, label: string, color: strin...
+         ╵              [32m~~~~~~[0m
+
+  The name "AGENTS" was originally exported here:
+
+    constants.ts:42:13:
+[37m      42 │ export const [32mAGENTS[37m: { role: AgentRole; label: string; color: stri...
+         ╵              [32m~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mThe symbol "AGENTS" has already been declared[0m
+
+    constants.ts:71:13:
+[37m      71 │ export const [32mAGENTS[37m: {role: AgentRole, label: string, color: strin...
+         ╵              [32m~~~~~~[0m
+
+  The symbol "AGENTS" was originally declared here:
+
+    constants.ts:42:13:
+[37m      42 │ export const [32mAGENTS[37m: { role: AgentRole; label: string; color: stri...
+         ╵              [32m~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mThe symbol "KnowledgeNodeSchema" has already been declared[0m
+
+    services/geminiService.ts:186:6:
+[37m      186 │ const [32mKnowledgeNodeSchema[37m = z.object({
+          ╵       [32m~~~~~~~~~~~~~~~~~~~[0m
+
+  The symbol "KnowledgeNodeSchema" was originally declared here:
+
+    services/geminiService.ts:54:6:
+[37m      54 │ const [32mKnowledgeNodeSchema[37m = z.object({
+         ╵       [32m~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mThe symbol "MetaInsightSchema" has already been declared[0m
+
+    services/geminiService.ts:196:6:
+[37m      196 │ const [32mMetaInsightSchema[37m = z.object({
+          ╵       [32m~~~~~~~~~~~~~~~~~[0m
+
+  The symbol "MetaInsightSchema" was originally declared here:
+
+    services/geminiService.ts:64:6:
+[37m      64 │ const [32mMetaInsightSchema[37m = z.object({
+         ╵       [32m~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mThe symbol "CognitiveExerciseSchema" has already been declared[0m
+
+    services/geminiService.ts:203:6:
+[37m      203 │ const [32mCognitiveExerciseSchema[37m = z.object({
+          ╵       [32m~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  The symbol "CognitiveExerciseSchema" was originally declared here:
+
+    services/geminiService.ts:71:6:
+[37m      71 │ const [32mCognitiveExerciseSchema[37m = z.object({
+         ╵       [32m~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mThe symbol "GradeResponseSchema" has already been declared[0m
+
+    services/geminiService.ts:211:6:
+[37m      211 │ const [32mGradeResponseSchema[37m = z.object({
+          ╵       [32m~~~~~~~~~~~~~~~~~~~[0m
+
+  The symbol "GradeResponseSchema" was originally declared here:
+
+    services/geminiService.ts:79:6:
+[37m      79 │ const [32mGradeResponseSchema[37m = z.object({
+         ╵       [32m~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mMultiple exports with the same name "readFile"[0m
+
+    utils/index.ts:182:13:
+[37m      182 │ export const [32mreadFile[37m = (
+          ╵              [32m~~~~~~~~[0m
+
+  The name "readFile" was originally exported here:
+
+    utils/index.ts:143:13:
+[37m      143 │ export const [32mreadFile[37m = (
+          ╵              [32m~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mThe symbol "readFile" has already been declared[0m
+
+    utils/index.ts:182:13:
+[37m      182 │ export const [32mreadFile[37m = (
+          ╵              [32m~~~~~~~~[0m
+
+  The symbol "readFile" was originally declared here:
+
+    utils/index.ts:143:13:
+[37m      143 │ export const [32mreadFile[37m = (
+          ╵              [32m~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mMultiple exports with the same name "extractJsonText"[0m
+
+    utils/index.ts:268:13:
+[37m      268 │ export const [32mextractJsonText[37m = (raw: string): string | null => {
+          ╵              [32m~~~~~~~~~~~~~~~[0m
+
+  The name "extractJsonText" was originally exported here:
+
+    utils/index.ts:221:13:
+[37m      221 │ export const [32mextractJsonText[37m = (raw: string): string | null => {
+          ╵              [32m~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mThe symbol "extractJsonText" has already been declared[0m
+
+    utils/index.ts:268:13:
+[37m      268 │ export const [32mextractJsonText[37m = (raw: string): string | null => {
+          ╵              [32m~~~~~~~~~~~~~~~[0m
+
+  The symbol "extractJsonText" was originally declared here:
+
+    utils/index.ts:221:13:
+[37m      221 │ export const [32mextractJsonText[37m = (raw: string): string | null => {
+          ╵              [32m~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mMultiple exports with the same name "parseJsonSafely"[0m
+
+    utils/index.ts:296:13:
+[37m      296 │ export const [32mparseJsonSafely[37m = <T>(raw: string, fallback: T): T => {
+          ╵              [32m~~~~~~~~~~~~~~~[0m
+
+  The name "parseJsonSafely" was originally exported here:
+
+    utils/index.ts:249:13:
+[37m      249 │ export const [32mparseJsonSafely[37m = <T>(raw: string, fallback: T): T => {
+          ╵              [32m~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mThe symbol "parseJsonSafely" has already been declared[0m
+
+    utils/index.ts:296:13:
+[37m      296 │ export const [32mparseJsonSafely[37m = <T>(raw: string, fallback: T): T => {
+          ╵              [32m~~~~~~~~~~~~~~~[0m
+
+  The symbol "parseJsonSafely" was originally declared here:
+
+    utils/index.ts:249:13:
+[37m      249 │ export const [32mparseJsonSafely[37m = <T>(raw: string, fallback: T): T => {
+          ╵              [32m~~~~~~~~~~~~~~~[0m
+
+
+    at failureErrorWithLog (/app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:1467:15)
+    at /app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:926:25
+    at runOnEndCallbacks (/app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:1307:45)
+    at buildResponseToResult (/app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:924:7)
+    at /app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:936:9
+    at new Promise (<anonymous>)
+    at requestCallbacks.on-end (/app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:935:54)
+    at handleRequest (/app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:628:17)
+    at handleIncomingPacket (/app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:653:7)
+    at Socket.readFromStdout (/app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:581:7)
+6:41:06 AM [vite] (client) Pre-transform error: /app/components/ChatInterface.tsx: Identifier 'handleSendRef' has already been declared. (216:8)
+
+  214 |
+  215 |   // Keep handleSend stable for ChatMessage callbacks
+> 216 |   const handleSendRef = useRef(handleSend);
+      |         ^
+  217 |   useEffect(() => {
+  218 |     handleSendRef.current = handleSend;
+  219 |   }, [handleSend]);
+  Plugin: vite:react-babel
+  File: /app/components/ChatInterface.tsx:216:8
+  214|
+  215|    // Keep handleSend stable for ChatMessage callbacks
+  216|    const handleSendRef = useRef(handleSend);
+     |          ^
+  217|    useEffect(() => {
+  218|      handleSendRef.current = handleSend;
+6:41:06 AM [vite] (client) Pre-transform error: Transform failed with 2 errors:
+/app/constants.ts:71:13: ERROR: Multiple exports with the same name "AGENTS"
+/app/constants.ts:71:13: ERROR: The symbol "AGENTS" has already been declared
+  Plugin: vite:esbuild
+  File: /app/constants.ts:71:13
+
+  Multiple exports with the same name "AGENTS"
+  69 |  ];
+  70 |
+  71 |  export const AGENTS: {role: AgentRole, label: string, color: string}[] = [
+     |               ^
+  72 |    { role: 'COUNCIL', label: 'The Council (Auto)', color: 'bg-indigo-600' },
+  73 |    { role: 'TEACHER', label: 'Teacher', color: 'bg-emerald-600' },
+
+  The symbol "AGENTS" has already been declared
+  69 |  ];
+  70 |
+  71 |  export const AGENTS: {role: AgentRole, label: string, color: string}[] = [
+     |               ^
+  72 |    { role: 'COUNCIL', label: 'The Council (Auto)', color: 'bg-indigo-600' },
+  73 |    { role: 'TEACHER', label: 'Teacher', color: 'bg-emerald-600' },
+
+6:41:06 AM [vite] (client) warning: Duplicate "aria-label" attribute in JSX element
+205|            onChange={handleFileUpload}
+206|            title="File input"
+207|            aria-label="Upload files" />
+   |            ^
+208|
+209|        </div>
+
+  Plugin: vite:esbuild
+  File: /app/components/FileUploader.tsx
+6:41:06 AM [vite] (client) Pre-transform error: Transform failed with 6 errors:
+/app/utils/index.ts:182:13: ERROR: Multiple exports with the same name "readFile"
+/app/utils/index.ts:182:13: ERROR: The symbol "readFile" has already been declared
+/app/utils/index.ts:268:13: ERROR: Multiple exports with the same name "extractJsonText"
+/app/utils/index.ts:268:13: ERROR: The symbol "extractJsonText" has already been declared
+/app/utils/index.ts:296:13: ERROR: Multiple exports with the same name "parseJsonSafely"
+...
+  Plugin: vite:esbuild
+  File: /app/utils/index.ts:182:13
+
+  Multiple exports with the same name "readFile"
+  180|   * @returns A Promise that resolves with the file content
+  181|   */
+  182|  export const readFile = (
+     |               ^
+  183|    file: File,
+  184|    readAs: 'text' | 'dataURL' | 'arrayBuffer' = 'text'
+
+  The symbol "readFile" has already been declared
+  180|   * @returns A Promise that resolves with the file content
+  181|   */
+  182|  export const readFile = (
+     |               ^
+  183|    file: File,
+  184|    readAs: 'text' | 'dataURL' | 'arrayBuffer' = 'text'
+
+  Multiple exports with the same name "extractJsonText"
+  266|   * @returns The extracted JSON string or null if no JSON found
+  267|   */
+  268|  export const extractJsonText = (raw: string): string | null => {
+     |               ^
+  269|    if (!raw?.trim()) return null;
+  270|    const trimmed = raw.trim();
+
+  The symbol "extractJsonText" has already been declared
+  266|   * @returns The extracted JSON string or null if no JSON found
+  267|   */
+  268|  export const extractJsonText = (raw: string): string | null => {
+     |               ^
+  269|    if (!raw?.trim()) return null;
+  270|    const trimmed = raw.trim();
+
+  Multiple exports with the same name "parseJsonSafely"
+  294|   * @returns The parsed object or the fallback value
+  295|   */
+  296|  export const parseJsonSafely = <T>(raw: string, fallback: T): T => {
+     |               ^
+  297|    try {
+  298|      return JSON.parse(raw) as T;
+
+  The symbol "parseJsonSafely" has already been declared
+  294|   * @returns The parsed object or the fallback value
+  295|   */
+  296|  export const parseJsonSafely = <T>(raw: string, fallback: T): T => {
+     |               ^
+  297|    try {
+  298|      return JSON.parse(raw) as T;
+
+6:41:06 AM [vite] Internal server error: /app/components/ChatInterface.tsx: Identifier 'handleSendRef' has already been declared. (216:8)
+
+  214 |
+  215 |   // Keep handleSend stable for ChatMessage callbacks
+> 216 |   const handleSendRef = useRef(handleSend);
+      |         ^
+  217 |   useEffect(() => {
+  218 |     handleSendRef.current = handleSend;
+  219 |   }, [handleSend]);
+  Plugin: vite:react-babel
+  File: /app/components/ChatInterface.tsx:216:8
+  214|
+  215|    // Keep handleSend stable for ChatMessage callbacks
+  216|    const handleSendRef = useRef(handleSend);
+     |          ^
+  217|    useEffect(() => {
+  218|      handleSendRef.current = handleSend;
+      at constructor (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:365:19)
+      at TypeScriptParserMixin.raise (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:6599:19)
+      at TypeScriptScopeHandler.checkRedeclarationInScope (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:1619:19)
+      at TypeScriptScopeHandler.declareName (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:1585:12)
+      at TypeScriptScopeHandler.declareName (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4880:11)
+      at TypeScriptParserMixin.declareNameFromIdentifier (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:7567:16)
+      at TypeScriptParserMixin.checkIdentifier (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:7563:12)
+      at TypeScriptParserMixin.checkLVal (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:7500:12)
+      at TypeScriptParserMixin.parseVarId (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13412:10)
+      at TypeScriptParserMixin.parseVarId (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9752:11)
+      at TypeScriptParserMixin.parseVar (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13383:12)
+      at TypeScriptParserMixin.parseVarStatement (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13230:10)
+      at TypeScriptParserMixin.parseVarStatement (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9408:31)
+      at TypeScriptParserMixin.parseStatementContent (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12851:23)
+      at TypeScriptParserMixin.parseStatementContent (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9508:18)
+      at TypeScriptParserMixin.parseStatementLike (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12767:17)
+      at TypeScriptParserMixin.parseStatementListItem (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12747:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13316:61)
+      at TypeScriptParserMixin.parseBlockBody (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13309:10)
+      at TypeScriptParserMixin.parseBlock (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13297:10)
+      at TypeScriptParserMixin.parseFunctionBody (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12100:24)
+      at TypeScriptParserMixin.parseArrowExpression (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12075:10)
+      at TypeScriptParserMixin.parseParenAndDistinguishExpression (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11687:12)
+      at TypeScriptParserMixin.parseExprAtom (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11331:23)
+      at TypeScriptParserMixin.parseExprAtom (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4764:20)
+      at TypeScriptParserMixin.parseExprSubscripts (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11081:23)
+      at TypeScriptParserMixin.parseUpdate (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10831:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9786:20)
+      at /app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10800:39
+      at TypeScriptParserMixin.allowInAnd (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12421:16)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10800:17)
+      at TypeScriptParserMixin.parseVar (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13384:91)
+      at TypeScriptParserMixin.parseVarStatement (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13230:10)
+      at TypeScriptParserMixin.parseVarStatement (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9408:31)
+      at TypeScriptParserMixin.parseStatementContent (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12851:23)
+      at TypeScriptParserMixin.parseStatementContent (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9508:18)
+      at TypeScriptParserMixin.parseStatementLike (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12767:17)
+      at TypeScriptParserMixin.parseModuleItem (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12744:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13316:36)
+      at TypeScriptParserMixin.parseBlockBody (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13309:10)
+      at TypeScriptParserMixin.parseProgram (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12622:10)
+      at TypeScriptParserMixin.parseTopLevel (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12612:25)
+      at TypeScriptParserMixin.parse (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:14488:25)
+      at TypeScriptParserMixin.parse (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10126:18)
+6:41:06 AM [vite] Internal server error: Transform failed with 2 errors:
+/app/constants.ts:71:13: ERROR: Multiple exports with the same name "AGENTS"
+/app/constants.ts:71:13: ERROR: The symbol "AGENTS" has already been declared
+  Plugin: vite:esbuild
+  File: /app/constants.ts:71:13
+
+  Multiple exports with the same name "AGENTS"
+  69 |  ];
+  70 |
+  71 |  export const AGENTS: {role: AgentRole, label: string, color: string}[] = [
+     |               ^
+  72 |    { role: 'COUNCIL', label: 'The Council (Auto)', color: 'bg-indigo-600' },
+  73 |    { role: 'TEACHER', label: 'Teacher', color: 'bg-emerald-600' },
+
+  The symbol "AGENTS" has already been declared
+  69 |  ];
+  70 |
+  71 |  export const AGENTS: {role: AgentRole, label: string, color: string}[] = [
+     |               ^
+  72 |    { role: 'COUNCIL', label: 'The Council (Auto)', color: 'bg-indigo-600' },
+  73 |    { role: 'TEACHER', label: 'Teacher', color: 'bg-emerald-600' },
+
+      at failureErrorWithLog (/app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:1467:15)
+      at /app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:736:50
+      at responseCallbacks.<computed> (/app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:603:9)
+      at handleIncomingPacket (/app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:658:12)
+      at Socket.readFromStdout (/app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+6:41:07 AM [vite] (client) ✨ new dependencies optimized: react-dom/client, firebase/app, firebase/auth
+6:41:07 AM [vite] (client) ✨ optimized dependencies changed. reloading
+6:41:07 AM [vite] (client) Pre-transform error: /app/components/ChatInterface.tsx: Identifier 'handleSendRef' has already been declared. (216:8)
+
+  214 |
+  215 |   // Keep handleSend stable for ChatMessage callbacks
+> 216 |   const handleSendRef = useRef(handleSend);
+      |         ^
+  217 |   useEffect(() => {
+  218 |     handleSendRef.current = handleSend;
+  219 |   }, [handleSend]);
+  Plugin: vite:react-babel
+  File: /app/components/ChatInterface.tsx:216:8
+  214|
+  215|    // Keep handleSend stable for ChatMessage callbacks
+  216|    const handleSendRef = useRef(handleSend);
+     |          ^
+  217|    useEffect(() => {
+  218|      handleSendRef.current = handleSend;
+6:41:07 AM [vite] (client) warning: Duplicate "aria-label" attribute in JSX element
+205|            onChange={handleFileUpload}
+206|            title="File input"
+207|            aria-label="Upload files" />
+   |            ^
+208|
+209|        </div>
+
+  Plugin: vite:esbuild
+  File: /app/components/FileUploader.tsx
+6:41:07 AM [vite] (client) Pre-transform error: Transform failed with 2 errors:
+/app/constants.ts:71:13: ERROR: Multiple exports with the same name "AGENTS"
+/app/constants.ts:71:13: ERROR: The symbol "AGENTS" has already been declared
+  Plugin: vite:esbuild
+  File: /app/constants.ts:71:13
+
+  Multiple exports with the same name "AGENTS"
+  69 |  ];
+  70 |
+  71 |  export const AGENTS: {role: AgentRole, label: string, color: string}[] = [
+     |               ^
+  72 |    { role: 'COUNCIL', label: 'The Council (Auto)', color: 'bg-indigo-600' },
+  73 |    { role: 'TEACHER', label: 'Teacher', color: 'bg-emerald-600' },
+
+  The symbol "AGENTS" has already been declared
+  69 |  ];
+  70 |
+  71 |  export const AGENTS: {role: AgentRole, label: string, color: string}[] = [
+     |               ^
+  72 |    { role: 'COUNCIL', label: 'The Council (Auto)', color: 'bg-indigo-600' },
+  73 |    { role: 'TEACHER', label: 'Teacher', color: 'bg-emerald-600' },
+
+6:41:07 AM [vite] (client) Pre-transform error: Transform failed with 6 errors:
+/app/utils/index.ts:182:13: ERROR: Multiple exports with the same name "readFile"
+/app/utils/index.ts:182:13: ERROR: The symbol "readFile" has already been declared
+/app/utils/index.ts:268:13: ERROR: Multiple exports with the same name "extractJsonText"
+/app/utils/index.ts:268:13: ERROR: The symbol "extractJsonText" has already been declared
+/app/utils/index.ts:296:13: ERROR: Multiple exports with the same name "parseJsonSafely"
+...
+  Plugin: vite:esbuild
+  File: /app/utils/index.ts:182:13
+
+  Multiple exports with the same name "readFile"
+  180|   * @returns A Promise that resolves with the file content
+  181|   */
+  182|  export const readFile = (
+     |               ^
+  183|    file: File,
+  184|    readAs: 'text' | 'dataURL' | 'arrayBuffer' = 'text'
+
+  The symbol "readFile" has already been declared
+  180|   * @returns A Promise that resolves with the file content
+  181|   */
+  182|  export const readFile = (
+     |               ^
+  183|    file: File,
+  184|    readAs: 'text' | 'dataURL' | 'arrayBuffer' = 'text'
+
+  Multiple exports with the same name "extractJsonText"
+  266|   * @returns The extracted JSON string or null if no JSON found
+  267|   */
+  268|  export const extractJsonText = (raw: string): string | null => {
+     |               ^
+  269|    if (!raw?.trim()) return null;
+  270|    const trimmed = raw.trim();
+
+  The symbol "extractJsonText" has already been declared
+  266|   * @returns The extracted JSON string or null if no JSON found
+  267|   */
+  268|  export const extractJsonText = (raw: string): string | null => {
+     |               ^
+  269|    if (!raw?.trim()) return null;
+  270|    const trimmed = raw.trim();
+
+  Multiple exports with the same name "parseJsonSafely"
+  294|   * @returns The parsed object or the fallback value
+  295|   */
+  296|  export const parseJsonSafely = <T>(raw: string, fallback: T): T => {
+     |               ^
+  297|    try {
+  298|      return JSON.parse(raw) as T;
+
+  The symbol "parseJsonSafely" has already been declared
+  294|   * @returns The parsed object or the fallback value
+  295|   */
+  296|  export const parseJsonSafely = <T>(raw: string, fallback: T): T => {
+     |               ^
+  297|    try {
+  298|      return JSON.parse(raw) as T;
+
+6:41:07 AM [vite] Internal server error: /app/components/ChatInterface.tsx: Identifier 'handleSendRef' has already been declared. (216:8)
+
+  214 |
+  215 |   // Keep handleSend stable for ChatMessage callbacks
+> 216 |   const handleSendRef = useRef(handleSend);
+      |         ^
+  217 |   useEffect(() => {
+  218 |     handleSendRef.current = handleSend;
+  219 |   }, [handleSend]);
+  Plugin: vite:react-babel
+  File: /app/components/ChatInterface.tsx:216:8
+  214|
+  215|    // Keep handleSend stable for ChatMessage callbacks
+  216|    const handleSendRef = useRef(handleSend);
+     |          ^
+  217|    useEffect(() => {
+  218|      handleSendRef.current = handleSend;
+      at constructor (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:365:19)
+      at TypeScriptParserMixin.raise (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:6599:19)
+      at TypeScriptScopeHandler.checkRedeclarationInScope (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:1619:19)
+      at TypeScriptScopeHandler.declareName (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:1585:12)
+      at TypeScriptScopeHandler.declareName (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4880:11)
+      at TypeScriptParserMixin.declareNameFromIdentifier (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:7567:16)
+      at TypeScriptParserMixin.checkIdentifier (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:7563:12)
+      at TypeScriptParserMixin.checkLVal (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:7500:12)
+      at TypeScriptParserMixin.parseVarId (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13412:10)
+      at TypeScriptParserMixin.parseVarId (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9752:11)
+      at TypeScriptParserMixin.parseVar (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13383:12)
+      at TypeScriptParserMixin.parseVarStatement (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13230:10)
+      at TypeScriptParserMixin.parseVarStatement (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9408:31)
+      at TypeScriptParserMixin.parseStatementContent (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12851:23)
+      at TypeScriptParserMixin.parseStatementContent (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9508:18)
+      at TypeScriptParserMixin.parseStatementLike (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12767:17)
+      at TypeScriptParserMixin.parseStatementListItem (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12747:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13316:61)
+      at TypeScriptParserMixin.parseBlockBody (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13309:10)
+      at TypeScriptParserMixin.parseBlock (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13297:10)
+      at TypeScriptParserMixin.parseFunctionBody (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12100:24)
+      at TypeScriptParserMixin.parseArrowExpression (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12075:10)
+      at TypeScriptParserMixin.parseParenAndDistinguishExpression (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11687:12)
+      at TypeScriptParserMixin.parseExprAtom (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11331:23)
+      at TypeScriptParserMixin.parseExprAtom (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4764:20)
+      at TypeScriptParserMixin.parseExprSubscripts (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11081:23)
+      at TypeScriptParserMixin.parseUpdate (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10831:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9786:20)
+      at /app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10800:39
+      at TypeScriptParserMixin.allowInAnd (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12421:16)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10800:17)
+      at TypeScriptParserMixin.parseVar (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13384:91)
+      at TypeScriptParserMixin.parseVarStatement (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13230:10)
+      at TypeScriptParserMixin.parseVarStatement (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9408:31)
+      at TypeScriptParserMixin.parseStatementContent (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12851:23)
+      at TypeScriptParserMixin.parseStatementContent (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9508:18)
+      at TypeScriptParserMixin.parseStatementLike (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12767:17)
+      at TypeScriptParserMixin.parseModuleItem (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12744:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13316:36)
+      at TypeScriptParserMixin.parseBlockBody (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13309:10)
+      at TypeScriptParserMixin.parseProgram (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12622:10)
+      at TypeScriptParserMixin.parseTopLevel (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12612:25)
+      at TypeScriptParserMixin.parse (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:14488:25)
+      at TypeScriptParserMixin.parse (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10126:18)
+6:41:07 AM [vite] Internal server error: Transform failed with 2 errors:
+/app/constants.ts:71:13: ERROR: Multiple exports with the same name "AGENTS"
+/app/constants.ts:71:13: ERROR: The symbol "AGENTS" has already been declared
+  Plugin: vite:esbuild
+  File: /app/constants.ts:71:13
+
+  Multiple exports with the same name "AGENTS"
+  69 |  ];
+  70 |
+  71 |  export const AGENTS: {role: AgentRole, label: string, color: string}[] = [
+     |               ^
+  72 |    { role: 'COUNCIL', label: 'The Council (Auto)', color: 'bg-indigo-600' },
+  73 |    { role: 'TEACHER', label: 'Teacher', color: 'bg-emerald-600' },
+
+  The symbol "AGENTS" has already been declared
+  69 |  ];
+  70 |
+  71 |  export const AGENTS: {role: AgentRole, label: string, color: string}[] = [
+     |               ^
+  72 |    { role: 'COUNCIL', label: 'The Council (Auto)', color: 'bg-indigo-600' },
+  73 |    { role: 'TEACHER', label: 'Teacher', color: 'bg-emerald-600' },
+
+      at failureErrorWithLog (/app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:1467:15)
+      at /app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:736:50
+      at responseCallbacks.<computed> (/app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:603:9)
+      at handleIncomingPacket (/app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:658:12)
+      at Socket.readFromStdout (/app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+6:41:07 AM [vite] Internal server error: /app/components/ChatInterface.tsx: Identifier 'handleSendRef' has already been declared. (216:8)
+
+  214 |
+  215 |   // Keep handleSend stable for ChatMessage callbacks
+> 216 |   const handleSendRef = useRef(handleSend);
+      |         ^
+  217 |   useEffect(() => {
+  218 |     handleSendRef.current = handleSend;
+  219 |   }, [handleSend]);
+  Plugin: vite:react-babel
+  File: /app/components/ChatInterface.tsx:216:8
+  214|
+  215|    // Keep handleSend stable for ChatMessage callbacks
+  216|    const handleSendRef = useRef(handleSend);
+     |          ^
+  217|    useEffect(() => {
+  218|      handleSendRef.current = handleSend;
+      at constructor (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:365:19)
+      at TypeScriptParserMixin.raise (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:6599:19)
+      at TypeScriptScopeHandler.checkRedeclarationInScope (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:1619:19)
+      at TypeScriptScopeHandler.declareName (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:1585:12)
+      at TypeScriptScopeHandler.declareName (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4880:11)
+      at TypeScriptParserMixin.declareNameFromIdentifier (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:7567:16)
+      at TypeScriptParserMixin.checkIdentifier (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:7563:12)
+      at TypeScriptParserMixin.checkLVal (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:7500:12)
+      at TypeScriptParserMixin.parseVarId (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13412:10)
+      at TypeScriptParserMixin.parseVarId (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9752:11)
+      at TypeScriptParserMixin.parseVar (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13383:12)
+      at TypeScriptParserMixin.parseVarStatement (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13230:10)
+      at TypeScriptParserMixin.parseVarStatement (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9408:31)
+      at TypeScriptParserMixin.parseStatementContent (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12851:23)
+      at TypeScriptParserMixin.parseStatementContent (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9508:18)
+      at TypeScriptParserMixin.parseStatementLike (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12767:17)
+      at TypeScriptParserMixin.parseStatementListItem (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12747:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13316:61)
+      at TypeScriptParserMixin.parseBlockBody (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13309:10)
+      at TypeScriptParserMixin.parseBlock (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13297:10)
+      at TypeScriptParserMixin.parseFunctionBody (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12100:24)
+      at TypeScriptParserMixin.parseArrowExpression (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12075:10)
+      at TypeScriptParserMixin.parseParenAndDistinguishExpression (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11687:12)
+      at TypeScriptParserMixin.parseExprAtom (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11331:23)
+      at TypeScriptParserMixin.parseExprAtom (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4764:20)
+      at TypeScriptParserMixin.parseExprSubscripts (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11081:23)
+      at TypeScriptParserMixin.parseUpdate (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10831:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9786:20)
+      at /app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10800:39
+      at TypeScriptParserMixin.allowInAnd (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12421:16)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10800:17)
+      at TypeScriptParserMixin.parseVar (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13384:91)
+      at TypeScriptParserMixin.parseVarStatement (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13230:10)
+      at TypeScriptParserMixin.parseVarStatement (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9408:31)
+      at TypeScriptParserMixin.parseStatementContent (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12851:23)
+      at TypeScriptParserMixin.parseStatementContent (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9508:18)
+      at TypeScriptParserMixin.parseStatementLike (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12767:17)
+      at TypeScriptParserMixin.parseModuleItem (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12744:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13316:36)
+      at TypeScriptParserMixin.parseBlockBody (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13309:10)
+      at TypeScriptParserMixin.parseProgram (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12622:10)
+      at TypeScriptParserMixin.parseTopLevel (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12612:25)
+      at TypeScriptParserMixin.parse (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:14488:25)
+      at TypeScriptParserMixin.parse (/app/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10126:18)
+6:41:07 AM [vite] Internal server error: Transform failed with 2 errors:
+/app/constants.ts:71:13: ERROR: Multiple exports with the same name "AGENTS"
+/app/constants.ts:71:13: ERROR: The symbol "AGENTS" has already been declared
+  Plugin: vite:esbuild
+  File: /app/constants.ts:71:13
+
+  Multiple exports with the same name "AGENTS"
+  69 |  ];
+  70 |
+  71 |  export const AGENTS: {role: AgentRole, label: string, color: string}[] = [
+     |               ^
+  72 |    { role: 'COUNCIL', label: 'The Council (Auto)', color: 'bg-indigo-600' },
+  73 |    { role: 'TEACHER', label: 'Teacher', color: 'bg-emerald-600' },
+
+  The symbol "AGENTS" has already been declared
+  69 |  ];
+  70 |
+  71 |  export const AGENTS: {role: AgentRole, label: string, color: string}[] = [
+     |               ^
+  72 |    { role: 'COUNCIL', label: 'The Council (Auto)', color: 'bg-indigo-600' },
+  73 |    { role: 'TEACHER', label: 'Teacher', color: 'bg-emerald-600' },
+
+      at failureErrorWithLog (/app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:1467:15)
+      at /app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:736:50
+      at responseCallbacks.<computed> (/app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:603:9)
+      at handleIncomingPacket (/app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:658:12)
+      at Socket.readFromStdout (/app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+6:41:07 AM [vite] Internal server error: Transform failed with 6 errors:
+/app/utils/index.ts:182:13: ERROR: Multiple exports with the same name "readFile"
+/app/utils/index.ts:182:13: ERROR: The symbol "readFile" has already been declared
+/app/utils/index.ts:268:13: ERROR: Multiple exports with the same name "extractJsonText"
+/app/utils/index.ts:268:13: ERROR: The symbol "extractJsonText" has already been declared
+/app/utils/index.ts:296:13: ERROR: Multiple exports with the same name "parseJsonSafely"
+...
+  Plugin: vite:esbuild
+  File: /app/utils/index.ts:182:13
+
+  Multiple exports with the same name "readFile"
+  180|   * @returns A Promise that resolves with the file content
+  181|   */
+  182|  export const readFile = (
+     |               ^
+  183|    file: File,
+  184|    readAs: 'text' | 'dataURL' | 'arrayBuffer' = 'text'
+
+  The symbol "readFile" has already been declared
+  180|   * @returns A Promise that resolves with the file content
+  181|   */
+  182|  export const readFile = (
+     |               ^
+  183|    file: File,
+  184|    readAs: 'text' | 'dataURL' | 'arrayBuffer' = 'text'
+
+  Multiple exports with the same name "extractJsonText"
+  266|   * @returns The extracted JSON string or null if no JSON found
+  267|   */
+  268|  export const extractJsonText = (raw: string): string | null => {
+     |               ^
+  269|    if (!raw?.trim()) return null;
+  270|    const trimmed = raw.trim();
+
+  The symbol "extractJsonText" has already been declared
+  266|   * @returns The extracted JSON string or null if no JSON found
+  267|   */
+  268|  export const extractJsonText = (raw: string): string | null => {
+     |               ^
+  269|    if (!raw?.trim()) return null;
+  270|    const trimmed = raw.trim();
+
+  Multiple exports with the same name "parseJsonSafely"
+  294|   * @returns The parsed object or the fallback value
+  295|   */
+  296|  export const parseJsonSafely = <T>(raw: string, fallback: T): T => {
+     |               ^
+  297|    try {
+  298|      return JSON.parse(raw) as T;
+
+  The symbol "parseJsonSafely" has already been declared
+  294|   * @returns The parsed object or the fallback value
+  295|   */
+  296|  export const parseJsonSafely = <T>(raw: string, fallback: T): T => {
+     |               ^
+  297|    try {
+  298|      return JSON.parse(raw) as T;
+
+      at failureErrorWithLog (/app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:1467:15)
+      at /app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:736:50
+      at responseCallbacks.<computed> (/app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:603:9)
+      at handleIncomingPacket (/app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:658:12)
+      at Socket.readFromStdout (/app/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/lib/main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
