@@ -24,16 +24,8 @@ interface SidebarProps {
   onSwitchToSignIn?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({
-  currentView,
-  setView,
-  authUser = null,
-  guestMode = false,
-  authBusy = false,
-  onSignOut,
-  onSwitchToSignIn,
-}) => {
-  const menuItems = [
+// Performance Optimization: Moved outside component to prevent re-allocation on every render
+const MENU_ITEMS = [
     { id: AppView.DASHBOARD, label: 'Dashboard', icon: Brain },
     { id: AppView.LESSON_STUDIO, label: 'Lesson Studio', icon: Zap },
     { id: AppView.CHAT, label: 'Council Chat', icon: MessageSquare },
@@ -47,6 +39,15 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: AppView.SYLLABUS, label: 'Syllabus', icon: BookOpen },
   ];
 
+const Sidebar: React.FC<SidebarProps> = ({
+  currentView,
+  setView,
+  authUser = null,
+  guestMode = false,
+  authBusy = false,
+  onSignOut,
+  onSwitchToSignIn,
+}) => {
   return (
     <div className="w-20 md:w-72 bg-slate-900 text-white flex flex-col h-screen border-r border-slate-800">
       <div className="p-4 md:p-6 flex items-center justify-center md:justify-start gap-3 border-b border-slate-800">
@@ -57,7 +58,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       <nav className="flex-1 py-6 px-2 md:px-4 space-y-2 overflow-y-auto">
-        {menuItems.map((item) => (
+        {MENU_ITEMS.map((item) => (
           <button
             key={item.id}
             onClick={() => setView(item.id)}
