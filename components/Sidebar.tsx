@@ -24,16 +24,8 @@ interface SidebarProps {
   onSwitchToSignIn?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({
-  currentView,
-  setView,
-  authUser = null,
-  guestMode = false,
-  authBusy = false,
-  onSignOut,
-  onSwitchToSignIn,
-}) => {
-  const menuItems = [
+// Optimization: Moved static array outside component to prevent recreation on every render
+const menuItems = [
     { id: AppView.DASHBOARD, label: 'Dashboard', icon: Brain },
     { id: AppView.LESSON_STUDIO, label: 'Lesson Studio', icon: Zap },
     { id: AppView.CHAT, label: 'Council Chat', icon: MessageSquare },
@@ -46,6 +38,16 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: AppView.FILES, label: 'Sources', icon: UploadCloud },
     { id: AppView.SYLLABUS, label: 'Syllabus', icon: BookOpen },
   ];
+
+const Sidebar: React.FC<SidebarProps> = ({
+  currentView,
+  setView,
+  authUser = null,
+  guestMode = false,
+  authBusy = false,
+  onSignOut,
+  onSwitchToSignIn,
+}) => {
 
   return (
     <div className="w-20 md:w-72 bg-slate-900 text-white flex flex-col h-screen border-r border-slate-800">
