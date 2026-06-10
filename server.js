@@ -11,7 +11,35 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-app.use(cors());
+// Secure CORS configuration
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  process.env.VITE_APP_URL,
+  process.env.PUBLIC_URL
+].filter(Boolean);
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    // Check explicitly configured origin
+    if (process.env.CORS_ORIGIN && process.env.CORS_ORIGIN === origin) {
+       return callback(null, true);
+    }
+
+    // Allow explicitly defined origins or bypass in non-production environments
+    if (process.env.NODE_ENV !== 'production' || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+    }
+
+    // Strictly block unknown origins in production to prevent Cross-Origin exploits
+    return callback(new Error('Not allowed by CORS'));
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+};
+app.use(cors(corsOptions));
 // Keep API payloads bounded to protect server memory while client-side file uploads stay local.
 app.use(express.json({ limit: '30mb' }));
 app.use(express.urlencoded({ extended: true, limit: '30mb' }));
