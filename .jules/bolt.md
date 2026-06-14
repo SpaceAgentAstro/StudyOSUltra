@@ -5,3 +5,7 @@
 ## 2024-05-22 - [Stable Callbacks for Memoization]
 **Learning:** When passing callbacks (like `handleSend`) to `React.memo` components, if the callback depends on changing state, `useCallback` alone is insufficient as it will change on every render.
 **Action:** Use a `useRef` to store the latest callback and expose a stable `useCallback` wrapper that invokes `ref.current`.
+
+## 2024-05-22 - [Redundant array traversals in useMemo hooks]
+**Learning:** When multiple `useMemo` hooks execute the same `.map()` traversal on the same array with identical dependencies, it causes redundant O(N) operations during re-renders.
+**Action:** Extract the shared array traversal into a single parent `useMemo` hook, and have the dependent hooks consume the pre-mapped array to improve performance.
