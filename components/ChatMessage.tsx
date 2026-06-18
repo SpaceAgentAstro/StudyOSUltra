@@ -71,7 +71,8 @@ const ChatMessage: React.FC<ChatMessageProps> = React.memo(({
                                     <button
                                         onClick={() => onExplain(codeContent, 'TEACHER')}
                                         className="flex items-center gap-1.5 text-[10px] font-bold text-indigo-600 hover:text-indigo-700 bg-white border border-slate-200 px-2 py-1 rounded hover:bg-indigo-50 transition-colors shadow-sm"
-                                        title="Ask Teacher to explain"
+                                        title="Ask Teacher to explain code snippet"
+                                        aria-label="Ask Teacher to explain code snippet"
                                     >
                                         <Brain className="w-3 h-3" /> Explain
                                     </button>
