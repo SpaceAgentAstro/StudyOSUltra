@@ -24,16 +24,10 @@ interface SidebarProps {
   onSwitchToSignIn?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({
-  currentView,
-  setView,
-  authUser = null,
-  guestMode = false,
-  authBusy = false,
-  onSignOut,
-  onSwitchToSignIn,
-}) => {
-  const menuItems = [
+// Performance Optimization: Moved MENU_ITEMS outside the component
+// to prevent array recreation on every render, which also helps React.memo
+// do a proper shallow comparison.
+const MENU_ITEMS = [
     { id: AppView.DASHBOARD, label: 'Dashboard', icon: Brain },
     { id: AppView.LESSON_STUDIO, label: 'Lesson Studio', icon: Zap },
     { id: AppView.CHAT, label: 'Council Chat', icon: MessageSquare },
@@ -47,6 +41,16 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: AppView.SYLLABUS, label: 'Syllabus', icon: BookOpen },
   ];
 
+const Sidebar: React.FC<SidebarProps> = ({
+  currentView,
+  setView,
+  authUser = null,
+  guestMode = false,
+  authBusy = false,
+  onSignOut,
+  onSwitchToSignIn,
+}) => {
+
   return (
     <div className="w-20 md:w-72 bg-slate-900 text-white flex flex-col h-screen border-r border-slate-800">
       <div className="p-4 md:p-6 flex items-center justify-center md:justify-start gap-3 border-b border-slate-800">
@@ -57,7 +61,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       <nav className="flex-1 py-6 px-2 md:px-4 space-y-2 overflow-y-auto">
-        {menuItems.map((item) => (
+        {MENU_ITEMS.map((item) => (
           <button
             key={item.id}
             onClick={() => setView(item.id)}
@@ -138,4 +142,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   );
 };
 
-export default Sidebar;
+// Performance Optimization: React.memo prevents Sidebar from re-rendering
+// unnecessarily when parent App.tsx re-renders but Sidebar props remain the same.
+export default React.memo(Sidebar);
