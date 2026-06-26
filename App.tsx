@@ -301,11 +301,14 @@ const App: React.FC = () => {
         onSwitchToSignIn={() => setGuestMode(false)}
       />
       <main className="flex-1 h-full overflow-hidden relative">
-        <div className="h-full w-full" style={{ display: currentView === AppView.CHAT ? 'block' : 'none' }}>
-          <div className="h-screen p-4 md:p-6 bg-slate-100/50">
-            <ChatInterface files={files} onMessagesChange={setChatHistory} />
+        {currentView === AppView.CHAT && (
+          <div className="h-full w-full">
+            <div className="h-screen p-4 md:p-6 bg-slate-100/50">
+              {/* ⚡ Bolt Optimization: Prevent heavy ChatInterface from rendering when hidden */}
+              <ChatInterface files={files} onMessagesChange={setChatHistory} initialMessages={chatHistory} />
+            </div>
           </div>
-        </div>
+        )}
 
         <Suspense
           fallback={<div className="h-full w-full flex items-center justify-center text-slate-500">Loading view...</div>}
@@ -313,9 +316,6 @@ const App: React.FC = () => {
           {currentView !== AppView.CHAT && renderContent()}
         </Suspense>
 
-        <div style={{ display: currentView === AppView.CHAT ? 'block' : 'none', height: '100%' }}>
-           <ChatInterface files={files} />
-        </div>
       </main>
     </div>
   );
