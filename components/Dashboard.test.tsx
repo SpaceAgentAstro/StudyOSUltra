@@ -90,15 +90,15 @@ describe('Dashboard Component', () => {
     );
 
     // Knowledge Universe
-    fireEvent.click(screen.getByText(/Knowledge Universe/i));
+    fireEvent.click(screen.getByText(/Knowledge Universe/i).closest('button')!);
     expect(mockSetCurrentView).toHaveBeenCalledWith(AppView.KNOWLEDGE_UNIVERSE);
 
     // Chat
-    fireEvent.click(screen.getByText(/Talk to The Coach/i));
+    fireEvent.click(screen.getByText(/Talk to The Coach/i).closest('button')!);
     expect(mockSetCurrentView).toHaveBeenCalledWith(AppView.CHAT);
 
     // Meta Learning
-    fireEvent.click(screen.getByText(/Meta Analysis/i));
+    fireEvent.click(screen.getByText(/Meta Analysis/i).closest('button')!);
     expect(mockSetCurrentView).toHaveBeenCalledWith(AppView.META_LEARNING);
   });
 });
