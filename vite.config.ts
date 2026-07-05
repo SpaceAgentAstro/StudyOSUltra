@@ -24,14 +24,9 @@ export default defineConfig(({ mode }) => {
     define: isTest
       ? {}
       : {
-          'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
-          'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
-          'process.env.JULES_API_KEY': JSON.stringify(env.JULES_API_KEY || ''),
-          'process.env.OPENAI_API_KEY': JSON.stringify(env.OPENAI_API_KEY || ''),
           'process.env.OPENAI_BASE_URL': JSON.stringify(env.OPENAI_BASE_URL || 'https://api.openai.com/v1'),
           'process.env.OPENAI_MODEL': JSON.stringify(env.OPENAI_MODEL || 'gpt-4.1-mini'),
           'process.env.OPENAI_IMAGE_MODEL': JSON.stringify(env.OPENAI_IMAGE_MODEL || 'gpt-image-1'),
-          'process.env.ANTHROPIC_API_KEY': JSON.stringify(env.ANTHROPIC_API_KEY || ''),
           'process.env.ANTHROPIC_BASE_URL': JSON.stringify(env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com/v1'),
           'process.env.ANTHROPIC_MODEL': JSON.stringify(env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-latest'),
           'process.env.MODEL_PROVIDER': JSON.stringify(env.MODEL_PROVIDER || 'auto'),
