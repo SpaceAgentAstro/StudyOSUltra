@@ -1,4 +1,3 @@
-import { GoogleGenAI } from '@google/genai';
 import { z } from 'zod';
 import {
   AgentRole,
@@ -20,8 +19,7 @@ import {
 } from '../types';
 import { AGENT_PERSONAS, SYSTEM_INSTRUCTION_BASE } from '../constants';
 
-const API_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.JULES_API_KEY || '';
-const aiClient = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
+
 
 type OllamaRuntimeConfig = {
   model?: string;
@@ -825,29 +823,25 @@ export const generateVideoPlan = async (prompt: string): Promise<VideoPlan> => {
 };
 
 export const generateVideoClip = async (plan: VideoPlan): Promise<string | null> => {
-  if (!aiClient) return null;
-
   try {
     const fullPrompt = `${plan.title}\n${plan.shots
       .map((shot) => `${shot.title}: ${shot.visual}. Voiceover: ${shot.voiceover}`)
       .join('\n')}`;
 
-    const videoApi = (aiClient.models as any)?.generateVideos;
-    if (typeof videoApi !== 'function') {
-      return null;
-    }
-
-    const response = await videoApi({
-      model: 'veo-2.0-generate-001',
-      prompt: fullPrompt,
-      config: {
-        durationSeconds: Math.min(Math.max(plan.durationSeconds, 4), 20),
-        aspectRatio: '16:9',
-      },
+    const response = await fetch('/api/video', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: fullPrompt,
+        config: {
+          durationSeconds: Math.min(Math.max(plan.durationSeconds, 4), 20),
+          aspectRatio: '16:9',
+        }
+      })
     });
-
-    const directUrl = response?.generatedVideos?.[0]?.video?.uri || response?.video?.uri;
-    return directUrl || null;
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.url || null;
   } catch (error) {
     console.error('Video generation unavailable:', error);
     return null;
@@ -857,35 +851,22 @@ export const generateVideoClip = async (plan: VideoPlan): Promise<string | null>
 export const generateImage = async (prompt: string): Promise<string> => {
   const cleanPrompt = sanitizeText(prompt);
 
-  if (!aiClient) {
-    return fallbackImageDataUrl(cleanPrompt);
-  }
-
   try {
-    const imageApi = (aiClient.models as any)?.generateImages;
-    if (typeof imageApi !== 'function') {
-      return fallbackImageDataUrl(cleanPrompt);
-    }
-
-    const response = await imageApi({
-      model: 'imagen-3.0-generate-002',
-      prompt: cleanPrompt,
-      config: {
-        numberOfImages: 1,
-        outputMimeType: 'image/jpeg',
-      },
+    const response = await fetch('/api/image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: cleanPrompt,
+        config: {
+          numberOfImages: 1,
+          outputMimeType: 'image/jpeg',
+        }
+      })
     });
-
-    const bytes =
-      response?.generatedImages?.[0]?.image?.imageBytes ||
-      response?.images?.[0]?.b64Json ||
-      response?.data?.[0]?.b64_json;
-
-    if (!bytes) {
-      return fallbackImageDataUrl(cleanPrompt);
-    }
-
-    return `data:image/jpeg;base64,${bytes}`;
+    if (!response.ok) return fallbackImageDataUrl(cleanPrompt);
+    const data = await response.json();
+    if (!data.bytes) return fallbackImageDataUrl(cleanPrompt);
+    return `data:image/jpeg;base64,${data.bytes}`;
   } catch (error) {
     console.error('Image generation unavailable:', error);
     return fallbackImageDataUrl(cleanPrompt);

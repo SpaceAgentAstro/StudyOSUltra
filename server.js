@@ -98,6 +98,53 @@ app.post('/api/stream', async (req, res) => {
   }
 });
 
+
+app.post('/api/video', async (req, res) => {
+  if (!aiClient) {
+    return res.status(500).json({ error: "Server Error: API Key not configured." });
+  }
+  try {
+    const { prompt, config } = req.body;
+    const videoApi = aiClient.models?.generateVideos;
+    if (typeof videoApi !== 'function') {
+      return res.status(400).json({ error: "Video generation unavailable" });
+    }
+    const response = await videoApi({
+      model: 'veo-2.0-generate-001',
+      prompt,
+      config
+    });
+    const directUrl = response?.generatedVideos?.[0]?.video?.uri || response?.video?.uri;
+    res.json({ url: directUrl || null });
+  } catch (error) {
+    console.error("Error in /api/video:", error);
+    res.status(500).json({ error: error.message || "Internal Server Error" });
+  }
+});
+
+app.post('/api/image', async (req, res) => {
+  if (!aiClient) {
+    return res.status(500).json({ error: "Server Error: API Key not configured." });
+  }
+  try {
+    const { prompt, config } = req.body;
+    const imageApi = aiClient.models?.generateImages;
+    if (typeof imageApi !== 'function') {
+      return res.status(400).json({ error: "Image generation unavailable" });
+    }
+    const response = await imageApi({
+      model: 'imagen-3.0-generate-002',
+      prompt,
+      config
+    });
+    const bytes = response?.generatedImages?.[0]?.image?.imageBytes || response?.images?.[0]?.b64Json || response?.data?.[0]?.b64_json;
+    res.json({ bytes: bytes || null });
+  } catch (error) {
+    console.error("Error in /api/image:", error);
+    res.status(500).json({ error: error.message || "Internal Server Error" });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
